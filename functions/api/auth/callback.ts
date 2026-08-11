@@ -8,6 +8,12 @@ const STEAM64_BASE = 76561197960265728n
  * it minted, which proves the claimed_id (and its SteamID64) is genuine.
  */
 export const onRequestGet = async (context: { request: Request; env: Env }) => {
+  if (!context.env.SESSION_SECRET) {
+    return new Response(
+      'Sign-in is not configured: set the SESSION_SECRET variable on the Cloudflare Pages project and redeploy.',
+      { status: 500 },
+    )
+  }
   const url = new URL(context.request.url)
   const params = new URLSearchParams(url.search)
   params.set('openid.mode', 'check_authentication')
