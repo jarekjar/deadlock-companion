@@ -1,0 +1,113 @@
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useHeroAnalytics, useHeroes } from '../../lib/queries'
+import { winRateClass } from '../../lib/winrate'
+import '../players/players.css'
+import './heroes.css'
+
+type SortKey = 'pick' | 'win' | 'name'
+
+/**
+ * Searchable, sortable grid of big hero cards. Shared by the Heroes index and
+ * the Matchups hero picker — only the link target differs.
+ */
+export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => string }) {
+  const heroes = useHeroes()
+  const analytics = useHeroAnalytics()
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('pick')
+  const [descending, setDescending] = useState(true)
+  const [complexity, setComplexity] = useState(0)
+
+  const rows = useMemo(() => {
+    if (!heroes.data || !analytics.data) return null
+    const totalMatches = analytics.data.reduce((s, h) => s + h.matches, 0) / 12
+    const needle = search.trim().toLowerCase()
+    const filtered = analytics.data.flatMap((stat) => {
+      const hero = heroes.data.get(stat.hero_id)
+      if (!hero || stat.matches === 0) return []
+      if (needle && !hero.name.toLowerCase().includes(needle)) return []
+      if (complexity > 0 && hero.complexity !== complexity) return []
+      return [
+        {
+          hero,
+          winRate: (stat.wins / stat.matches) * 100,
+          pickRate: (stat.matches / totalMatches) * 100,
+        },
+      ]
+    })
+    const dir = descending ? -1 : 1
+    return filtered.sort((a, b) => {
+      switch (sortKey) {
+        case 'pick':
+          return dir * (a.pickRate - b.pickRate)
+        case 'win':
+          return dir * (a.winRate - b.winRate)
+        case 'name':
+          return dir * b.hero.name.localeCompare(a.hero.name)
+      }
+    })
+  }, [heroes.data, analytics.data, search, sortKey, descending, complexity])
+
+  if (analytics.isError || heroes.isError) {
+    return <div className="page-note error">Could not load hero stats</div>
+  }
+
+  return (
+    <>
+      <div className="grid-controls">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search heroes"
+          aria-label="Search heroes"
+        />
+        <label>
+          Sort
+          <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
+            <option value="pick">Pick rate</option>
+            <option value="win">Win rate</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+        <button
+          className="btn btn-small"
+          onClick={() => setDescending((d) => !d)}
+          title={descending ? 'Descending' : 'Ascending'}
+        >
+          {descending ? '▼' : '▲'}
+        </button>
+        <label>
+          Complexity
+          <select value={complexity} onChange={(e) => setComplexity(Number(e.target.value))}>
+            <option value={0}>All</option>
+            <option value={1}>Simple</option>
+            <option value={2}>Moderate</option>
+            <option value={3}>Complex</option>
+          </select>
+        </label>
+      </div>
+      <p className="grid-note">Win and pick rates from all matches in the last 30 days.</p>
+      {!rows ? (
+        <div className="page-note">Loading hero stats</div>
+      ) : rows.length === 0 ? (
+        <div className="page-note">No heroes match</div>
+      ) : (
+        <div className="hero-grid">
+          {rows.map(({ hero, winRate, pickRate }) => (
+            <Link key={hero.id} className="hero-card" to={linkTo(hero.id)}>
+              <img src={hero.images.icon_hero_card_webp} alt="" loading="lazy" />
+              <span className="hc-body">
+                <span className="hc-name">{hero.name}</span>
+                <span className="hc-stats">
+                  <span className={winRateClass(winRate)}>{winRate.toFixed(1)}%</span>
+                  <span className="pick">{pickRate.toFixed(1)}% pick</span>
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}

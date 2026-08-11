@@ -1,54 +1,60 @@
-/* ---- hero index grid ---- */
+/* ---- hero card grid ---- */
 
 .hero-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-.hero-tile {
-  display: flex;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
-  border: 1px solid var(--rule);
-  padding: 10px 14px;
-  color: var(--ink);
-  text-decoration: none;
 }
 
-.hero-tile:hover {
+.hero-card {
+  display: block;
+  border: 1px solid var(--rule);
   background: var(--bg-raised);
-  border-color: var(--brass-dim);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.hero-card:hover {
+  border-color: var(--brass);
   text-decoration: none;
   color: var(--ink);
 }
 
-.hero-tile img {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--rule);
+.hero-card img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
+  object-position: top;
+  display: block;
+  border-bottom: 1px solid var(--rule);
 }
 
-.hero-tile .ht-name {
+.hero-card .hc-body {
+  display: block;
+  padding: 10px 10px 12px;
+  text-align: center;
+}
+
+.hero-card .hc-name {
+  display: block;
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  font-size: 14px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.hero-tile .ht-stats {
-  margin-left: auto;
-  text-align: right;
+.hero-card .hc-stats {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
-.hero-tile .ht-stats .pick {
-  display: block;
-  font-size: 11px;
+.hero-card .hc-stats .pick {
   color: var(--ink-faint);
 }
 
@@ -65,6 +71,32 @@
   margin-bottom: 16px;
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+.grid-controls {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.grid-controls input {
+  width: 190px;
+}
+
+.grid-controls label {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.grid-controls select {
+  padding: 5px 8px;
+  font-size: 12px;
 }
 
 /* ---- hero detail ---- */
@@ -116,31 +148,60 @@
 .hero-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
   justify-content: center;
   margin-bottom: 24px;
 }
 
 .hero-strip a {
   display: block;
+  width: 72px;
   border: 1px solid var(--rule);
-  padding: 2px;
-  line-height: 0;
+  padding: 4px 4px 5px;
+  text-align: center;
+  color: var(--ink-dim);
+  text-decoration: none;
 }
 
 .hero-strip a:hover {
   border-color: var(--brass-dim);
+  color: var(--ink);
+  text-decoration: none;
 }
 
 .hero-strip a.selected {
   border-color: var(--brass);
+  color: var(--brass);
 }
 
 .hero-strip img {
-  width: 34px;
-  height: 34px;
+  width: 100%;
+  aspect-ratio: 1;
   object-fit: cover;
   display: block;
+  margin-bottom: 4px;
+}
+
+.hero-strip span {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-controls.left {
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.dim-note {
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 
 .counter-tr td {

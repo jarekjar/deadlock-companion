@@ -56,6 +56,8 @@ export interface SteamProfile {
 export interface HeroAsset {
   id: number
   name: string
+  /** 1 = simple, 3 = most complex (the in-game picker's difficulty dots). */
+  complexity: number
   player_selectable: boolean
   disabled: boolean
   in_development: boolean
@@ -83,8 +85,16 @@ export interface ItemAsset {
   activation?: string
   is_active_item?: boolean
   image?: string
+  image_webp?: string
+  shop_image?: string
+  shop_image_webp?: string
   shopable?: boolean
   description?: { desc?: string }
+}
+
+/** The in-game shop tile art; falls back to the flat white mod glyph. */
+export function itemIcon(item: ItemAsset): string | undefined {
+  return item.shop_image_webp ?? item.shop_image ?? item.image_webp ?? item.image
 }
 
 export interface MatchPlayerStatsSample {

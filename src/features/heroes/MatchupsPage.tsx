@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { type HeroAsset } from '../../lib/api'
+import { itemIcon, type HeroAsset } from '../../lib/api'
 import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
+import HeroBrowser from './HeroBrowser'
 import '../players/players.css'
 import './heroes.css'
 
@@ -13,19 +14,21 @@ export default function MatchupsPage() {
   const heroId = params.heroId ? Number(params.heroId) : null
   const heroes = useHeroes()
 
-  const strip = useMemo(
-    () =>
-      heroes.data
-        ? [...heroes.data.values()].sort((a, b) => a.name.localeCompare(b.name))
-        : null,
-    [heroes.data],
-  )
+  if (heroId === null) {
+    return (
+      <>
+        <p className="grid-note">Pick a hero to see their matchups.</p>
+        <HeroBrowser linkTo={(id) => `/matchups/${id}`} />
+      </>
+    )
+  }
+
+  const strip = heroes.data
+    ? [...heroes.data.values()].sort((a, b) => a.name.localeCompare(b.name))
+    : null
 
   return (
     <>
-      <p className="grid-note">
-        {heroId ? 'Matchups for the selected hero, last 30 days.' : 'Pick a hero to see their matchups.'}
-      </p>
       {strip && (
         <div className="hero-strip">
           {strip.map((h) => (
@@ -36,28 +39,35 @@ export default function MatchupsPage() {
               title={h.name}
             >
               <img src={h.images.icon_image_small_webp} alt={h.name} loading="lazy" />
+              <span>{h.name}</span>
             </Link>
           ))}
         </div>
       )}
-      {heroId !== null && heroes.data && (
-        <MatchupTable heroId={heroId} heroes={heroes.data} />
-      )}
+      {heroes.data && <MatchupTable heroId={heroId} heroes={heroes.data} />}
     </>
   )
 }
 
+type MatchupSortKey = 'win' | 'matches' | 'name'
+
 function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, HeroAsset> }) {
   const counters = useHeroCounters()
   const [openEnemy, setOpenEnemy] = useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<MatchupSortKey>('win')
+  const [descending, setDescending] = useState(false)
 
   const rows = useMemo(() => {
     if (!counters.data) return null
+    const needle = search.trim().toLowerCase()
+    const dir = descending ? -1 : 1
     return counters.data
       .filter((c) => c.hero_id === heroId && c.matches_played > 0)
       .flatMap((c) => {
         const enemy = heroes.get(c.enemy_hero_id)
         if (!enemy) return []
+        if (needle && !enemy.name.toLowerCase().includes(needle)) return []
         return [
           {
             enemy,
@@ -66,8 +76,17 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
           },
         ]
       })
-      .sort((a, b) => a.winRate - b.winRate)
-  }, [counters.data, heroId, heroes])
+      .sort((a, b) => {
+        switch (sortKey) {
+          case 'win':
+            return dir * (a.winRate - b.winRate)
+          case 'matches':
+            return dir * (a.matches - b.matches)
+          case 'name':
+            return dir * a.enemy.name.localeCompare(b.enemy.name)
+        }
+      })
+  }, [counters.data, heroId, heroes, search, sortKey, descending])
 
   const hero = heroes.get(heroId)
 
@@ -76,7 +95,34 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
 
   return (
     <section className="data-section">
-      <h3>{hero.name} — toughest opponents first</h3>
+      <h3>{hero.name} — matchups, last 30 days</h3>
+      <div className="grid-controls left">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search opponents"
+          aria-label="Search opponents"
+        />
+        <label>
+          Sort
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as MatchupSortKey)}
+          >
+            <option value="win">Win rate</option>
+            <option value="matches">Matches</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+        <button
+          className="btn btn-small"
+          onClick={() => setDescending((d) => !d)}
+          title={descending ? 'Descending' : 'Ascending'}
+        >
+          {descending ? '▼' : '▲'}
+        </button>
+        <span className="dim-note">win rate ascending = toughest opponents first</span>
+      </div>
       <div className="table-wrap">
         <table className="data-table">
           <thead>
@@ -166,7 +212,7 @@ function CounterItems({
       <div className="counter-list">
         {rows.map(({ item, matches, winRate }) => (
           <span key={item.id} className="counter-item">
-            {item.image && <img src={item.image} alt="" loading="lazy" />}
+            {itemIcon(item) && <img src={itemIcon(item)} alt="" loading="lazy" />}
             <span>{item.name}</span>
             <span className={`ci-wr ${winRateClass(winRate)}`}>{winRate.toFixed(1)}%</span>
             <span className="ci-n">({matches.toLocaleString()})</span>

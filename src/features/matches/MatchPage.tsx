@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
+import { itemIcon, rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
 import {
   useHeroes,
   useItems,
@@ -207,7 +207,7 @@ function BuildStrip({
         .sort((a, b) => a.game_time_s - b.game_time_s)
         .flatMap((entry) => {
           const item = items?.get(entry.item_id)
-          if (!item || item.type !== 'upgrade' || !item.image) return []
+          if (!item || item.type !== 'upgrade' || !itemIcon(item)) return []
           return [{ ...entry, item }]
         }),
     [player.items, items],
@@ -262,7 +262,12 @@ function ItemChip({
 
   return (
     <span className="item-chip" onMouseEnter={show} onMouseLeave={() => setTip(null)}>
-      <img src={item.image} alt={item.name} className={soldAt > 0 ? 'sold' : ''} loading="lazy" />
+      <img
+        src={itemIcon(item)}
+        alt={item.name}
+        className={soldAt > 0 ? 'sold' : ''}
+        loading="lazy"
+      />
       {tip && (
         <span className="item-tip" style={{ left: tip.x, top: tip.y }}>
           <span className="tip-name">{item.name}</span>

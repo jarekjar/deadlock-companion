@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { type ItemAsset, type ItemStat } from '../../lib/api'
+import { itemIcon, type ItemAsset, type ItemStat } from '../../lib/api'
 import { useHeroAnalytics, useHeroes, useHeroItemStats, useItems } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
@@ -66,7 +66,7 @@ function Hero({ heroId }: { heroId: number }) {
   return (
     <>
       <div className="hero-head">
-        <img src={hero.images.icon_image_small_webp} alt="" />
+        <img src={hero.images.icon_hero_card_webp} alt="" style={{ objectPosition: 'top' }} />
         <h2>{hero.name}</h2>
         <span className="actions">
           <Link className="btn" to={`/matchups/${hero.id}`}>
@@ -123,7 +123,9 @@ function Hero({ heroId }: { heroId: number }) {
                       <tr key={item.id}>
                         <td>
                           <span className="item-cell">
-                            {item.image && <img src={item.image} alt="" loading="lazy" />}
+                            {itemIcon(item) && (
+                              <img src={itemIcon(item)} alt="" loading="lazy" />
+                            )}
                             {item.name}
                           </span>
                         </td>
