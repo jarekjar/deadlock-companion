@@ -242,7 +242,7 @@ function Highlights({
               <ItemHover
                 key={item.id}
                 item={item}
-                size={32}
+                size={46}
                 extraLine={`bought in ${matches.toLocaleString()} matches`}
               />
             ))}

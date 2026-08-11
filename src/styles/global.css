@@ -83,15 +83,24 @@ button {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 12px;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  padding: 9px 18px 7px;
+  padding: 11px 18px 9px;
   border: 1px solid var(--brass-dim);
   color: var(--ink);
   background: transparent;
+  text-decoration: none;
+}
+
+a.btn:hover {
+  text-decoration: none;
 }
 
 .btn:hover {
