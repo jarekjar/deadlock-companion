@@ -97,6 +97,15 @@ button {
   color: var(--ink);
   background: transparent;
   text-decoration: none;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
 }
 
 a.btn:hover {
@@ -236,6 +245,17 @@ select option::checkmark {
   border: 1px solid var(--rule);
   background: var(--bg-inset);
   display: block;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.item-chip:hover img {
+  transform: scale(1.08);
+}
+
+.item-tip {
+  animation: fade-in 0.15s ease-out;
 }
 
 .item-chip:hover img {
@@ -317,6 +337,75 @@ select option::checkmark {
 
 .app-bg.strong {
   opacity: 0.38;
+}
+
+/* ---- motion ---- */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes glow-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.shell-main {
+  animation: page-enter 0.32s ease-out;
+}
+
+.app-bg {
+  transition: opacity 0.5s ease;
+}
+
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid) > * {
+  animation: page-enter 0.35s ease-out backwards;
+}
+
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(1) { animation-delay: 0.03s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(2) { animation-delay: 0.06s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(3) { animation-delay: 0.09s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(4) { animation-delay: 0.12s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(5) { animation-delay: 0.15s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(6) { animation-delay: 0.18s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(7) { animation-delay: 0.21s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(8) { animation-delay: 0.24s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(9) { animation-delay: 0.27s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(10) { animation-delay: 0.3s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(11) { animation-delay: 0.33s; }
+:is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
+  > *:nth-child(12) { animation-delay: 0.36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .shell > :not(.app-bg) {
@@ -405,6 +494,7 @@ select option::checkmark {
 
 .site-nav a,
 .site-nav .nav-action {
+  position: relative;
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 13px;
@@ -412,8 +502,22 @@ select option::checkmark {
   text-transform: uppercase;
   color: var(--ink-dim);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  padding-bottom: 2px;
+  padding-bottom: 3px;
+  transition: color 0.15s ease;
+}
+
+.site-nav a::after,
+.site-nav .nav-action::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.2s ease;
 }
 
 .site-nav a:hover,
@@ -422,9 +526,17 @@ select option::checkmark {
   text-decoration: none;
 }
 
+.site-nav a:hover::after,
+.site-nav .nav-action:hover::after {
+  transform: scaleX(1);
+}
+
 .site-nav a.active {
   color: var(--brass);
-  border-bottom-color: var(--brass);
+}
+
+.site-nav a.active::after {
+  transform: scaleX(1);
 }
 
 .site-footer {

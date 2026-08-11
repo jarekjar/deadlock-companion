@@ -20,32 +20,42 @@ const FEATURES = [
   {
     to: '/timers',
     title: 'Spawn Timers',
-    text: 'A match clock you sync once, then live countdowns for camps, Sinner’s Sacrifice, bridge buffs, the Mid-Boss ladder, and the Soul Urn — with optional alerts.',
+    text: 'A synced match clock with live countdowns, spawn alerts, and an objective map — camps, Sinner’s Sacrifice, bridge buffs, the Mid-Boss ladder, and the Soul Urn.',
+  },
+  {
+    to: '/my-match',
+    title: 'My Match',
+    text: 'A prep board for every game: pick your hero and the enemy team for matchup win rates, counter items, and lane tracking — or fill it from your live match.',
   },
   {
     to: '/players',
     title: 'Player Profiles',
-    text: 'Look up any player by Steam link, ID, or name: win rate, KDA, souls per minute, hero breakdowns, and a filterable match history.',
+    text: 'Look up anyone by Steam link, ID, or name: win rate, KDA, favorite and best heroes, favorite items, rank badges, and a filterable match history.',
   },
   {
     to: '/players',
     title: 'Match Breakdowns',
-    text: 'Full scoreboards for both teams, the souls race over time, every player’s item build with timings, and the Mid-Boss log.',
+    text: 'Full scoreboards for both teams, the souls race over time, every player’s item build with buy times, and the Mid-Boss log.',
   },
   {
     to: '/heroes',
-    title: 'Hero Meta',
-    text: 'Win and pick rates for every hero over the last 30 days, and the most popular items per tier with their win rates.',
+    title: 'Heroes',
+    text: 'Every hero’s lore, abilities with rank buffs, base stats and weapon, plus 30-day win rates and the most popular items per tier.',
+  },
+  {
+    to: '/items',
+    title: 'Items',
+    text: 'Every shop item with what it does, usage and win rates, and its pick rate per hero — hover any item anywhere for the details.',
   },
   {
     to: '/matchups',
     title: 'Matchups & Counters',
-    text: 'See who your hero struggles against — and the items that actually win those games, from millions of real matches.',
+    text: 'See who your hero struggles against — and the items that actually win those specific games, from millions of real matches.',
   },
   {
     to: '/live',
     title: 'Live Matches',
-    text: 'Browse ongoing games with live soul counts, follow a friend’s match, and sync the spawn timers to it in one click.',
+    text: 'Browse ongoing games with live soul counts and average ranks, watch in Deadlock, and sync the spawn timers to any match in one click.',
   },
 ]
 
@@ -68,19 +78,34 @@ export default function HomePage() {
       <div className="home-intro">
         <h2>Your one-stop shop for Deadlock</h2>
         <p>
-          A companion for Valve's Deadlock: spawn timers you can trust mid-match, deep stats for
-          you and your friends, the current hero meta, and live games — all free, no account
-          needed.
+          Spawn timers that sync to your live game, a prep board for every match, deep player
+          and match stats, the full hero and item meta, and live games to watch — all free, no
+          account needed.
         </p>
       </div>
 
       {artHeroes && (
         <div className="home-art">
-          {artHeroes.map((hero) => (
-            <Link key={hero.id} to={`/heroes/${hero.id}`} title={hero.name}>
-              <img src={hero.images.icon_hero_card_webp} alt={hero.name} loading="lazy" />
-            </Link>
-          ))}
+          <div className="home-art-track">
+            {[...artHeroes, ...artHeroes].map((hero, index) => {
+              const isClone = index >= artHeroes.length
+              return (
+                <Link
+                  key={`${hero.id}-${index}`}
+                  to={`/heroes/${hero.id}`}
+                  tabIndex={isClone ? -1 : 0}
+                  aria-hidden={isClone || undefined}
+                >
+                  <img
+                    src={hero.images.icon_hero_card_webp}
+                    alt={isClone ? '' : hero.name}
+                    loading="lazy"
+                  />
+                  <span>{hero.name}</span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       )}
 
@@ -96,8 +121,8 @@ export default function HomePage() {
       </div>
 
       <p className="home-cta">
-        Start with the timers before your next match, or paste your Steam profile link under
-        Players. Sign in through Steam to pin your own profile.
+        Open My Match before your next game, or paste your Steam profile link under Players.
+        Sign in through Steam to pin your profile and auto-fill your live match.
       </p>
     </>
   )

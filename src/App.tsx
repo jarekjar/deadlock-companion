@@ -36,7 +36,7 @@ export default function App() {
         aria-hidden
       />
       <Header />
-      <main className="shell-main">
+      <main key={location.pathname} className="shell-main">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/timers" element={<TimersPage />} />

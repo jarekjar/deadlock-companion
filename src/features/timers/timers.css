@@ -164,6 +164,7 @@
 
 .obj-status .state-up {
   color: var(--brass);
+  animation: glow-pulse 1.8s ease-in-out infinite;
 }
 
 .obj-status .state-onmap {
@@ -273,6 +274,7 @@
 
 .map-marker.up {
   background: var(--brass);
+  animation: glow-pulse 1.8s ease-in-out infinite;
 }
 
 .map-marker:hover,
@@ -315,6 +317,14 @@
   justify-content: center;
   padding: 20px;
   z-index: 20;
+  animation: fade-in 0.18s ease-out;
+}
+
+@keyframes panel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
 }
 
 .modal-panel {
@@ -325,6 +335,7 @@
   max-height: 85vh;
   overflow-y: auto;
   padding: 20px 24px 26px;
+  animation: panel-rise 0.22s ease-out;
 }
 
 .modal-head {
