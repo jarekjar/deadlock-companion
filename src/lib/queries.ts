@@ -2,12 +2,15 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import {
   fetchActiveMatches,
   fetchActiveMatchForPlayer,
+  fetchAllItemStats,
   fetchAnalyticsHeroStats,
   fetchCounterItemStats,
   fetchHeroCounterStats,
   fetchHeroes,
   fetchHeroItemStats,
+  fetchHeroStatsWithItem,
   fetchItems,
+  fetchMapAsset,
   fetchMatchHistory,
   fetchMatchMetadata,
   fetchPlayerHeroStats,
@@ -149,11 +152,34 @@ export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
     staleTime: 30 * 60 * 1000,
   })
 
+export const useAllItemStats = () =>
+  useQuery({
+    queryKey: ['allItemStats', SINCE_30D],
+    queryFn: () => fetchAllItemStats(SINCE_30D),
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useHeroStatsWithItem = (itemId: number) =>
+  useQuery({
+    queryKey: ['heroStatsWithItem', itemId, SINCE_30D],
+    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D),
+    enabled: itemId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
 export const usePlayerItemStats = (accountId: number) =>
   useQuery({
     queryKey: ['playerItemStats', accountId],
     queryFn: () => fetchPlayerItemStats(accountId),
     staleTime: 5 * 60 * 1000,
+  })
+
+export const useMapAsset = () =>
+  useQuery({
+    queryKey: ['mapAsset'],
+    queryFn: fetchMapAsset,
+    staleTime: FOREVER,
+    gcTime: FOREVER,
   })
 
 export const useActiveMatches = () =>

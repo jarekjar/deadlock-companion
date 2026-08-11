@@ -20,6 +20,9 @@ export default function Header() {
         <NavLink to="/heroes" end>
           Heroes
         </NavLink>
+        <NavLink to="/items" end>
+          Items
+        </NavLink>
         <NavLink to="/matchups">Matchups</NavLink>
         <NavLink to="/live">Live</NavLink>
         {session.data ? (

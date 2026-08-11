@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { itemIcon, type ItemAsset, type ItemStat } from '../../lib/api'
+import { type ItemAsset, type ItemStat } from '../../lib/api'
+import ItemHover from '../../components/ItemHover'
 import { useHeroAnalytics, useHeroes, useHeroItemStats, useItems } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
@@ -123,9 +124,7 @@ function Hero({ heroId }: { heroId: number }) {
                       <tr key={item.id}>
                         <td>
                           <span className="item-cell">
-                            {itemIcon(item) && (
-                              <img src={itemIcon(item)} alt="" loading="lazy" />
-                            )}
+                            <ItemHover item={item} size={24} />
                             {item.name}
                           </span>
                         </td>

@@ -9,6 +9,7 @@ import {
   type MatchHistoryEntry,
   type PlayerHeroStats,
 } from '../../lib/api'
+import ItemHover from '../../components/ItemHover'
 import {
   useHeroes,
   useItems,
@@ -238,12 +239,11 @@ function Highlights({
         ) : (
           <span className="hl-items">
             {favoriteItems.map(({ item, matches }) => (
-              <img
+              <ItemHover
                 key={item.id}
-                src={itemIcon(item)}
-                alt={item.name}
-                title={`${item.name} · bought in ${matches.toLocaleString()} matches`}
-                loading="lazy"
+                item={item}
+                size={32}
+                extraLine={`bought in ${matches.toLocaleString()} matches`}
               />
             ))}
           </span>

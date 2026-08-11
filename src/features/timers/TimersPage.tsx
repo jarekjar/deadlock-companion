@@ -9,6 +9,7 @@ import {
   type ObjectiveState,
 } from './timerEngine'
 import { useMatchClock } from './useMatchClock'
+import { useMapAsset } from '../../lib/queries'
 import {
   defaultAlertSettings,
   playChime,
@@ -192,7 +193,58 @@ export default function TimersPage() {
           />
         ))}
       </section>
+
+      <MapPanel states={states} t={t} started={clock !== null} />
     </div>
+  )
+}
+
+function MapPanel({
+  states,
+  t,
+  started,
+}: {
+  states: Record<string, ObjectiveState>
+  t: number
+  started: boolean
+}) {
+  const map = useMapAsset()
+  if (!map.data) return null
+
+  const markerState = (def: ObjectiveDef): { className: string; label: string } => {
+    if (!started) return { className: '', label: `at ${formatClock(def.firstSpawn)}` }
+    const status = nextSpawn(def, states[def.id] ?? emptyState(), t)
+    if (status.kind === 'waiting') {
+      return { className: '', label: `in ${formatClock(status.spawnsAt - t)}` }
+    }
+    return { className: ' up', label: status.kind === 'up' ? 'up now' : 'on map' }
+  }
+
+  return (
+    <section className="map-panel-section">
+      <h3>The Map</h3>
+      <div className="map-panel">
+        <img src={map.data.images.minimap} alt="Deadlock minimap" loading="lazy" />
+        {objectives.flatMap((def) =>
+          (def.mapSpots ?? []).map((spot, i) => {
+            const state = markerState(def)
+            return (
+              <span
+                key={`${def.id}-${i}`}
+                className={`map-marker${state.className}`}
+                style={{ left: `${spot.left * 100}%`, top: `${spot.top * 100}%` }}
+                title={`${def.name} — ${state.label}`}
+              />
+            )
+          }),
+        )}
+      </div>
+      <p className="map-caption">
+        Brass diamonds are up; dim diamonds are waiting to spawn — hover any marker for its
+        timer. Positions are approximate. Camps and breakables are spread through the jungles
+        and are not marked.
+      </p>
+    </section>
   )
 }
 

@@ -16,6 +16,8 @@ export interface ObjectiveDef {
   /** Label for the button that records the event ("Killed", "Broken", ...). */
   eventLabel?: string
   note?: string
+  /** Approximate marker positions on the minimap, as relative coordinates. */
+  mapSpots?: { left: number; top: number }[]
 }
 
 export interface ObjectiveState {

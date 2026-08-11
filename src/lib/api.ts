@@ -97,6 +97,28 @@ export function itemIcon(item: ItemAsset): string | undefined {
   return item.shop_image_webp ?? item.shop_image ?? item.image_webp ?? item.image
 }
 
+const TIER_ROMAN = ['I', 'II', 'III', 'IV']
+
+/** "Tier II · vitality · 1,600 souls · passive" */
+export function itemMeta(item: ItemAsset): string {
+  const tier = TIER_ROMAN[(item.item_tier ?? 1) - 1] ?? ''
+  return [
+    tier && `Tier ${tier}`,
+    item.item_slot_type,
+    item.cost != null && `${item.cost.toLocaleString()} souls`,
+    item.is_active_item ? 'active' : 'passive',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+/** Plain-text item description (the asset ships HTML). */
+export function itemDescription(item: ItemAsset): string {
+  return (item.description?.desc ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+}
+
 export interface MatchPlayerStatsSample {
   time_stamp_s: number
   net_worth: number
@@ -187,6 +209,16 @@ export const fetchAnalyticsHeroStats = (sinceUnix: number) =>
 export const fetchHeroItemStats = (heroId: number, sinceUnix: number) =>
   get<ItemStat[]>(`/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}`)
 
+/** Global per-item stats over a window: usage and win rate for every item. */
+export const fetchAllItemStats = (sinceUnix: number) =>
+  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}`)
+
+/** Per-hero stats restricted to matches where the given item was bought. */
+export const fetchHeroStatsWithItem = (itemId: number, sinceUnix: number) =>
+  get<AnalyticsHeroStat[]>(
+    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}`,
+  )
+
 /** Lifetime item usage for one player — the basis for "favorite items". */
 export const fetchPlayerItemStats = (accountId: number) =>
   get<ItemStat[]>(`/v1/analytics/item-stats?account_ids=${accountId}&min_matches=1`)
@@ -208,8 +240,28 @@ export interface ActiveMatch {
   spectators: number
   match_mode_parsed: string | null
   region_mode_parsed: string | null
+  /** Bitmask of objectives still standing (16 bits, all set at match start). */
+  objectives_mask_team0: number
+  objectives_mask_team1: number
   players: { account_id: number; team: number; hero_id: number }[]
 }
+
+/** Count of objectives still standing in an objectives mask. */
+export function objectivesStanding(mask: number): number {
+  let count = 0
+  for (let m = mask >>> 0; m; m >>>= 1) count += m & 1
+  return count
+}
+
+export interface MapAsset {
+  images: {
+    minimap: string
+    plain: string
+    mid: string
+  }
+}
+
+export const fetchMapAsset = () => get<MapAsset>(`/v1/assets/map`)
 
 /**
  * Live matches, sourced from the in-game Watch tab — only the top ~200
@@ -238,6 +290,19 @@ export async function resolveVanity(name: string): Promise<number | null> {
   } catch {
     return null
   }
+}
+
+/**
+ * Average of visible rank badges. Badges are tier*10+subrank with six subranks
+ * per tier, so averaging happens on a linearized index.
+ */
+export function averageBadge(badges: number[]): number | null {
+  const valid = badges.filter((b) => b > 0)
+  if (valid.length === 0) return null
+  const mean =
+    valid.reduce((s, b) => s + Math.floor(b / 10) * 6 + ((b % 10) - 1), 0) / valid.length
+  const index = Math.round(mean)
+  return Math.floor(index / 6) * 10 + (index % 6) + 1
 }
 
 export function rankName(badge: number, ranks: RankAsset[] | undefined): string {

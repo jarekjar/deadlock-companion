@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { type ActiveMatch } from '../../lib/api'
+import { averageBadge, objectivesStanding, rankName, type ActiveMatch } from '../../lib/api'
 import { TEAMS } from '../../lib/teams'
-import { useActiveMatches, useHeroes, useRanks, useSteamProfilesBatch } from '../../lib/queries'
+import {
+  useActiveMatches,
+  useHeroes,
+  useRankAssets,
+  useRanks,
+  useSteamProfilesBatch,
+} from '../../lib/queries'
 import RankBadge from '../../components/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
@@ -40,6 +46,8 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
   const accountIds = useMemo(() => match.players.map((p) => p.account_id), [match])
   const profiles = useSteamProfilesBatch(accountIds)
   const badges = useRanks(accountIds)
+  const rankAssets = useRankAssets()
+  const avgBadge = averageBadge(accountIds.map((id) => badges.get(id) ?? 0))
   const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
 
   useEffect(() => {
@@ -63,6 +71,7 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
           {match.match_mode_parsed ?? 'Unknown mode'}
           {match.region_mode_parsed ? ` · ${match.region_mode_parsed}` : ''} · {match.spectators}{' '}
           watching
+          {avgBadge !== null && ` · avg rank ${rankName(avgBadge, rankAssets.data)}`}
         </div>
         <div className="actions">
           <button
@@ -73,7 +82,13 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
             }}
           >
             Sync spawn timers to this match
-          </button>
+          </button>{' '}
+          <a className="btn" href="steam://rungameid/1422450">
+            Watch in Deadlock
+          </a>
+          <div className="watch-hint">
+            The watch button opens Deadlock — find match #{match.match_id} in the Watch tab.
+          </div>
         </div>
       </div>
 
@@ -87,6 +102,12 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
             <div className="team">{TEAMS[team].name}</div>
             <div className="souls">
               {compact.format(team === 0 ? match.net_worth_team_0 : match.net_worth_team_1)}
+            </div>
+            <div className="objectives">
+              {objectivesStanding(
+                team === 0 ? match.objectives_mask_team0 : match.objectives_mask_team1,
+              )}
+              /16 objectives standing
             </div>
           </div>
         ))}

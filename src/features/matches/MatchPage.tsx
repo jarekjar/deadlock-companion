@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { itemIcon, rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
+import ItemHover from '../../components/ItemHover'
 import {
   useHeroes,
   useItems,
@@ -208,69 +209,15 @@ function BuildStrip({
   return (
     <span className="build-items">
       {purchases.map((p, i) => (
-        <ItemChip
+        <ItemHover
           key={`${p.item.id}-${i}`}
           item={p.item}
-          boughtAt={p.game_time_s}
-          soldAt={p.sold_time_s}
+          dimmed={p.sold_time_s > 0}
+          extraLine={`bought ${formatClock(p.game_time_s)}${
+            p.sold_time_s > 0 ? ` · sold ${formatClock(p.sold_time_s)}` : ''
+          }`}
         />
       ))}
-    </span>
-  )
-}
-
-const TIER_ROMAN = ['I', 'II', 'III', 'IV']
-
-function ItemChip({
-  item,
-  boughtAt,
-  soldAt,
-}: {
-  item: ItemAsset
-  boughtAt: number
-  soldAt: number
-}) {
-  const [tip, setTip] = useState<{ x: number; y: number } | null>(null)
-
-  function show(e: React.MouseEvent) {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const x = Math.max(140, Math.min(window.innerWidth - 140, rect.left + rect.width / 2))
-    setTip({ x, y: rect.top - 6 })
-  }
-
-  const description = (item.description?.desc ?? '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-
-  const tier = TIER_ROMAN[(item.item_tier ?? 1) - 1] ?? ''
-  const meta = [
-    tier && `Tier ${tier}`,
-    item.item_slot_type,
-    item.cost != null && `${item.cost.toLocaleString()} souls`,
-    item.is_active_item ? 'active' : 'passive',
-  ]
-    .filter(Boolean)
-    .join(' · ')
-
-  return (
-    <span className="item-chip" onMouseEnter={show} onMouseLeave={() => setTip(null)}>
-      <img
-        src={itemIcon(item)}
-        alt={item.name}
-        className={soldAt > 0 ? 'sold' : ''}
-        loading="lazy"
-      />
-      {tip && (
-        <span className="item-tip" style={{ left: tip.x, top: tip.y }}>
-          <span className="tip-name">{item.name}</span>
-          <span className="tip-meta">{meta}</span>
-          {description && <span className="tip-desc">{description}</span>}
-          <span className="tip-times">
-            bought {formatClock(boughtAt)}
-            {soldAt > 0 ? ` · sold ${formatClock(soldAt)}` : ''}
-          </span>
-        </span>
-      )}
     </span>
   )
 }

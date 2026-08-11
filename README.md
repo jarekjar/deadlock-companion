@@ -20,6 +20,8 @@ Spawn timers, player stats, hero meta, and live matches for Valve's Deadlock, in
   items per tier with their win rates.
 - **Matchups & counters** — how a hero fares into every opponent, with the items
   that actually win those specific matchups.
+- **Items** — every shop item with what it does, usage and win rates, and pick rate
+  per hero; hovering any item anywhere shows its details.
 - **Live matches** — browse ongoing games with live soul counts, follow a friend's
   match, and sync the spawn timers to it in one click.
 - **Steam sign-in** — optional OpenID login (via Cloudflare Pages Functions) that

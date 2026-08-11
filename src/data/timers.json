@@ -28,7 +28,25 @@
       "firstSpawn": 300,
       "mode": "interval",
       "interval": 300,
-      "note": "New wave on all four bridges"
+      "note": "New wave on all four bridges",
+      "mapSpots": [
+        {
+          "left": 0.4,
+          "top": 0.42
+        },
+        {
+          "left": 0.6,
+          "top": 0.42
+        },
+        {
+          "left": 0.4,
+          "top": 0.58
+        },
+        {
+          "left": 0.6,
+          "top": 0.58
+        }
+      ]
     },
     {
       "id": "medium-camps",
@@ -53,16 +71,44 @@
       "mode": "event",
       "respawn": 300,
       "eventLabel": "Broken",
-      "note": "Respawns 5:00 after broken, per machine"
+      "note": "Respawns 5:00 after broken, per machine",
+      "mapSpots": [
+        {
+          "left": 0.28,
+          "top": 0.33
+        },
+        {
+          "left": 0.72,
+          "top": 0.33
+        },
+        {
+          "left": 0.28,
+          "top": 0.67
+        },
+        {
+          "left": 0.72,
+          "top": 0.67
+        }
+      ]
     },
     {
       "id": "midboss",
       "name": "Mid-Boss",
       "firstSpawn": 600,
       "mode": "ladder",
-      "ladder": [420, 360, 300],
+      "ladder": [
+        420,
+        360,
+        300
+      ],
       "eventLabel": "Killed",
-      "note": "Respawns 7:00, then 6:00, then 5:00"
+      "note": "Respawns 7:00, then 6:00, then 5:00",
+      "mapSpots": [
+        {
+          "left": 0.5,
+          "top": 0.5
+        }
+      ]
     },
     {
       "id": "urn",
@@ -71,7 +117,17 @@
       "mode": "event",
       "respawn": 300,
       "eventLabel": "Delivered",
-      "note": "Respawns 5:00 after delivery"
+      "note": "Respawns 5:00 after delivery",
+      "mapSpots": [
+        {
+          "left": 0.18,
+          "top": 0.5
+        },
+        {
+          "left": 0.82,
+          "top": 0.5
+        }
+      ]
     }
   ]
 }

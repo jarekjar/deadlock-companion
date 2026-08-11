@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { itemIcon, type HeroAsset } from '../../lib/api'
+import { type HeroAsset } from '../../lib/api'
+import ItemHover from '../../components/ItemHover'
 import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import HeroBrowser from './HeroBrowser'
@@ -215,7 +216,7 @@ function CounterItems({
       <div className="counter-list">
         {rows.map(({ item, matches, winRate }) => (
           <span key={item.id} className="counter-item">
-            {itemIcon(item) && <img src={itemIcon(item)} alt="" loading="lazy" />}
+            <ItemHover item={item} size={22} />
             <span>{item.name}</span>
             <span className={`ci-wr ${winRateClass(winRate)}`}>{winRate.toFixed(1)}%</span>
             <span className="ci-n">({matches.toLocaleString()})</span>

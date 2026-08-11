@@ -11,6 +11,8 @@ import MatchupsPage from './features/heroes/MatchupsPage'
 import LiveMatchesPage from './features/live/LiveMatchesPage'
 import LiveMatchPage from './features/live/LiveMatchPage'
 import HomePage from './features/home/HomePage'
+import ItemsPage from './features/items/ItemsPage'
+import ItemPage from './features/items/ItemPage'
 import timersData from './data/timers.json'
 
 export default function App() {
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="/heroes/:heroId" element={<HeroPage />} />
           <Route path="/matchups" element={<MatchupsPage />} />
           <Route path="/matchups/:heroId" element={<MatchupsPage />} />
+          <Route path="/items" element={<ItemsPage />} />
+          <Route path="/items/:itemId" element={<ItemPage />} />
           <Route path="/live" element={<LiveMatchesPage />} />
           <Route path="/live/:matchId" element={<LiveMatchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

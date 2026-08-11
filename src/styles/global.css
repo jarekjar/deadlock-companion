@@ -161,6 +161,12 @@ select,
   appearance: base-select;
 }
 
+/* base-select turns the closed control into a plain button; center its label */
+select {
+  display: inline-flex;
+  align-items: center;
+}
+
 select::picker(select) {
   background: var(--bg-inset);
   border: 1px solid var(--brass-dim);
@@ -198,12 +204,85 @@ select option::checkmark {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  vertical-align: middle;
 }
 
+/* emblem art carries transparent margins; a contained box keeps rows tidy */
 .rank-badge img {
-  height: 20px;
-  width: auto;
+  height: 26px;
+  width: 30px;
+  object-fit: contain;
   display: block;
+}
+
+/* ---- item hover chip (used wherever an item icon appears) ---- */
+
+.item-chip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.item-chip img {
+  border: 1px solid var(--rule);
+  background: var(--bg-inset);
+  display: block;
+}
+
+.item-chip:hover img {
+  border-color: var(--brass-dim);
+}
+
+.item-chip img.sold {
+  opacity: 0.35;
+}
+
+.item-tip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  width: 260px;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  padding: 10px 12px;
+  z-index: 10;
+  pointer-events: none;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.item-tip > span {
+  display: block;
+}
+
+.item-tip .tip-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.item-tip .tip-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: capitalize;
+}
+
+.item-tip .tip-desc {
+  margin-top: 6px;
+  color: var(--ink-dim);
+  white-space: pre-line;
+}
+
+.item-tip .tip-times {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 
 /* ---- layout shell ---- */
