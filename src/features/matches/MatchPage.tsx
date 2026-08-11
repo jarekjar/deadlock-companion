@@ -111,10 +111,10 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                   const rows = [
                     <tr key={p.account_id}>
                       <td>
-                        <span className="hero-cell">
+                        <Link className="hero-cell" to={`/heroes/${p.hero_id}`}>
                           {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
                           {hero?.name ?? `Hero ${p.hero_id}`}
-                        </span>
+                        </Link>
                       </td>
                       <td>
                         <span className="persona-cell">

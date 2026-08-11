@@ -257,11 +257,13 @@ function MyMatchDetail({ match, accountId }: { match: ActiveMatch; accountId: nu
             const hero = heroes.data?.get(p.hero_id)
             return (
               <li key={p.account_id}>
-                {hero && <img className="hero" src={hero.images.icon_image_small_webp} alt="" />}
-                <span>
+                <Link className="hero-cell" to={`/heroes/${p.hero_id}`}>
+                  {hero && (
+                    <img className="hero" src={hero.images.icon_image_small_webp} alt="" />
+                  )}
                   {hero?.name ?? `Hero ${p.hero_id}`}
                   {p.account_id === accountId ? ' (you)' : ''}
-                </span>
+                </Link>
                 <span className="persona-cell">
                   <Link className="player-link" to={`/players/${p.account_id}`}>
                     {persona(p.account_id)}

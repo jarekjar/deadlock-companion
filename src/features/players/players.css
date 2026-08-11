@@ -251,18 +251,18 @@
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .data-table th {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
   text-align: right;
-  padding: 12px 14px 10px;
+  padding: 15px 16px 13px;
   border-bottom: 1px solid var(--rule);
   white-space: nowrap;
 }
@@ -286,7 +286,7 @@
 }
 
 .data-table td {
-  padding: 12px 14px;
+  padding: 16px;
   border-bottom: 1px solid var(--rule-faint);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -319,9 +319,33 @@
   gap: 10px;
 }
 
+a.hero-cell {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.hero-cell:hover {
+  color: var(--brass);
+  text-decoration: none;
+}
+
+a.hl-hero {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.hl-hero:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.hl-hero:hover .hl-name {
+  color: var(--brass);
+}
+
 .hero-cell img {
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border: 1px solid var(--rule);
   object-fit: cover;
 }

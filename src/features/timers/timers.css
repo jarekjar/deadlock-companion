@@ -321,19 +321,19 @@
 .cheat-table th {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--brass);
   text-align: left;
-  padding: 14px 18px 12px;
+  padding: 16px 18px 14px;
   border-bottom: 1px solid var(--rule);
 }
 
 .cheat-table td {
-  padding: 13px 18px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--rule-faint);
-  font-size: 15px;
+  font-size: 16px;
   vertical-align: top;
 }
 
@@ -349,7 +349,7 @@
 
 .cheat-table td.note {
   color: var(--ink-dim);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .cheat-section {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { TEAMS } from '../../lib/teams'
 import { useActiveMatches, useHeroes } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
@@ -65,13 +65,18 @@ export default function LiveMatchesPage() {
                       .map((p, i) => {
                         const hero = heroes.data?.get(p.hero_id)
                         return hero ? (
-                          <img
+                          <Link
                             key={i}
-                            src={hero.images.icon_image_small_webp}
-                            alt={hero.name}
-                            title={hero.name}
-                            loading="lazy"
-                          />
+                            to={`/heroes/${p.hero_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <img
+                              src={hero.images.icon_image_small_webp}
+                              alt={hero.name}
+                              title={hero.name}
+                              loading="lazy"
+                            />
+                          </Link>
                         ) : null
                       })}
                   </span>
@@ -89,13 +94,18 @@ export default function LiveMatchesPage() {
                       .map((p, i) => {
                         const hero = heroes.data?.get(p.hero_id)
                         return hero ? (
-                          <img
+                          <Link
                             key={i}
-                            src={hero.images.icon_image_small_webp}
-                            alt={hero.name}
-                            title={hero.name}
-                            loading="lazy"
-                          />
+                            to={`/heroes/${p.hero_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <img
+                              src={hero.images.icon_image_small_webp}
+                              alt={hero.name}
+                              title={hero.name}
+                              loading="lazy"
+                            />
+                          </Link>
                         ) : null
                       })}
                   </span>

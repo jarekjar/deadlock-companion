@@ -207,13 +207,13 @@ function Highlights({
   const heroPanel = (stat: PlayerHeroStats, sub: string) => {
     const hero = heroes?.get(stat.hero_id)
     return (
-      <span className="hl-hero">
+      <Link className="hl-hero" to={`/heroes/${stat.hero_id}`}>
         {hero && <img src={hero.images.icon_hero_card_webp} alt="" loading="lazy" />}
         <span>
           <span className="hl-name">{hero?.name ?? `Hero ${stat.hero_id}`}</span>
           <span className="hl-sub">{sub}</span>
         </span>
-      </span>
+      </Link>
     )
   }
 
@@ -408,10 +408,14 @@ function MatchTable({
                   onClick={() => navigate(`/matches/${m.match_id}`)}
                 >
                   <td>
-                    <span className="hero-cell">
+                    <Link
+                      className="hero-cell"
+                      to={`/heroes/${m.hero_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
                       {hero?.name ?? `Hero ${m.hero_id}`}
-                    </span>
+                    </Link>
                   </td>
                   <td className={isWin(m) ? 'result-w' : 'result-l'}>{isWin(m) ? 'W' : 'L'}</td>
                   <td className="mono">{m.player_kills}</td>
@@ -473,10 +477,10 @@ function HeroTable({
               return (
                 <tr key={s.hero_id}>
                   <td>
-                    <span className="hero-cell">
+                    <Link className="hero-cell" to={`/heroes/${s.hero_id}`}>
                       {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
                       {hero?.name ?? `Hero ${s.hero_id}`}
-                    </span>
+                    </Link>
                   </td>
                   <td className="mono">{s.matches_played}</td>
                   <td className="mono">{((s.wins / s.matches_played) * 100).toFixed(0)}%</td>

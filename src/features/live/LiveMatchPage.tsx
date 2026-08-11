@@ -147,12 +147,12 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
                       return (
                         <tr key={p.account_id}>
                           <td>
-                            <span className="hero-cell">
+                            <Link className="hero-cell" to={`/heroes/${p.hero_id}`}>
                               {hero && (
                                 <img src={hero.images.icon_image_small_webp} alt="" />
                               )}
                               {hero?.name ?? `Hero ${p.hero_id}`}
-                            </span>
+                            </Link>
                           </td>
                           <td className={`mono ${wr !== null ? winRateClass(wr) : ''}`}>
                             {wr !== null ? `${wr.toFixed(1)}%` : '—'}

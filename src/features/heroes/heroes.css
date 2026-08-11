@@ -234,6 +234,31 @@
 
 /* ---- hero about / abilities / scaling ---- */
 
+.about-facts {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.about-facts .fact {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fact-value {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.fact-tags {
+  color: var(--ink-dim);
+  font-weight: 400;
+}
+
 .hero-about .about-role {
   font-family: var(--font-heading);
   font-weight: 600;
@@ -507,39 +532,33 @@
 }
 
 .counter-note {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-faint);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .counter-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 6px 18px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px 26px;
 }
 
 .counter-item {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 13px;
-}
-
-.counter-item img {
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--rule);
-  background: var(--bg-inset);
+  gap: 12px;
+  font-size: 15px;
 }
 
 .counter-item .ci-wr {
   margin-left: auto;
   font-family: var(--font-mono);
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 
 .counter-item .ci-n {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-faint);
   font-family: var(--font-mono);
 }

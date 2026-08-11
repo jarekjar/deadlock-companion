@@ -62,6 +62,9 @@ export interface HeroAsset {
   disabled: boolean
   in_development: boolean
   description?: { lore?: string; role?: string; playstyle?: string }
+  /** "marksman" | "mystic" | "brawler" | "assassin" — missing for a few heroes. */
+  hero_type?: string
+  tags?: string[]
   /** Slot -> ability class_name; signatures are "signature1".."signature4". */
   items?: Record<string, string>
   scaling_stats?: Record<string, { scaling_stat?: string; scale?: number }>

@@ -169,14 +169,33 @@ function Hero({ heroId }: { heroId: number }) {
   )
 }
 
+const COMPLEXITY_LABELS = ['Simple', 'Moderate', 'Complex']
+
 function AboutSection({ hero }: { hero: HeroAsset }) {
   const d = hero.description
-  if (!d?.role && !d?.playstyle) return null
   return (
     <section className="data-section hero-about">
       <h3>About</h3>
-      {d.role && <p className="about-role">{d.role}</p>}
-      {d.playstyle && <p className="about-playstyle">{d.playstyle}</p>}
+      <div className="about-facts">
+        {hero.hero_type && (
+          <span className="fact">
+            <span className="stat-label">Role type</span>
+            <span className="fact-value capitalize">{hero.hero_type}</span>
+          </span>
+        )}
+        <span className="fact">
+          <span className="stat-label">Complexity</span>
+          <span className="fact-value">{COMPLEXITY_LABELS[hero.complexity - 1] ?? '—'}</span>
+        </span>
+        {hero.tags && hero.tags.length > 0 && (
+          <span className="fact">
+            <span className="stat-label">Tags</span>
+            <span className="fact-value fact-tags">{hero.tags.join(' · ')}</span>
+          </span>
+        )}
+      </div>
+      {d?.role && <p className="about-role">{d.role}</p>}
+      {d?.playstyle && <p className="about-playstyle">{d.playstyle}</p>}
     </section>
   )
 }

@@ -216,7 +216,7 @@ export function CounterItems({
       <div className="counter-list">
         {rows.map(({ item, matches, winRate }) => (
           <span key={item.id} className="counter-item">
-            <ItemHover item={item} size={22} />
+            <ItemHover item={item} size={38} />
             <span>{item.name}</span>
             <span className={`ci-wr ${winRateClass(winRate)}`}>{winRate.toFixed(1)}%</span>
             <span className="ci-n">({matches.toLocaleString()})</span>
