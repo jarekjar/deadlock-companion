@@ -96,33 +96,36 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
   return (
     <section className="data-section">
       <h3>{hero.name} — matchups, last 30 days</h3>
-      <div className="grid-controls left">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search opponents"
-          aria-label="Search opponents"
-        />
-        <label>
-          Sort
+      <div className="control-bar">
+        <span className="cb-group cb-search">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search opponents"
+            aria-label="Search opponents"
+          />
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">Sort</span>
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as MatchupSortKey)}
+            aria-label="Sort matchups"
           >
             <option value="win">Win rate</option>
             <option value="matches">Matches</option>
             <option value="name">Name</option>
           </select>
-        </label>
-        <button
-          className="btn btn-small"
-          onClick={() => setDescending((d) => !d)}
-          title={descending ? 'Descending' : 'Ascending'}
-        >
-          {descending ? '▼' : '▲'}
-        </button>
-        <span className="dim-note">win rate ascending = toughest opponents first</span>
+          <button
+            className="cb-dir"
+            onClick={() => setDescending((d) => !d)}
+            title={descending ? 'Descending' : 'Ascending'}
+          >
+            {descending ? '▼' : '▲'}
+          </button>
+        </span>
       </div>
+      <span className="dim-note">win rate ascending = toughest opponents first</span>
       <div className="table-wrap">
         <table className="data-table">
           <thead>

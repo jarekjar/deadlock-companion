@@ -55,37 +55,47 @@ export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => st
 
   return (
     <>
-      <div className="grid-controls">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search heroes"
-          aria-label="Search heroes"
-        />
-        <label>
-          Sort
-          <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
+      <div className="control-bar">
+        <span className="cb-group cb-search">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search heroes"
+            aria-label="Search heroes"
+          />
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">Sort</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            aria-label="Sort heroes"
+          >
             <option value="pick">Pick rate</option>
             <option value="win">Win rate</option>
             <option value="name">Name</option>
           </select>
-        </label>
-        <button
-          className="btn btn-small"
-          onClick={() => setDescending((d) => !d)}
-          title={descending ? 'Descending' : 'Ascending'}
-        >
-          {descending ? '▼' : '▲'}
-        </button>
-        <label>
-          Complexity
-          <select value={complexity} onChange={(e) => setComplexity(Number(e.target.value))}>
+          <button
+            className="cb-dir"
+            onClick={() => setDescending((d) => !d)}
+            title={descending ? 'Descending' : 'Ascending'}
+          >
+            {descending ? '▼' : '▲'}
+          </button>
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">Complexity</span>
+          <select
+            value={complexity}
+            onChange={(e) => setComplexity(Number(e.target.value))}
+            aria-label="Filter by complexity"
+          >
             <option value={0}>All</option>
             <option value={1}>Simple</option>
             <option value={2}>Moderate</option>
             <option value={3}>Complex</option>
           </select>
-        </label>
+        </span>
       </div>
       <p className="grid-note">Win and pick rates from all matches in the last 30 days.</p>
       {!rows ? (
