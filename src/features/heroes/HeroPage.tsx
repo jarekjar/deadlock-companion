@@ -17,6 +17,7 @@ import {
 } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import './heroes.css'
 
@@ -34,6 +35,15 @@ export default function HeroPage() {
 
 function Hero({ heroId }: { heroId: number }) {
   const heroes = useHeroes()
+  const heroName = heroes.data?.get(heroId)?.name
+  usePageMeta(
+    heroName
+      ? `${heroName} — Deadlock Hero Guide & Builds — The Cursed Apple`
+      : 'Deadlock Hero Guide — The Cursed Apple',
+    heroName
+      ? `${heroName} guide for Deadlock: abilities and rank buffs, base stats and weapon, win rate, and the most popular items per tier.`
+      : undefined,
+  )
   const analytics = useHeroAnalytics()
   const itemStats = useHeroItemStats(heroId)
   const items = useItems()

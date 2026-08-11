@@ -10,6 +10,7 @@ import {
   useRanks,
 } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../live/live.css'
 import './home.css'
@@ -60,6 +61,10 @@ const FEATURES = [
 ]
 
 export default function HomePage() {
+  usePageMeta(
+    'The Cursed Apple — Deadlock Companion',
+    'Spawn timers that sync to your live game, a match prep board with counter items, player and match stats, hero and item meta, leaderboards, and live matches for Valve’s Deadlock.',
+  )
   const heroes = useHeroes()
   const analytics = useHeroAnalytics()
 

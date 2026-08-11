@@ -4,6 +4,7 @@ import { itemIcon, type ItemAsset, type ItemStat } from '../../lib/api'
 import { useAllItemStats, useHeroAnalytics, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import ItemHover from '../../shared/ItemHover'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './items.css'
@@ -12,6 +13,10 @@ type SortKey = 'usage' | 'win' | 'cost' | 'name'
 const TIER_ROMAN = ['I', 'II', 'III', 'IV']
 
 export default function ItemsPage() {
+  usePageMeta(
+    'Deadlock Items — Usage & Win Rates — The Cursed Apple',
+    'Every Deadlock shop item with what it does, usage and win rates over the last 30 days, and pick rate per hero.',
+  )
   const navigate = useNavigate()
   const items = useItems()
   const stats = useAllItemStats()

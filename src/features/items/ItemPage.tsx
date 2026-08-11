@@ -10,6 +10,7 @@ import {
 } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './items.css'
@@ -36,6 +37,14 @@ function Item({ itemId }: { itemId: number }) {
   const heroes = useHeroes()
 
   const item = items.data?.get(itemId)
+  usePageMeta(
+    item
+      ? `${item.name} — Deadlock Item Stats — The Cursed Apple`
+      : 'Deadlock Item Stats — The Cursed Apple',
+    item
+      ? `${item.name} in Deadlock: what it does, usage and win rate, and which heroes buy it most.`
+      : undefined,
+  )
   const globalStat = allStats.data?.find((s) => s.item_id === itemId)
   // item stats count player-slots (12 per match), so the denominator does too
   const totalPlayerSlots = heroAnalytics.data

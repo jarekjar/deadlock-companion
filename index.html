@@ -6,9 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="The Cursed Apple — a Deadlock companion. Spawn timers, match tracking, and player stats."
+      content="The Cursed Apple — a free Deadlock companion: spawn timers that sync to your live game, a match prep board with counter items, player and match stats, hero and item meta, leaderboards, and live matches."
     />
     <title>The Cursed Apple — Deadlock Companion</title>
+    <link rel="canonical" href="https://thecursedapple.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="The Cursed Apple" />
+    <meta property="og:title" content="The Cursed Apple — Deadlock Companion" />
+    <meta
+      property="og:description"
+      content="Spawn timers, match prep, player stats, hero and item meta, leaderboards, and live matches for Valve's Deadlock. Free, no account needed."
+    />
+    <meta property="og:url" content="https://thecursedapple.app/" />
+    <meta property="og:image" content="https://thecursedapple.app/social.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="The Cursed Apple — Deadlock Companion" />
+    <meta
+      name="twitter:description"
+      content="Spawn timers, match prep, player stats, hero and item meta, leaderboards, and live matches for Valve's Deadlock."
+    />
+    <meta name="twitter:image" content="https://thecursedapple.app/social.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "The Cursed Apple",
+        "url": "https://thecursedapple.app/",
+        "description": "A free companion app for Valve's Deadlock: spawn timers, match prep, player stats, hero and item meta, leaderboards, and live matches.",
+        "author": { "@type": "Person", "name": "Jared Kjar" }
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,6 +47,11 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      The Cursed Apple is a free companion app for Valve's Deadlock — spawn timers, match
+      prep, player and match statistics, hero and item meta, leaderboards, and live matches.
+      It requires JavaScript to run.
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

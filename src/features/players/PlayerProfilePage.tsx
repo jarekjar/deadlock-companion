@@ -10,6 +10,7 @@ import {
   type PlayerHeroStats,
 } from '../../lib/api'
 import ItemHover from '../../shared/ItemHover'
+import { usePageMeta } from '../../lib/usePageMeta'
 import {
   useHeroes,
   useItems,
@@ -55,6 +56,10 @@ function Profile({ accountId }: { accountId: number }) {
 
   const persona = profile.data?.personaname ?? `Player #${accountId}`
   const isFavorite = favorites.some((f) => f.accountId === accountId)
+  usePageMeta(
+    `${persona} — Deadlock Player Stats — The Cursed Apple`,
+    `Deadlock stats for ${persona}: win rate, KDA, souls per minute, hero breakdowns, and match history.`,
+  )
 
   const summary = useMemo(() => {
     const matches = history.data ?? []

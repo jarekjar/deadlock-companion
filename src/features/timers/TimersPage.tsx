@@ -13,6 +13,7 @@ import { CheatSheetContent } from './CheatSheetPage'
 import { useMapAsset } from '../../lib/queries'
 import { useSession } from '../../lib/session'
 import { fetchActiveMatchForPlayer } from '../../lib/api'
+import { usePageMeta } from '../../lib/usePageMeta'
 import {
   defaultAlertSettings,
   playChime,
@@ -36,6 +37,10 @@ function loadSettings(): AlertSettings {
 }
 
 export default function TimersPage() {
+  usePageMeta(
+    'Deadlock Spawn Timers & Objective Map — The Cursed Apple',
+    'Live spawn countdowns for camps, Sinner’s Sacrifice, bridge buffs, the Mid-Boss ladder, and the Soul Urn — with spawn alerts, an objective map, and one-click sync to your live Deadlock match.',
+  )
   const {
     clock,
     t,

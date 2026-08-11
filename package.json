@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "sitemap": "node scripts/generate-sitemap.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",

@@ -9,6 +9,7 @@ import {
   useRankDistribution,
 } from '../../lib/queries'
 import { useSession } from '../../lib/session'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import '../live/live.css'
@@ -18,6 +19,10 @@ import './leaderboard.css'
 const PAGE_SIZE = 100
 
 export default function LeaderboardPage() {
+  usePageMeta(
+    'Deadlock Leaderboard & Rank Distribution — The Cursed Apple',
+    'The top 1000 ranked Deadlock players per region, plus the full rank distribution — and where you land on it.',
+  )
   const [params] = useSearchParams()
   const [region, setRegion] = useState<LeaderboardRegion>('NAmerica')
   const [search, setSearch] = useState(params.get('q') ?? '')

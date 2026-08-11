@@ -5,9 +5,14 @@ import { resolveVanity } from '../../lib/api'
 import { usePlayerSearch, useRanks } from '../../lib/queries'
 import { useFavorites } from '../../lib/favorites'
 import RankBadge from '../../shared/RankBadge'
+import { usePageMeta } from '../../lib/usePageMeta'
 import './players.css'
 
 export default function PlayersPage() {
+  usePageMeta(
+    'Deadlock Player Search — The Cursed Apple',
+    'Look up any Deadlock player by Steam link, ID, or name: win rate, KDA, hero stats, rank, and full match history.',
+  )
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [query, setQuery] = useState('')

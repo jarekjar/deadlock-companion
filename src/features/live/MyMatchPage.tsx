@@ -17,6 +17,7 @@ import { CounterItems, MatchupSummary } from '../heroes/MatchupsPage'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
 import MiniTimers from '../timers/MiniTimers'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './live.css'
@@ -46,6 +47,10 @@ function loadPrep(): PrepState {
 }
 
 export default function MyMatchPage() {
+  usePageMeta(
+    'My Match — Deadlock Prep Board — The Cursed Apple',
+    'Prep every Deadlock match: pick your hero and the enemy team for matchup win rates, counter items, lane tracking, and spawn timers — or fill the board from your live game.',
+  )
   const navigate = useNavigate()
   const heroes = useHeroes()
   const analytics = useHeroAnalytics()

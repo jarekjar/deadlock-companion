@@ -4,6 +4,7 @@ import { averageBadge, rankName } from '../../lib/api'
 import { TEAMS } from '../../lib/teams'
 import { useActiveMatches, useHeroes, useRankAssets, useRanks } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import './live.css'
 
@@ -11,6 +12,10 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFracti
 const SHOWN_MATCHES = 25
 
 export default function LiveMatchesPage() {
+  usePageMeta(
+    'Live Deadlock Matches — The Cursed Apple',
+    'Watch live Deadlock matches: live soul counts, average ranks, and one-click spawn-timer sync.',
+  )
   const navigate = useNavigate()
   const active = useActiveMatches()
   const heroes = useHeroes()

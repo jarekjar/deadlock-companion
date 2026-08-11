@@ -5,6 +5,7 @@ import ItemHover from '../../shared/ItemHover'
 import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import HeroBrowser from './HeroBrowser'
+import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import './heroes.css'
 
@@ -14,6 +15,15 @@ export default function MatchupsPage() {
   const params = useParams()
   const heroId = params.heroId ? Number(params.heroId) : null
   const heroes = useHeroes()
+  const heroName = heroId !== null ? heroes.data?.get(heroId)?.name : undefined
+  usePageMeta(
+    heroName
+      ? `${heroName} Matchups & Counters — The Cursed Apple`
+      : 'Deadlock Matchups & Counter Items — The Cursed Apple',
+    heroName
+      ? `${heroName} matchups in Deadlock: win rates into every opponent, why each matchup leans the way it does, and the counter items that win those games.`
+      : 'Win rates for every Deadlock hero matchup, and the counter items that actually win those games.',
+  )
 
   if (heroId === null) {
     return (

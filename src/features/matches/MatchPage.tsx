@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { itemIcon, rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
 import ItemHover from '../../shared/ItemHover'
+import { usePageMeta } from '../../lib/usePageMeta'
 import {
   useHeroes,
   useItems,
@@ -42,6 +43,10 @@ function Match({ matchId }: { matchId: number }) {
 }
 
 function MatchDetail({ info }: { info: MatchInfo }) {
+  usePageMeta(
+    `Deadlock Match #${info.match_id} — Breakdown — The Cursed Apple`,
+    `Full breakdown of Deadlock match #${info.match_id}: scoreboards, the souls race, item builds, and the Mid-Boss log.`,
+  )
   const heroes = useHeroes()
   const items = useItems()
   const ranks = useRankAssets()
