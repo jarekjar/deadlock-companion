@@ -206,13 +206,21 @@ input[type='checkbox'] {
   margin-top: 20px;
   display: flex;
   justify-content: center;
-  gap: 36px;
+  gap: 12px 36px;
+  flex-wrap: wrap;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
   padding: 12px 0 10px;
 }
 
-.site-nav a {
+@media (max-width: 620px) {
+  .site-nav {
+    gap: 10px 22px;
+  }
+}
+
+.site-nav a,
+.site-nav .nav-action {
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 13px;
@@ -224,7 +232,8 @@ input[type='checkbox'] {
   padding-bottom: 2px;
 }
 
-.site-nav a:hover {
+.site-nav a:hover,
+.site-nav .nav-action:hover {
   color: var(--ink);
   text-decoration: none;
 }

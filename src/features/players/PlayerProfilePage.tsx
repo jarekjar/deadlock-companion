@@ -1,0 +1,287 @@
+import { useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { isWin, rankName, type HeroAsset, type MatchHistoryEntry } from '../../lib/api'
+import {
+  useHeroes,
+  useMatchHistory,
+  usePlayerHeroStats,
+  useRank,
+  useRankAssets,
+  useSteamProfile,
+} from '../../lib/queries'
+import { useFavorites } from '../../lib/favorites'
+import { formatClock } from '../timers/timerEngine'
+import './players.css'
+
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+const dateFmt = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  day: 'numeric',
+  year: '2-digit',
+})
+
+export default function PlayerProfilePage() {
+  const params = useParams()
+  const accountId = Number(params.accountId)
+  if (!Number.isInteger(accountId) || accountId <= 0) {
+    return <div className="page-note error">Invalid player id</div>
+  }
+  return <Profile accountId={accountId} />
+}
+
+function Profile({ accountId }: { accountId: number }) {
+  const profile = useSteamProfile(accountId)
+  const rank = useRank(accountId)
+  const rankAssets = useRankAssets()
+  const heroes = useHeroes()
+  const history = useMatchHistory(accountId)
+  const heroStats = usePlayerHeroStats(accountId)
+  const { favorites, toggle } = useFavorites()
+
+  const persona = profile.data?.personaname ?? `Player #${accountId}`
+  const isFavorite = favorites.some((f) => f.accountId === accountId)
+
+  const summary = useMemo(() => {
+    const matches = history.data ?? []
+    if (matches.length === 0) return null
+    const wins = matches.filter(isWin).length
+    const kills = matches.reduce((s, m) => s + m.player_kills, 0)
+    const deaths = matches.reduce((s, m) => s + m.player_deaths, 0)
+    const assists = matches.reduce((s, m) => s + m.player_assists, 0)
+    const souls = matches.reduce((s, m) => s + m.net_worth, 0)
+    const minutes = matches.reduce((s, m) => s + m.match_duration_s, 0) / 60
+    return {
+      matches: matches.length,
+      winRate: (wins / matches.length) * 100,
+      kda: deaths === 0 ? kills + assists : (kills + assists) / deaths,
+      soulsPerMin: souls / minutes,
+    }
+  }, [history.data])
+
+  if (history.isError || profile.isError) {
+    return <div className="page-note error">Could not load this player</div>
+  }
+
+  return (
+    <>
+      <div className="profile-head">
+        {profile.data && <img src={profile.data.avatarfull} alt="" />}
+        <div className="who">
+          <h2>{persona}</h2>
+          <div className="sub">
+            #{accountId}
+            {profile.data && (
+              <>
+                {' · '}
+                <a href={profile.data.profileurl} target="_blank" rel="noreferrer">
+                  steam profile
+                </a>
+              </>
+            )}
+          </div>
+          <span className="rank">{rankName(rank.data?.badge ?? 0, rankAssets.data)}</span>
+        </div>
+        <div className="actions">
+          <button
+            className="btn"
+            onClick={() =>
+              toggle({
+                accountId,
+                personaname: persona,
+                avatar: profile.data?.avatarmedium ?? '',
+              })
+            }
+          >
+            {isFavorite ? 'Favorited' : 'Favorite'}
+          </button>
+        </div>
+      </div>
+
+      {history.isPending ? (
+        <div className="page-note">Loading match data</div>
+      ) : (
+        <>
+          {summary && (
+            <div className="stat-row">
+              <StatTile label="Matches" value={String(summary.matches)} />
+              <StatTile label="Win rate" value={`${summary.winRate.toFixed(1)}%`} />
+              <StatTile label="KDA" value={summary.kda.toFixed(2)} />
+              <StatTile label="Souls per min" value={compact.format(summary.soulsPerMin)} />
+            </div>
+          )}
+
+          <MatchTable matches={history.data} heroes={heroes.data} />
+
+          {heroStats.data && heroStats.data.length > 0 && (
+            <HeroTable stats={heroStats.data} heroes={heroes.data} />
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="stat-tile">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+    </div>
+  )
+}
+
+type SortKey =
+  | 'start_time'
+  | 'hero'
+  | 'result'
+  | 'player_kills'
+  | 'player_deaths'
+  | 'player_assists'
+  | 'net_worth'
+  | 'match_duration_s'
+
+function MatchTable({
+  matches,
+  heroes,
+}: {
+  matches: MatchHistoryEntry[]
+  heroes: Map<number, HeroAsset> | undefined
+}) {
+  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
+    key: 'start_time',
+    desc: true,
+  })
+  const [visible, setVisible] = useState(25)
+
+  const sorted = useMemo(() => {
+    const value = (m: MatchHistoryEntry): number | string => {
+      switch (sort.key) {
+        case 'hero':
+          return heroes?.get(m.hero_id)?.name ?? m.hero_id
+        case 'result':
+          return isWin(m) ? 1 : 0
+        default:
+          return m[sort.key]
+      }
+    }
+    return [...matches].sort((a, b) => {
+      const av = value(a)
+      const bv = value(b)
+      const cmp = typeof av === 'string' ? av.localeCompare(String(bv)) : av - Number(bv)
+      return sort.desc ? -cmp : cmp
+    })
+  }, [matches, sort, heroes])
+
+  const header = (key: SortKey, label: string) => (
+    <th
+      className={`sortable${sort.key === key ? ' sorted' : ''}`}
+      onClick={() => setSort((s) => ({ key, desc: s.key === key ? !s.desc : true }))}
+    >
+      {label}
+    </th>
+  )
+
+  return (
+    <section className="data-section">
+      <h3>Match History</h3>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              {header('hero', 'Hero')}
+              {header('result', 'Result')}
+              {header('player_kills', 'K')}
+              {header('player_deaths', 'D')}
+              {header('player_assists', 'A')}
+              {header('net_worth', 'Souls')}
+              {header('match_duration_s', 'Length')}
+              {header('start_time', 'Date')}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.slice(0, visible).map((m) => {
+              const hero = heroes?.get(m.hero_id)
+              return (
+                <tr key={m.match_id}>
+                  <td>
+                    <span className="hero-cell">
+                      {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
+                      {hero?.name ?? `Hero ${m.hero_id}`}
+                    </span>
+                  </td>
+                  <td className={isWin(m) ? 'result-w' : 'result-l'}>{isWin(m) ? 'W' : 'L'}</td>
+                  <td className="mono">{m.player_kills}</td>
+                  <td className="mono">{m.player_deaths}</td>
+                  <td className="mono">{m.player_assists}</td>
+                  <td className="mono">{compact.format(m.net_worth)}</td>
+                  <td className="mono">{formatClock(m.match_duration_s)}</td>
+                  <td className="dim">{dateFmt.format(m.start_time * 1000)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {visible < sorted.length && (
+        <button className="btn show-more" onClick={() => setVisible((v) => v + 50)}>
+          Show more ({sorted.length - visible} remaining)
+        </button>
+      )}
+    </section>
+  )
+}
+
+function HeroTable({
+  stats,
+  heroes,
+}: {
+  stats: import('../../lib/api').PlayerHeroStats[]
+  heroes: Map<number, HeroAsset> | undefined
+}) {
+  const rows = useMemo(
+    () => [...stats].sort((a, b) => b.matches_played - a.matches_played),
+    [stats],
+  )
+  return (
+    <section className="data-section">
+      <h3>Heroes</h3>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Hero</th>
+              <th>Matches</th>
+              <th>Win rate</th>
+              <th>K / D / A per match</th>
+              <th>Souls per min</th>
+              <th>Last played</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((s) => {
+              const hero = heroes?.get(s.hero_id)
+              const per = (n: number) => (n / s.matches_played).toFixed(1)
+              return (
+                <tr key={s.hero_id}>
+                  <td>
+                    <span className="hero-cell">
+                      {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
+                      {hero?.name ?? `Hero ${s.hero_id}`}
+                    </span>
+                  </td>
+                  <td className="mono">{s.matches_played}</td>
+                  <td className="mono">{((s.wins / s.matches_played) * 100).toFixed(0)}%</td>
+                  <td className="mono">
+                    {per(s.kills)} / {per(s.deaths)} / {per(s.assists)}
+                  </td>
+                  <td className="mono">{compact.format(s.networth_per_min)}</td>
+                  <td className="dim">{dateFmt.format(s.last_played * 1000)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}

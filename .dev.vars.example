@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local `npm run dev:cf`. In production, set
+# SESSION_SECRET in the Cloudflare Pages project (Settings -> Variables).
+SESSION_SECRET=change-me-to-a-long-random-string
