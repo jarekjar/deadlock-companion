@@ -69,10 +69,13 @@ export interface HeroAsset {
   items?: Record<string, string>
   scaling_stats?: Record<string, { scaling_stat?: string; scale?: number }>
   standard_level_up_upgrades?: Record<string, number>
+  starting_stats?: Record<string, { value?: number } | undefined>
   images: {
     icon_image_small_webp: string
     icon_hero_card_webp: string
     minimap_image_webp: string
+    /** Large poster art used by the in-game hero background. */
+    background_image_webp?: string
   }
 }
 
@@ -91,6 +94,8 @@ export interface ItemAsset {
   properties?: Record<string, { value?: unknown } | undefined>
   /** Ability rank-ups (3 tiers, costing 1/2/5 ability points). */
   upgrades?: { property_upgrades?: { name: string; bonus?: string }[] }[]
+  /** Present on hero primary weapons: bullet damage, clip, fire rate, ... */
+  weapon_info?: Record<string, unknown>
   item_tier?: number
   item_slot_type?: string
   cost?: number

@@ -143,6 +143,7 @@
   border: 1px solid var(--rule);
   padding: 14px 16px 12px;
   text-align: center;
+  background: var(--bg-veil);
 }
 
 .stat-label {
@@ -181,6 +182,7 @@
 .highlight-panel {
   border: 1px solid var(--rule);
   padding: 14px 16px;
+  background: var(--bg-veil);
 }
 
 .hl-hero {
@@ -246,6 +248,7 @@
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--rule);
+  background: var(--bg-veil);
 }
 
 .data-table {

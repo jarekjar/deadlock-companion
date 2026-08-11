@@ -275,6 +275,127 @@
   line-height: 1.65;
 }
 
+/* ---- hero page poster background ---- */
+
+.hero-page {
+  position: relative;
+}
+
+.hero-page-bg {
+  position: absolute;
+  top: -32px;
+  right: -24px;
+  width: min(58vw, 860px);
+  height: 920px;
+  background-size: cover;
+  background-position: top right;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: linear-gradient(250deg, black 20%, transparent 78%);
+}
+
+.hero-page > :not(.hero-page-bg) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- base stats ---- */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-panel {
+  border: 1px solid var(--rule);
+  padding: 16px 18px;
+  background: var(--bg-veil);
+}
+
+.stats-panel h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+
+.stats-panel h4 img {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule);
+  background: var(--bg-inset);
+}
+
+.stat-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-faint);
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.stat-line:last-child {
+  border-bottom: none;
+}
+
+.stat-line .mono {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- collapsible tier tables ---- */
+
+.tier-details summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.tier-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.tier-details summary::before {
+  content: '\25B8';
+  margin-right: 10px;
+  color: var(--brass-dim);
+}
+
+.tier-details[open] summary::before {
+  content: '\25BE';
+}
+
+.tier-details summary:hover {
+  color: var(--brass-bright);
+}
+
+.tier-details[open] summary {
+  margin-bottom: 12px;
+}
+
 /* ---- hero page header: full art + lore ---- */
 
 .hero-hero {
@@ -355,6 +476,7 @@
 .ability-card {
   border: 1px solid var(--rule);
   padding: 16px 18px;
+  background: var(--bg-veil);
 }
 
 .ability-head {
@@ -422,6 +544,7 @@
 .scaling-list {
   list-style: none;
   border: 1px solid var(--rule);
+  background: var(--bg-veil);
 }
 
 .scaling-list li {

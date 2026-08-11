@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import TimersPage from './features/timers/TimersPage'
 import CheatSheetPage from './features/timers/CheatSheetPage'
@@ -17,8 +17,12 @@ import ItemPage from './features/items/ItemPage'
 import timersData from './data/timers.json'
 
 export default function App() {
+  const location = useLocation()
+  // hero detail pages bring their own poster background
+  const showDefaultBg = !/^\/heroes\/\d+/.test(location.pathname)
   return (
     <div className="shell">
+      {showDefaultBg && <div className="app-bg" aria-hidden />}
       <Header />
       <main className="shell-main">
         <Routes>

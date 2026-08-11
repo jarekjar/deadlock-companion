@@ -77,7 +77,13 @@ function Hero({ heroId }: { heroId: number }) {
   const pickRate = (stat.matches / totalMatches) * 100
 
   return (
-    <>
+    <div className="hero-page">
+      {hero.images.background_image_webp && (
+        <div
+          className="hero-page-bg"
+          style={{ backgroundImage: `url(${hero.images.background_image_webp})` }}
+        />
+      )}
       <div className="hero-hero">
         <img className="hero-art" src={hero.images.icon_hero_card_webp} alt="" />
         <div className="hero-intro">
@@ -120,14 +126,15 @@ function Hero({ heroId }: { heroId: number }) {
       </div>
 
       <AboutSection hero={hero} />
+      <BaseStatsSection hero={hero} />
       <AbilitiesSection hero={hero} />
       <ScalingSection hero={hero} />
 
       {byTier ? (
         byTier.map((rows, tier) =>
           rows.length === 0 ? null : (
-            <section key={tier} className="data-section">
-              <h3>{TIER_LABELS[tier]} — most popular items</h3>
+            <details key={tier} className="data-section tier-details">
+              <summary>{TIER_LABELS[tier]} — most popular items</summary>
               <div className="table-wrap">
                 <table className="data-table">
                   <thead>
@@ -155,7 +162,7 @@ function Hero({ heroId }: { heroId: number }) {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </details>
           ),
         )
       ) : (
@@ -165,7 +172,104 @@ function Hero({ heroId }: { heroId: number }) {
         Last 30 days, all ranks. Win rate is for matches where the item was bought — popular
         late-game items skew high because buying them means the game already went well.
       </p>
-    </>
+    </div>
+  )
+}
+
+function statValue(
+  stats: HeroAsset['starting_stats'],
+  key: string,
+): number | undefined {
+  const v = stats?.[key]?.value
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined
+}
+
+function weaponValue(info: Record<string, unknown> | undefined, key: string): number | undefined {
+  const v = info?.[key]
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined
+}
+
+type StatLine = { label: string; value: string }
+
+function lines(entries: (StatLine | null)[]): StatLine[] {
+  return entries.filter((e): e is StatLine => e !== null)
+}
+
+function line(label: string, value: number | undefined, format: (v: number) => string): StatLine | null {
+  return value === undefined ? null : { label, value: format(value) }
+}
+
+function BaseStatsSection({ hero }: { hero: HeroAsset }) {
+  const byClassName = useItemsByClassName()
+  const gunClass = hero.items?.weapon_primary
+  const gun = gunClass ? byClassName.data?.get(gunClass) : undefined
+  const info = gun?.weapon_info
+  const stats = hero.starting_stats
+
+  const weaponLines = lines([
+    line('Bullet damage', weaponValue(info, 'bullet_damage'), (v) => `${v}`),
+    (weaponValue(info, 'bullets') ?? 1) > 1
+      ? line('Bullets per shot', weaponValue(info, 'bullets'), (v) => `${v}`)
+      : null,
+    line('Fire rate', weaponValue(info, 'bullets_per_second'), (v) => `${v.toFixed(1)}/s`),
+    line('Clip size', weaponValue(info, 'clip_size'), (v) => `${v}`),
+    line('Reload', weaponValue(info, 'reload_duration'), (v) => `${v}s`),
+    line('Sustained DPS', weaponValue(info, 'damage_per_second_with_reload'), (v) =>
+      `${Math.round(v)}`,
+    ),
+    line('Bullet velocity', weaponValue(info, 'bullet_speed'), (v) => `${Math.round(v / 100)} m/s`),
+  ])
+
+  const vitalityLines = lines([
+    line('Max health', statValue(stats, 'max_health'), (v) => `${v}`),
+    line('Health regen', statValue(stats, 'base_health_regen'), (v) => `${v}/s`),
+    line('Move speed', statValue(stats, 'max_move_speed'), (v) => `${v} m/s`),
+    line('Sprint bonus', statValue(stats, 'sprint_speed'), (v) => `+${v} m/s`),
+    line('Stamina', statValue(stats, 'stamina'), (v) => `${v}`),
+    line('Light melee', statValue(stats, 'light_melee_damage'), (v) => `${v}`),
+    line('Heavy melee', statValue(stats, 'heavy_melee_damage'), (v) => `${v}`),
+  ])
+
+  const perLevelSpirit = hero.standard_level_up_upgrades?.MODIFIER_VALUE_TECH_POWER
+  const spiritLines = lines([
+    {
+      label: 'Spirit power',
+      value: perLevelSpirit ? `0 (+${perLevelSpirit} per level)` : '0',
+    },
+    line('Ability duration', statValue(stats, 'tech_duration'), (v) => `×${v}`),
+    line('Ability range', statValue(stats, 'tech_range'), (v) => `×${v}`),
+  ])
+
+  if (weaponLines.length === 0 && vitalityLines.length === 0) return null
+
+  const panel = (title: React.ReactNode, rows: StatLine[]) =>
+    rows.length === 0 ? null : (
+      <div className="stats-panel">
+        <h4>{title}</h4>
+        {rows.map((row) => (
+          <div key={row.label} className="stat-line">
+            <span>{row.label}</span>
+            <span className="mono">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    )
+
+  return (
+    <section className="data-section">
+      <h3>Base Stats</h3>
+      <div className="stats-grid">
+        {panel(
+          <>
+            {gun && itemIcon(gun) && <img src={itemIcon(gun)} alt="" />}
+            Weapon{gun ? ` — ${gun.name}` : ''}
+          </>,
+          weaponLines,
+        )}
+        {panel('Vitality', vitalityLines)}
+        {panel('Spirit', spiritLines)}
+      </div>
+    </section>
   )
 }
 
