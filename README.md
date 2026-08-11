@@ -1,6 +1,6 @@
 # The Cursed Apple — a Deadlock companion
 
-**Live at [deadlock-companion.pages.dev](https://deadlock-companion.pages.dev)**
+**Live at [thecursedapple.app](https://thecursedapple.app)**
 
 Spawn timers, match prep, player stats, hero and item meta, leaderboards, and live
 matches for Valve's Deadlock — in a 1930s-noir dress. Free, no account needed.
