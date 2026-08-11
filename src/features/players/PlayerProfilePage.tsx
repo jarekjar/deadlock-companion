@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { isWin, rankName, type HeroAsset, type MatchHistoryEntry } from '../../lib/api'
 import {
   useHeroes,
@@ -198,6 +198,7 @@ function MatchTable({
               {header('net_worth', 'Souls')}
               {header('match_duration_s', 'Length')}
               {header('start_time', 'Date')}
+              <th>Match</th>
             </tr>
           </thead>
           <tbody>
@@ -218,6 +219,9 @@ function MatchTable({
                   <td className="mono">{compact.format(m.net_worth)}</td>
                   <td className="mono">{formatClock(m.match_duration_s)}</td>
                   <td className="dim">{dateFmt.format(m.start_time * 1000)}</td>
+                  <td className="mono">
+                    <Link to={`/matches/${m.match_id}`}>view</Link>
+                  </td>
                 </tr>
               )
             })}

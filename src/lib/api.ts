@@ -73,6 +73,50 @@ export interface RankAsset {
   images: Record<string, string>
 }
 
+export interface ItemAsset {
+  id: number
+  name: string
+  type: string
+  tier?: number
+  image?: string
+  shopable?: boolean
+}
+
+export interface MatchPlayerStatsSample {
+  time_stamp_s: number
+  net_worth: number
+  player_damage: number
+  player_healing: number
+  player_damage_taken: number
+}
+
+export interface MatchPlayer {
+  account_id: number
+  team: number
+  hero_id: number
+  kills: number
+  deaths: number
+  assists: number
+  net_worth: number
+  last_hits: number
+  denies: number
+  level: number
+  items: { game_time_s: number; item_id: number; sold_time_s: number }[]
+  stats: MatchPlayerStatsSample[]
+}
+
+export interface MatchInfo {
+  match_id: number
+  duration_s: number
+  start_time: number
+  /** 0 = Amber, 1 = Sapphire. */
+  winning_team: number
+  average_badge_team0: number | null
+  average_badge_team1: number | null
+  players: MatchPlayer[]
+  mid_boss: { team_killed: number; team_claimed: number; destroyed_time_s: number }[] | null
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`)
   if (!res.ok) throw new Error(`Deadlock API ${res.status} on ${path}`)
@@ -95,6 +139,11 @@ export const searchPlayers = (query: string) =>
   get<SteamProfile[]>(`/v1/players/steam-search?search_query=${encodeURIComponent(query)}&limit=12`)
 
 export const fetchHeroes = () => get<HeroAsset[]>(`/v1/assets/heroes?only_active=true`)
+
+export const fetchItems = () => get<ItemAsset[]>(`/v1/assets/items`)
+
+export const fetchMatchMetadata = (matchId: number) =>
+  get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)
 
 export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
