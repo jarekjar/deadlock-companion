@@ -4,7 +4,7 @@ import { parsePlayerInput } from '../../lib/steamid'
 import { resolveVanity } from '../../lib/api'
 import { usePlayerSearch, useRanks } from '../../lib/queries'
 import { useFavorites } from '../../lib/favorites'
-import RankBadge from '../../components/RankBadge'
+import RankBadge from '../../shared/RankBadge'
 import './players.css'
 
 export default function PlayersPage() {

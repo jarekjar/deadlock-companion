@@ -7,7 +7,7 @@ import {
   type ItemAsset,
   type ItemStat,
 } from '../../lib/api'
-import ItemHover from '../../components/ItemHover'
+import ItemHover from '../../shared/ItemHover'
 import {
   useHeroAnalytics,
   useHeroes,

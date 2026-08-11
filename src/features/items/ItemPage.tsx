@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { itemDescription, itemIcon, itemMeta } from '../../lib/api'
 import {
@@ -16,6 +16,8 @@ import './items.css'
 
 const MIN_HERO_ROWS_MATCHES = 50
 const compactFmt = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+
+type HeroSortKey = 'pick' | 'win' | 'matches' | 'name'
 
 export default function ItemPage() {
   const params = useParams()
@@ -40,14 +42,21 @@ function Item({ itemId }: { itemId: number }) {
     ? heroAnalytics.data.reduce((s, h) => s + h.matches, 0)
     : null
 
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<HeroSortKey>('pick')
+  const [descending, setDescending] = useState(true)
+
   const heroRows = useMemo(() => {
     if (!withItem.data || !heroAnalytics.data || !heroes.data) return null
     const totals = new Map(heroAnalytics.data.map((h) => [h.hero_id, h]))
+    const needle = search.trim().toLowerCase()
+    const dir = descending ? -1 : 1
     return withItem.data
       .flatMap((row) => {
         const hero = heroes.data.get(row.hero_id)
         const total = totals.get(row.hero_id)
         if (!hero || !total || row.matches < MIN_HERO_ROWS_MATCHES) return []
+        if (needle && !hero.name.toLowerCase().includes(needle)) return []
         return [
           {
             hero,
@@ -57,8 +66,19 @@ function Item({ itemId }: { itemId: number }) {
           },
         ]
       })
-      .sort((a, b) => b.pickRate - a.pickRate)
-  }, [withItem.data, heroAnalytics.data, heroes.data])
+      .sort((a, b) => {
+        switch (sortKey) {
+          case 'pick':
+            return dir * (a.pickRate - b.pickRate)
+          case 'win':
+            return dir * (a.winRate - b.winRate)
+          case 'matches':
+            return dir * (a.matches - b.matches)
+          case 'name':
+            return dir * b.hero.name.localeCompare(a.hero.name)
+        }
+      })
+  }, [withItem.data, heroAnalytics.data, heroes.data, search, sortKey, descending])
 
   if (items.isError) return <div className="page-note error">Could not load items</div>
   if (!items.data) return <div className="page-note">Loading item</div>
@@ -111,6 +131,36 @@ function Item({ itemId }: { itemId: number }) {
 
       <section className="data-section">
         <h3>Pick rate per hero</h3>
+        <div className="control-bar">
+          <span className="cb-group cb-search">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search heroes"
+              aria-label="Search heroes"
+            />
+          </span>
+          <span className="cb-group">
+            <span className="cb-label">Sort</span>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as HeroSortKey)}
+              aria-label="Sort heroes"
+            >
+              <option value="pick">Pick rate</option>
+              <option value="win">Win rate</option>
+              <option value="matches">Matches</option>
+              <option value="name">Name</option>
+            </select>
+            <button
+              className="cb-dir"
+              onClick={() => setDescending((d) => !d)}
+              title="Toggle sort direction"
+            >
+              {descending ? 'Desc' : 'Asc'}
+            </button>
+          </span>
+        </div>
         {!heroRows ? (
           <div className="page-note">Loading hero data</div>
         ) : heroRows.length === 0 ? (

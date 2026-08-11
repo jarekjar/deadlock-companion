@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import Header from './components/Header'
+import Header from './shared/Header'
 import TimersPage from './features/timers/TimersPage'
 import CheatSheetPage from './features/timers/CheatSheetPage'
 import PlayersPage from './features/players/PlayersPage'
@@ -23,6 +24,11 @@ const DEFAULT_BG =
 export default function App() {
   const location = useLocation()
   const heroes = useHeroes()
+
+  // new page, top of page — SPAs don't reset scroll on their own
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
   // hero detail pages swap the ambient poster for that hero's own art
   const heroMatch = /^\/heroes\/(\d+)/.exec(location.pathname)
   const heroBg = heroMatch

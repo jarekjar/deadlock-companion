@@ -11,7 +11,7 @@ import {
   useSteamProfilesBatch,
 } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
-import RankBadge from '../../components/RankBadge'
+import RankBadge from '../../shared/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
 import '../players/players.css'

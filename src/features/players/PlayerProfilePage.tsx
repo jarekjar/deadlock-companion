@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import RankBadge from '../../components/RankBadge'
+import RankBadge from '../../shared/RankBadge'
 import {
   isWin,
   itemIcon,
@@ -9,7 +9,7 @@ import {
   type MatchHistoryEntry,
   type PlayerHeroStats,
 } from '../../lib/api'
-import ItemHover from '../../components/ItemHover'
+import ItemHover from '../../shared/ItemHover'
 import {
   useHeroes,
   useItems,

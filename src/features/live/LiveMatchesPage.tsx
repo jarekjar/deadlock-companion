@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { averageBadge, rankName } from '../../lib/api'
 import { TEAMS } from '../../lib/teams'
-import { useActiveMatches, useHeroes } from '../../lib/queries'
+import { useActiveMatches, useHeroes, useRankAssets, useRanks } from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import './live.css'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+const SHOWN_MATCHES = 25
 
 export default function LiveMatchesPage() {
   const navigate = useNavigate()
   const active = useActiveMatches()
   const heroes = useHeroes()
+  const rankAssets = useRankAssets()
   const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
 
   useEffect(() => {
@@ -20,9 +23,17 @@ export default function LiveMatchesPage() {
   }, [])
 
   const rows = useMemo(
-    () => (active.data ? [...active.data].sort((a, b) => b.spectators - a.spectators) : null),
+    () =>
+      active.data
+        ? [...active.data].sort((a, b) => b.spectators - a.spectators).slice(0, SHOWN_MATCHES)
+        : null,
     [active.data],
   )
+  const allAccountIds = useMemo(
+    () => rows?.flatMap((m) => m.players.map((p) => p.account_id)) ?? [],
+    [rows],
+  )
+  const badges = useRanks(allAccountIds)
 
   if (active.isError) return <div className="page-note error">Could not load live matches</div>
   if (!rows) return <div className="page-note">Loading live matches</div>
@@ -43,11 +54,12 @@ export default function LiveMatchesPage() {
               <th>Souls</th>
               <th>Souls</th>
               <th>{TEAMS[1].short}</th>
+              <th>Avg Rank</th>
               <th>Watching</th>
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0, 40).map((m) => (
+            {rows.map((m) => (
               <tr
                 key={m.match_id}
                 className="row-link"
@@ -109,6 +121,14 @@ export default function LiveMatchesPage() {
                         ) : null
                       })}
                   </span>
+                </td>
+                <td className="dim">
+                  {(() => {
+                    const avg = averageBadge(
+                      m.players.map((p) => badges.get(p.account_id) ?? 0),
+                    )
+                    return avg !== null ? rankName(avg, rankAssets.data) : '—'
+                  })()}
                 </td>
                 <td className="mono">{m.spectators}</td>
               </tr>

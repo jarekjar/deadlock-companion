@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { type HeroAsset } from '../../lib/api'
-import ItemHover from '../../components/ItemHover'
+import ItemHover from '../../shared/ItemHover'
 import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import HeroBrowser from './HeroBrowser'
@@ -72,6 +72,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
         return [
           {
             enemy,
+            stat: c,
             matches: c.matches_played,
             winRate: (c.wins / c.matches_played) * 100,
           },
@@ -138,7 +139,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ enemy, matches, winRate }) => {
+            {rows.map(({ enemy, stat, matches, winRate }) => {
               const isOpen = openEnemy === enemy.id
               const row = (
                 <tr key={enemy.id}>
@@ -165,6 +166,12 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
                 row,
                 <tr key={`${enemy.id}-counters`} className="counter-tr">
                   <td colSpan={4}>
+                    <MatchupSummary
+                      stat={stat}
+                      heroName={hero.name}
+                      enemy={enemy}
+                      winRate={winRate}
+                    />
                     <CounterItems heroId={heroId} enemy={enemy} heroName={hero.name} />
                   </td>
                 </tr>,
@@ -174,6 +181,105 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
         </table>
       </div>
     </section>
+  )
+}
+
+const compactSouls = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
+/**
+ * Data-derived explanation of why a matchup leans the way it does, built from
+ * the pair's aggregate stats — no hand-written matchup opinions.
+ */
+export function MatchupSummary({
+  stat,
+  heroName,
+  enemy,
+  winRate,
+}: {
+  stat: import('../../lib/api').HeroCounterStat
+  heroName: string
+  enemy: HeroAsset
+  winRate: number
+}) {
+  const n = stat.matches_played
+  if (n === 0) return null
+
+  const souls = stat.networth / n
+  const enemySouls = stat.enemy_networth / n
+  const soulsPct = enemySouls > 0 ? ((souls - enemySouls) / enemySouls) * 100 : 0
+  const kills = stat.kills / n
+  const enemyKills = stat.enemy_kills / n
+  const denies = stat.denies / n
+  const enemyDenies = stat.enemy_denies / n
+  const objDamage = stat.obj_damage / n
+  const enemyObjDamage = stat.enemy_obj_damage / n
+
+  const verdict =
+    winRate >= 52
+      ? `A favorable matchup — ${heroName} wins ${winRate.toFixed(1)}% of these games`
+      : winRate <= 48
+        ? `A tough matchup — ${heroName} wins only ${winRate.toFixed(1)}% of these games`
+        : `An even matchup — ${heroName} wins ${winRate.toFixed(1)}% of these games`
+
+  const lines: string[] = []
+  if (Math.abs(soulsPct) >= 2) {
+    lines.push(
+      soulsPct > 0
+        ? `${heroName} out-farms ${enemy.name} by ~${Math.abs(soulsPct).toFixed(0)}% souls per match (${compactSouls.format(souls)} vs ${compactSouls.format(enemySouls)})`
+        : `${enemy.name} out-farms ${heroName} by ~${Math.abs(soulsPct).toFixed(0)}% souls per match (${compactSouls.format(enemySouls)} vs ${compactSouls.format(souls)})`,
+    )
+  } else {
+    lines.push(
+      `The souls race is nearly even (${compactSouls.format(souls)} vs ${compactSouls.format(enemySouls)} per match)`,
+    )
+  }
+  if (Math.abs(kills - enemyKills) >= 0.3) {
+    lines.push(
+      kills > enemyKills
+        ? `${heroName} wins the kill trade, averaging ${kills.toFixed(1)} kills to ${enemy.name}'s ${enemyKills.toFixed(1)}`
+        : `${enemy.name} wins the kill trade, averaging ${enemyKills.toFixed(1)} kills to ${heroName}'s ${kills.toFixed(1)}`,
+    )
+  }
+  if (denies + enemyDenies > 0 && Math.abs(denies - enemyDenies) / Math.max(denies, enemyDenies) >= 0.1) {
+    lines.push(
+      denies > enemyDenies
+        ? `${heroName} wins the deny war in lane (${denies.toFixed(1)} vs ${enemyDenies.toFixed(1)} per match)`
+        : `${enemy.name} wins the deny war in lane (${enemyDenies.toFixed(1)} vs ${denies.toFixed(1)} per match)`,
+    )
+  }
+  if (
+    objDamage + enemyObjDamage > 0 &&
+    Math.abs(objDamage - enemyObjDamage) / Math.max(objDamage, enemyObjDamage) >= 0.1
+  ) {
+    lines.push(
+      objDamage > enemyObjDamage
+        ? `${heroName} pressures objectives harder (${compactSouls.format(objDamage)} vs ${compactSouls.format(enemyObjDamage)} objective damage)`
+        : `${enemy.name} pressures objectives harder (${compactSouls.format(enemyObjDamage)} vs ${compactSouls.format(objDamage)} objective damage)`,
+    )
+  }
+
+  const playstyle = enemy.description?.playstyle
+  const playstyleExcerpt = playstyle ? `${playstyle.split('. ')[0].replace(/\.$/, '')}.` : null
+
+  return (
+    <div className="matchup-why">
+      <div className={`matchup-verdict ${winRateClass(winRate)}`}>{verdict}</div>
+      <ul>
+        {lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      {(enemy.hero_type || playstyleExcerpt) && (
+        <p className="matchup-enemy-note">
+          {enemy.name}
+          {enemy.hero_type ? ` is a ${enemy.hero_type}` : ''}
+          {playstyleExcerpt ? ` — ${playstyleExcerpt}` : '.'}
+        </p>
+      )}
+    </div>
   )
 }
 

@@ -205,6 +205,19 @@ export interface HeroCounterStat {
   enemy_hero_id: number
   wins: number
   matches_played: number
+  /** Totals across all matches of the pair — divide by matches_played. */
+  kills: number
+  deaths: number
+  assists: number
+  denies: number
+  networth: number
+  obj_damage: number
+  enemy_kills: number
+  enemy_deaths: number
+  enemy_assists: number
+  enemy_denies: number
+  enemy_networth: number
+  enemy_obj_damage: number
 }
 
 export interface AnalyticsHeroStat {

@@ -104,8 +104,13 @@ export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => st
         <div className="page-note">No heroes match</div>
       ) : (
         <div className="hero-grid">
-          {rows.map(({ hero, winRate, pickRate }) => (
-            <Link key={hero.id} className="hero-card" to={linkTo(hero.id)}>
+          {rows.map(({ hero, winRate, pickRate }, index) => (
+            <Link
+              key={hero.id}
+              className="hero-card"
+              to={linkTo(hero.id)}
+              style={{ '--i': index } as React.CSSProperties}
+            >
               <img src={hero.images.icon_hero_card_webp} alt="" loading="lazy" />
               <span className="hc-body">
                 <span className="hc-name">{hero.name}</span>

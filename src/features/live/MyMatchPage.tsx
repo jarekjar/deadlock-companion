@@ -11,8 +11,8 @@ import {
 } from '../../lib/queries'
 import { useSession } from '../../lib/session'
 import { winRateClass } from '../../lib/winrate'
-import RankBadge from '../../components/RankBadge'
-import { CounterItems } from '../heroes/MatchupsPage'
+import RankBadge from '../../shared/RankBadge'
+import { CounterItems, MatchupSummary } from '../heroes/MatchupsPage'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
 import '../players/players.css'
@@ -315,6 +315,19 @@ export default function MyMatchPage() {
                 </div>
                 {isOpen && myHero && (
                   <div className="enemy-counters">
+                    {(() => {
+                      const raw = counters.data?.find(
+                        (c) => c.hero_id === myHero.id && c.enemy_hero_id === hero.id,
+                      )
+                      return raw && vsWr !== undefined ? (
+                        <MatchupSummary
+                          stat={raw}
+                          heroName={myHero.name}
+                          enemy={hero}
+                          winRate={vsWr}
+                        />
+                      ) : null
+                    })()}
                     <CounterItems heroId={myHero.id} enemy={hero} heroName={myHero.name} />
                   </div>
                 )}

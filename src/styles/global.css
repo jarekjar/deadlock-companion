@@ -397,6 +397,11 @@ select option::checkmark {
 :is(.hero-grid, .home-features, .stat-row, .highlight-row, .ability-grid, .stats-grid)
   > *:nth-child(12) { animation-delay: 0.36s; }
 
+/* large grids stagger by index (set as --i inline) so every card animates */
+.hero-grid > *:nth-child(n) {
+  animation-delay: calc(var(--i, 0) * 0.02s);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

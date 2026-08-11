@@ -647,6 +647,49 @@
   margin-bottom: 12px;
 }
 
+.matchup-why {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.matchup-verdict {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.matchup-why ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.matchup-why li {
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.matchup-why li::before {
+  content: '\25C6';
+  font-size: 7px;
+  color: var(--brass-dim);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.matchup-enemy-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  font-style: italic;
+  max-width: 720px;
+}
+
 .counter-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

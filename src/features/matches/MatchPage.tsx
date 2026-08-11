@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { itemIcon, rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
-import ItemHover from '../../components/ItemHover'
+import ItemHover from '../../shared/ItemHover'
 import {
   useHeroes,
   useItems,
@@ -10,7 +10,7 @@ import {
   useRanks,
   useSteamProfilesBatch,
 } from '../../lib/queries'
-import RankBadge from '../../components/RankBadge'
+import RankBadge from '../../shared/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import './match.css'
@@ -212,6 +212,7 @@ function BuildStrip({
         <ItemHover
           key={`${p.item.id}-${i}`}
           item={p.item}
+          size={42}
           dimmed={p.sold_time_s > 0}
           extraLine={`bought ${formatClock(p.game_time_s)}${
             p.sold_time_s > 0 ? ` · sold ${formatClock(p.sold_time_s)}` : ''
