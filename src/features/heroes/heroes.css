@@ -232,6 +232,136 @@
   margin-left: auto;
 }
 
+/* ---- hero about / abilities / scaling ---- */
+
+.hero-about .about-role {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--brass);
+}
+
+.hero-about .about-playstyle {
+  margin-top: 8px;
+  max-width: 760px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.about-lore {
+  margin-top: 12px;
+}
+
+.about-lore summary {
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.about-lore summary:hover {
+  color: var(--brass);
+}
+
+.about-lore p {
+  margin-top: 10px;
+  max-width: 760px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .ability-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ability-card {
+  border: 1px solid var(--rule);
+  padding: 16px 18px;
+}
+
+.ability-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ability-head img {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--rule);
+  background: var(--bg-inset);
+}
+
+.ability-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ability-meta {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.ability-desc {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  white-space: pre-line;
+}
+
+.scaling-list {
+  list-style: none;
+  border: 1px solid var(--rule);
+}
+
+.scaling-list li {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--rule-faint);
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.scaling-list li:last-child {
+  border-bottom: none;
+}
+
+.scaling-list .mono {
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+
+.scaling-unique {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  border: 1px solid var(--brass-dim);
+  padding: 2px 6px 1px;
+  margin-right: 8px;
+}
+
 .item-cell {
   display: flex;
   align-items: center;

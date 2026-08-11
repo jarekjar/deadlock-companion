@@ -86,6 +86,18 @@ export function useItems() {
   })
 }
 
+/** Same items query, keyed by class_name — abilities are referenced this way. */
+export function useItemsByClassName() {
+  return useQuery({
+    queryKey: ['items'],
+    queryFn: fetchItems,
+    staleTime: FOREVER,
+    gcTime: FOREVER,
+    select: (items): Map<string, ItemAsset> =>
+      new Map(items.flatMap((i) => (i.class_name ? [[i.class_name, i] as const] : []))),
+  })
+}
+
 export const useMatchMetadata = (matchId: number) =>
   useQuery({
     queryKey: ['matchMetadata', matchId],

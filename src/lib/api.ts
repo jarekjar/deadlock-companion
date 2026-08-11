@@ -61,6 +61,11 @@ export interface HeroAsset {
   player_selectable: boolean
   disabled: boolean
   in_development: boolean
+  description?: { lore?: string; role?: string; playstyle?: string }
+  /** Slot -> ability class_name; signatures are "signature1".."signature4". */
+  items?: Record<string, string>
+  scaling_stats?: Record<string, { scaling_stat?: string; scale?: number }>
+  standard_level_up_upgrades?: Record<string, number>
   images: {
     icon_image_small_webp: string
     icon_hero_card_webp: string
@@ -78,7 +83,9 @@ export interface RankAsset {
 export interface ItemAsset {
   id: number
   name: string
+  class_name?: string
   type: string
+  properties?: Record<string, { value?: unknown } | undefined>
   item_tier?: number
   item_slot_type?: string
   cost?: number
@@ -112,11 +119,15 @@ export function itemMeta(item: ItemAsset): string {
     .join(' · ')
 }
 
-/** Plain-text item description (the asset ships HTML). */
+/** Plain-text item/ability description (the asset ships HTML with inline SVGs). */
 export function itemDescription(item: ItemAsset): string {
   return (item.description?.desc ?? '')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]+>/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 export interface MatchPlayerStatsSample {

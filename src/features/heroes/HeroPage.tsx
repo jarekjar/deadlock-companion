@@ -1,8 +1,20 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { type ItemAsset, type ItemStat } from '../../lib/api'
+import {
+  itemDescription,
+  itemIcon,
+  type HeroAsset,
+  type ItemAsset,
+  type ItemStat,
+} from '../../lib/api'
 import ItemHover from '../../components/ItemHover'
-import { useHeroAnalytics, useHeroes, useHeroItemStats, useItems } from '../../lib/queries'
+import {
+  useHeroAnalytics,
+  useHeroes,
+  useHeroItemStats,
+  useItems,
+  useItemsByClassName,
+} from '../../lib/queries'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
 import '../players/players.css'
@@ -104,6 +116,10 @@ function Hero({ heroId }: { heroId: number }) {
         </div>
       </div>
 
+      <AboutSection hero={hero} />
+      <AbilitiesSection hero={hero} />
+      <ScalingSection hero={hero} />
+
       {byTier ? (
         byTier.map((rows, tier) =>
           rows.length === 0 ? null : (
@@ -147,5 +163,127 @@ function Hero({ heroId }: { heroId: number }) {
         late-game items skew high because buying them means the game already went well.
       </p>
     </>
+  )
+}
+
+function AboutSection({ hero }: { hero: HeroAsset }) {
+  const d = hero.description
+  if (!d?.role && !d?.playstyle && !d?.lore) return null
+  return (
+    <section className="data-section hero-about">
+      <h3>About</h3>
+      {d.role && <p className="about-role">{d.role}</p>}
+      {d.playstyle && <p className="about-playstyle">{d.playstyle}</p>}
+      {d.lore && (
+        <details className="about-lore">
+          <summary>Lore</summary>
+          <p>{d.lore}</p>
+        </details>
+      )}
+    </section>
+  )
+}
+
+const SIGNATURE_SLOTS = ['signature1', 'signature2', 'signature3', 'signature4']
+
+function AbilitiesSection({ hero }: { hero: HeroAsset }) {
+  const byClassName = useItemsByClassName()
+  if (!byClassName.data || !hero.items) return null
+
+  const abilities = SIGNATURE_SLOTS.flatMap((slot) => {
+    const className = hero.items?.[slot]
+    const ability = className ? byClassName.data.get(className) : undefined
+    return ability ? [ability] : []
+  })
+  if (abilities.length === 0) return null
+
+  return (
+    <section className="data-section">
+      <h3>Abilities</h3>
+      <div className="ability-grid">
+        {abilities.map((ability, index) => {
+          const cooldown = Number(ability.properties?.AbilityCooldown?.value ?? 0)
+          const charges = Number(ability.properties?.AbilityCharges?.value ?? 0)
+          const icon = itemIcon(ability)
+          const meta = [
+            cooldown > 0 ? `${cooldown}s cooldown` : 'no cooldown',
+            charges > 1 && `${charges} charges`,
+          ]
+            .filter(Boolean)
+            .join(' · ')
+          return (
+            <div key={ability.id} className="ability-card">
+              <div className="ability-head">
+                {icon && <img src={icon} alt="" loading="lazy" />}
+                <div>
+                  <div className="ability-name">
+                    {index + 1} · {ability.name}
+                  </div>
+                  <div className="ability-meta">{meta}</div>
+                </div>
+              </div>
+              <p className="ability-desc">{itemDescription(ability).replace(/[ \t]+/g, ' ')}</p>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+const LEVEL_LABELS: Record<string, string> = {
+  MODIFIER_VALUE_BASE_BULLET_DAMAGE_FROM_LEVEL: 'Bullet damage',
+  MODIFIER_VALUE_BASE_BULLET_DAMAGE_FROM_LEVEL_ALT_FIRE: 'Alt-fire damage',
+  MODIFIER_VALUE_BASE_HEALTH_FROM_LEVEL: 'Health',
+  MODIFIER_VALUE_BASE_MELEE_DAMAGE_FROM_LEVEL: 'Melee damage',
+  MODIFIER_VALUE_TECH_POWER: 'Spirit power',
+  MODIFIER_VALUE_TECH_DAMAGE_MULTIPLIER: 'Spirit damage',
+  MODIFIER_VALUE_BULLET_ARMOR_DAMAGE_RESIST: 'Bullet resist',
+  MODIFIER_VALUE_TECH_RESIST: 'Spirit resist',
+  MODIFIER_VALUE_BONUS_ATTACK_RANGE: 'Attack range',
+  MODIFIER_VALUE_BOON_COUNT: 'Ability points',
+}
+
+/** "EBulletDamage" / "ETechPower" -> "Bullet damage" / "Spirit power" */
+function statLabel(key: string): string {
+  const words = key
+    .replace(/^E/, '')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/Tech/g, 'Spirit')
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase()
+}
+
+function ScalingSection({ hero }: { hero: HeroAsset }) {
+  const scaling = Object.entries(hero.scaling_stats ?? {}).filter(
+    ([, v]) => v?.scaling_stat && v?.scale,
+  )
+  const perLevel = Object.entries(hero.standard_level_up_upgrades ?? {}).filter(
+    ([, value]) => value !== 0,
+  )
+  if (scaling.length === 0 && perLevel.length === 0) return null
+
+  return (
+    <section className="data-section">
+      <h3>Scaling</h3>
+      <ul className="scaling-list">
+        {scaling.map(([stat, v]) => (
+          <li key={stat}>
+            <span className="scaling-unique">Unique</span> {statLabel(stat)} gains{' '}
+            <span className="mono">+{v.scale}</span> per point of {statLabel(v.scaling_stat!)}
+          </li>
+        ))}
+        {perLevel.length > 0 && (
+          <li>
+            Per level:{' '}
+            {perLevel
+              .map(
+                ([key, value]) =>
+                  `${LEVEL_LABELS[key] ?? statLabel(key.replace(/^MODIFIER_VALUE_/, '').toLowerCase())} +${value}`,
+              )
+              .join(' · ')}
+          </li>
+        )}
+      </ul>
+    </section>
   )
 }
