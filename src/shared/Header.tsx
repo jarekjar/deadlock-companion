@@ -24,6 +24,7 @@ export default function Header() {
         </NavLink>
         <NavLink to="/matchups">Matchups</NavLink>
         <NavLink to="/live">Live</NavLink>
+        <NavLink to="/leaderboard">Ranks</NavLink>
         <NavLink to="/my-match">My Match</NavLink>
         {session.data ? (
           <>

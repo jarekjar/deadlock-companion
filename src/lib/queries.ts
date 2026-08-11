@@ -10,6 +10,7 @@ import {
   fetchHeroItemStats,
   fetchHeroStatsWithItem,
   fetchItems,
+  fetchLeaderboard,
   fetchMapAsset,
   fetchMatchHistory,
   fetchMatchMetadata,
@@ -17,10 +18,12 @@ import {
   fetchPlayerItemStats,
   fetchRank,
   fetchRankAssets,
+  fetchRankDistribution,
   fetchSteamProfiles,
   searchPlayers,
   type HeroAsset,
   type ItemAsset,
+  type LeaderboardRegion,
   type SteamProfile,
 } from './api'
 
@@ -184,6 +187,20 @@ export const usePlayerItemStats = (accountId: number) =>
     queryKey: ['playerItemStats', accountId],
     queryFn: () => fetchPlayerItemStats(accountId),
     staleTime: 5 * 60 * 1000,
+  })
+
+export const useLeaderboard = (region: LeaderboardRegion) =>
+  useQuery({
+    queryKey: ['leaderboard', region],
+    queryFn: () => fetchLeaderboard(region),
+    staleTime: 5 * 60 * 1000,
+  })
+
+export const useRankDistribution = () =>
+  useQuery({
+    queryKey: ['rankDistribution'],
+    queryFn: fetchRankDistribution,
+    staleTime: 60 * 60 * 1000,
   })
 
 export const useMapAsset = () =>

@@ -91,6 +91,10 @@ function Profile({ accountId }: { accountId: number }) {
                 <a href={profile.data.profileurl} target="_blank" rel="noreferrer">
                   steam profile
                 </a>
+                {' · '}
+                <Link to={`/leaderboard?q=${encodeURIComponent(profile.data.personaname)}`}>
+                  find on leaderboard
+                </Link>
               </>
             )}
           </div>

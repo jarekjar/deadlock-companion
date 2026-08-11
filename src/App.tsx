@@ -15,6 +15,7 @@ import MyMatchPage from './features/live/MyMatchPage'
 import HomePage from './features/home/HomePage'
 import ItemsPage from './features/items/ItemsPage'
 import ItemPage from './features/items/ItemPage'
+import LeaderboardPage from './features/leaderboard/LeaderboardPage'
 import timersData from './data/timers.json'
 import { useHeroes } from './lib/queries'
 
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/matchups/:heroId" element={<MatchupsPage />} />
           <Route path="/items" element={<ItemsPage />} />
           <Route path="/items/:itemId" element={<ItemPage />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/live" element={<LiveMatchesPage />} />
           <Route path="/live/:matchId" element={<LiveMatchPage />} />
           <Route path="/my-match" element={<MyMatchPage />} />

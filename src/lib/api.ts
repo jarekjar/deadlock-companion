@@ -306,6 +306,29 @@ export const fetchActiveMatches = () => get<ActiveMatch[]>(`/v1/matches/active`)
 export const fetchActiveMatchForPlayer = (accountId: number) =>
   get<ActiveMatch[]>(`/v1/matches/active?account_id=${accountId}`).then((r) => r[0] ?? null)
 
+export const LEADERBOARD_REGIONS = ['NAmerica', 'Europe', 'Asia', 'SAmerica', 'Oceania'] as const
+export type LeaderboardRegion = (typeof LEADERBOARD_REGIONS)[number]
+
+export interface LeaderboardEntry {
+  account_name: string
+  /** The leaderboard is name-based; the ids are best-effort matches. */
+  possible_account_ids: number[]
+  rank: number
+  top_hero_ids: number[]
+}
+
+export const fetchLeaderboard = (region: LeaderboardRegion) =>
+  get<{ entries: LeaderboardEntry[] }>(`/v1/leaderboard/${region}`).then((r) => r.entries)
+
+export interface RankDistributionBucket {
+  /** Badge number: tier * 10 + subrank. */
+  rank: number
+  players: number
+}
+
+export const fetchRankDistribution = () =>
+  get<RankDistributionBucket[]>(`/v1/players/mmr/distribution`)
+
 export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
 export const isWin = (m: MatchHistoryEntry) => m.match_result === m.player_team
