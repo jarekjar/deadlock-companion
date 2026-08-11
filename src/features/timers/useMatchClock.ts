@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react'
 import { gameTime, pause, resume, resync, start, type ClockState } from './clock'
 import { type ObjectiveState } from './timerEngine'
 
+/**
+ * Seed the persisted match clock from an external source (live match sync).
+ * The Timers page picks it up on mount.
+ */
+export function syncClockFromLive(gameTimeSec: number): void {
+  persist(CLOCK_KEY, resync(start(Date.now()), Date.now(), gameTimeSec))
+  persist(EVENTS_KEY, {})
+}
+
 const CLOCK_KEY = 'dc.matchClock.v1'
 const EVENTS_KEY = 'dc.objectiveEvents.v1'
 

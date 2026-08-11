@@ -1,5 +1,7 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import {
+  fetchActiveMatches,
+  fetchActiveMatchForPlayer,
   fetchAnalyticsHeroStats,
   fetchCounterItemStats,
   fetchHeroCounterStats,
@@ -144,6 +146,23 @@ export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
     queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D),
     enabled: heroId > 0 && enemyHeroId !== null,
     staleTime: 30 * 60 * 1000,
+  })
+
+export const useActiveMatches = () =>
+  useQuery({
+    queryKey: ['activeMatches'],
+    queryFn: fetchActiveMatches,
+    refetchInterval: 30 * 1000,
+    staleTime: 25 * 1000,
+  })
+
+export const useLiveMatchForPlayer = (accountId: number) =>
+  useQuery({
+    queryKey: ['liveMatch', accountId],
+    queryFn: () => fetchActiveMatchForPlayer(accountId),
+    refetchInterval: 60 * 1000,
+    staleTime: 50 * 1000,
+    retry: false,
   })
 
 export const usePlayerSearch = (query: string) =>

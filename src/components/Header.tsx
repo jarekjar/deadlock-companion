@@ -19,6 +19,7 @@ export default function Header() {
           Heroes
         </NavLink>
         <NavLink to="/matchups">Matchups</NavLink>
+        <NavLink to="/live">Live</NavLink>
         {session.data ? (
           <>
             <NavLink to={`/players/${session.data}`}>My Profile</NavLink>

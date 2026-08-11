@@ -4,6 +4,7 @@ import RankBadge from '../../components/RankBadge'
 import { isWin, rankName, type HeroAsset, type MatchHistoryEntry } from '../../lib/api'
 import {
   useHeroes,
+  useLiveMatchForPlayer,
   useMatchHistory,
   usePlayerHeroStats,
   useRank,
@@ -13,6 +14,8 @@ import {
 import { useFavorites } from '../../lib/favorites'
 import { formatClock } from '../timers/timerEngine'
 import './players.css'
+import '../heroes/heroes.css'
+import '../live/live.css'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
 const dateFmt = new Intl.DateTimeFormat(undefined, {
@@ -37,6 +40,7 @@ function Profile({ accountId }: { accountId: number }) {
   const heroes = useHeroes()
   const history = useMatchHistory(accountId)
   const heroStats = usePlayerHeroStats(accountId)
+  const live = useLiveMatchForPlayer(accountId)
   const { favorites, toggle } = useFavorites()
 
   const persona = profile.data?.personaname ?? `Player #${accountId}`
@@ -84,6 +88,15 @@ function Profile({ accountId }: { accountId: number }) {
             <RankBadge badge={rank.data?.badge} />
             {rankName(rank.data?.badge ?? 0, rankAssets.data)}
           </span>
+          {live.data && (
+            <Link
+              className="live-chip"
+              style={{ marginLeft: 10, verticalAlign: 'bottom' }}
+              to={`/live/${live.data.match_id}`}
+            >
+              Live now
+            </Link>
+          )}
         </div>
         <div className="actions">
           <button
@@ -159,6 +172,27 @@ function MatchTable({
     desc: true,
   })
   const [visible, setVisible] = useState(25)
+  const [heroFilter, setHeroFilter] = useState(0)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+
+  const heroOptions = useMemo(() => {
+    const ids = [...new Set(matches.map((m) => m.hero_id))]
+    return ids
+      .map((id) => ({ id, name: heroes?.get(id)?.name ?? `Hero ${id}` }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [matches, heroes])
+
+  const filtered = useMemo(() => {
+    const from = fromDate ? Date.parse(`${fromDate}T00:00:00`) / 1000 : null
+    const to = toDate ? Date.parse(`${toDate}T23:59:59`) / 1000 : null
+    return matches.filter(
+      (m) =>
+        (heroFilter === 0 || m.hero_id === heroFilter) &&
+        (from === null || m.start_time >= from) &&
+        (to === null || m.start_time <= to),
+    )
+  }, [matches, heroFilter, fromDate, toDate])
 
   const sorted = useMemo(() => {
     const value = (m: MatchHistoryEntry): number | string => {
@@ -171,13 +205,15 @@ function MatchTable({
           return m[sort.key]
       }
     }
-    return [...matches].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const av = value(a)
       const bv = value(b)
       const cmp = typeof av === 'string' ? av.localeCompare(String(bv)) : av - Number(bv)
       return sort.desc ? -cmp : cmp
     })
-  }, [matches, sort, heroes])
+  }, [filtered, sort, heroes])
+
+  const hasFilters = heroFilter !== 0 || fromDate !== '' || toDate !== ''
 
   const header = (key: SortKey, label: string) => (
     <th
@@ -191,6 +227,58 @@ function MatchTable({
   return (
     <section className="data-section">
       <h3>Match History</h3>
+      <div className="control-bar">
+        <span className="cb-group">
+          <span className="cb-label">Hero</span>
+          <select
+            value={heroFilter}
+            onChange={(e) => setHeroFilter(Number(e.target.value))}
+            aria-label="Filter by hero"
+          >
+            <option value={0}>All heroes</option>
+            {heroOptions.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">From</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            aria-label="From date"
+          />
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">To</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            aria-label="To date"
+          />
+        </span>
+        {hasFilters && (
+          <span className="cb-group">
+            <button
+              className="cb-dir"
+              onClick={() => {
+                setHeroFilter(0)
+                setFromDate('')
+                setToDate('')
+              }}
+            >
+              Clear
+            </button>
+          </span>
+        )}
+        <span className="cb-group cb-count">
+          {hasFilters ? `${filtered.length} of ${matches.length}` : `${matches.length}`} matches
+        </span>
+      </div>
       <div className="table-wrap">
         <table className="data-table">
           <thead>

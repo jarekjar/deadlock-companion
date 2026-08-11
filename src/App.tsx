@@ -8,6 +8,8 @@ import MatchPage from './features/matches/MatchPage'
 import HeroesPage from './features/heroes/HeroesPage'
 import HeroPage from './features/heroes/HeroPage'
 import MatchupsPage from './features/heroes/MatchupsPage'
+import LiveMatchesPage from './features/live/LiveMatchesPage'
+import LiveMatchPage from './features/live/LiveMatchPage'
 import timersData from './data/timers.json'
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="/heroes/:heroId" element={<HeroPage />} />
           <Route path="/matchups" element={<MatchupsPage />} />
           <Route path="/matchups/:heroId" element={<MatchupsPage />} />
+          <Route path="/live" element={<LiveMatchesPage />} />
+          <Route path="/live/:matchId" element={<LiveMatchPage />} />
           <Route path="*" element={<Navigate to="/timers" replace />} />
         </Routes>
       </main>

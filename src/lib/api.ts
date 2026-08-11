@@ -195,6 +195,27 @@ export const fetchCounterItemStats = (heroId: number, enemyHeroId: number, since
 export const fetchMatchMetadata = (matchId: number) =>
   get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)
 
+export interface ActiveMatch {
+  match_id: number
+  /** Unix seconds; live game time is roughly now - start_time. */
+  start_time: number
+  net_worth_team_0: number
+  net_worth_team_1: number
+  spectators: number
+  match_mode_parsed: string | null
+  region_mode_parsed: string | null
+  players: { account_id: number; team: number; hero_id: number }[]
+}
+
+/**
+ * Live matches, sourced from the in-game Watch tab — only the top ~200
+ * spectate-able matches are visible, so low-profile games may be absent.
+ */
+export const fetchActiveMatches = () => get<ActiveMatch[]>(`/v1/matches/active`)
+
+export const fetchActiveMatchForPlayer = (accountId: number) =>
+  get<ActiveMatch[]>(`/v1/matches/active?account_id=${accountId}`).then((r) => r[0] ?? null)
+
 export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
 export const isWin = (m: MatchHistoryEntry) => m.match_result === m.player_team

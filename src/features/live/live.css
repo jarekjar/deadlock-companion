@@ -1,0 +1,152 @@
+.live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 4px 9px 3px;
+  text-decoration: none;
+}
+
+.live-chip:hover {
+  color: #c65a44;
+  border-color: #c65a44;
+  text-decoration: none;
+}
+
+.live-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentcolor;
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ---- live match detail ---- */
+
+.live-head {
+  text-align: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 24px;
+}
+
+.live-head .live-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+
+.live-head .clock {
+  font-family: var(--font-mono);
+  font-size: clamp(40px, 8vw, 56px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  margin-top: 6px;
+}
+
+.live-head .meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.live-head .actions {
+  margin-top: 16px;
+}
+
+.live-souls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.souls-panel {
+  border: 1px solid var(--rule);
+  border-top-width: 3px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.souls-panel .team {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.souls-panel .souls {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.souls-lead {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-dim);
+  margin-bottom: 24px;
+}
+
+.live-roster {
+  list-style: none;
+  border: 1px solid var(--rule);
+}
+
+.live-roster li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.live-roster li:last-child {
+  border-bottom: none;
+}
+
+.live-roster img.hero {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule);
+  object-fit: cover;
+}
+
+.live-note {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* ---- live match list ---- */
+
+.hero-cluster {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.hero-cluster img {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--rule);
+  object-fit: cover;
+}

@@ -14,15 +14,7 @@ import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import './match.css'
 
-/*
- * Team 0 was The Amber Hand, team 1 The Sapphire Flame; the "Old Gods, New
- * Blood" update (2026-01) renamed them to their patrons. Colors keep the old
- * amber/sapphire identity (validated against the dark surface, dataviz six-checks).
- */
-const TEAMS = [
-  { name: 'The Hidden King', short: 'Hidden King', color: '#c9822f' },
-  { name: 'The Archmother', short: 'Archmother', color: '#5b8dd6' },
-] as const
+import { TEAMS } from '../../lib/teams'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
 const dateFmt = new Intl.DateTimeFormat(undefined, {
