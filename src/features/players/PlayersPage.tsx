@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { parsePlayerInput } from '../../lib/steamid'
+import { resolveVanity } from '../../lib/api'
 import { usePlayerSearch } from '../../lib/queries'
 import { useFavorites } from '../../lib/favorites'
 import './players.css'
@@ -9,18 +10,31 @@ export default function PlayersPage() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const [query, setQuery] = useState('')
+  const [resolving, setResolving] = useState(false)
   const search = usePlayerSearch(query)
   const { favorites, toggle } = useFavorites()
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const parsed = parsePlayerInput(input)
     if (!parsed) return
     if (parsed.kind === 'account') {
       navigate(`/players/${parsed.accountId}`)
-    } else {
-      setQuery(parsed.query)
+      return
     }
+    if (parsed.kind === 'vanity') {
+      setResolving(true)
+      const accountId = await resolveVanity(parsed.name)
+      setResolving(false)
+      if (accountId !== null) {
+        navigate(`/players/${accountId}`)
+        return
+      }
+      // vanity lookup failed; fall through to a name search
+      setQuery(parsed.name)
+      return
+    }
+    setQuery(parsed.query)
   }
 
   return (
@@ -32,8 +46,8 @@ export default function PlayersPage() {
           placeholder="Steam profile URL, ID, or name"
           aria-label="Find a player"
         />
-        <button className="btn btn-solid" type="submit">
-          Find
+        <button className="btn btn-solid" type="submit" disabled={resolving}>
+          {resolving ? 'Finding' : 'Find'}
         </button>
       </form>
       <p className="search-hint">

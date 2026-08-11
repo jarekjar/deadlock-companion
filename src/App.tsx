@@ -21,7 +21,8 @@ export default function App() {
         </Routes>
       </main>
       <footer className="site-footer">
-        Timings as of patch {timersData.patch} · stats from the community Deadlock API ·{' '}
+        Built by <a href="https://github.com/jarekjar">Jared Kjar</a> · timings as of patch{' '}
+        {timersData.patch} · stats from the community Deadlock API ·{' '}
         <a href="https://github.com/jarekjar/deadlock-companion">source</a>
       </footer>
     </div>

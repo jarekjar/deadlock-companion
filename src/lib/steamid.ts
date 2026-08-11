@@ -18,6 +18,8 @@ export function steamId64FromAccountId(accountId: number): string {
 
 export type PlayerInput =
   | { kind: 'account'; accountId: number }
+  /** A steamcommunity.com/id/<name> URL — resolve via /api/resolve-vanity. */
+  | { kind: 'vanity'; name: string }
   /** Not directly resolvable — feed it to the steam-search endpoint. */
   | { kind: 'search'; query: string }
 
@@ -36,7 +38,7 @@ export function parsePlayerInput(raw: string): PlayerInput | null {
   }
 
   const vanityUrl = /steamcommunity\.com\/id\/([^/?#\s]+)/i.exec(input)
-  if (vanityUrl) return { kind: 'search', query: vanityUrl[1] }
+  if (vanityUrl) return { kind: 'vanity', name: vanityUrl[1] }
 
   const steam3 = /^\[?U:1:(\d+)\]?$/i.exec(input)
   if (steam3) return { kind: 'account', accountId: Number(steam3[1]) }

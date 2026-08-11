@@ -99,6 +99,8 @@ function Profile({ accountId }: { accountId: number }) {
 
       {history.isPending ? (
         <div className="page-note">Loading match data</div>
+      ) : history.data.length === 0 ? (
+        <div className="page-note">No Deadlock matches on record for this account</div>
       ) : (
         <>
           {summary && (

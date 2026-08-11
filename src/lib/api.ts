@@ -100,6 +100,22 @@ export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
 export const isWin = (m: MatchHistoryEntry) => m.match_result === m.player_team
 
+/**
+ * Resolves a Steam vanity name through our own Pages Function. Returns null
+ * when the profile doesn't exist or the function isn't available (plain
+ * `vite dev`), so callers can fall back to a name search.
+ */
+export async function resolveVanity(name: string): Promise<number | null> {
+  try {
+    const res = await fetch(`/api/resolve-vanity?name=${encodeURIComponent(name)}`)
+    if (!res.ok) return null
+    const body = (await res.json()) as { accountId: number }
+    return body.accountId
+  } catch {
+    return null
+  }
+}
+
 export function rankName(badge: number, ranks: RankAsset[] | undefined): string {
   if (!badge || !ranks) return 'Unranked'
   const tier = Math.floor(badge / 10)

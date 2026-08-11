@@ -25,10 +25,14 @@ describe('parsePlayerInput', () => {
     ).toEqual({ kind: 'account', accountId: 829915167 })
   })
 
-  it('parses vanity URLs as searches', () => {
+  it('parses vanity URLs for server-side resolution', () => {
     expect(parsePlayerInput('https://steamcommunity.com/id/somecoolguy')).toEqual({
-      kind: 'search',
-      query: 'somecoolguy',
+      kind: 'vanity',
+      name: 'somecoolguy',
+    })
+    expect(parsePlayerInput('steamcommunity.com/id/some_guy-77/')).toEqual({
+      kind: 'vanity',
+      name: 'some_guy-77',
     })
   })
 
