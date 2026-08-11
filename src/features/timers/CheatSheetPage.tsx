@@ -20,6 +20,14 @@ function respawnText(def: ObjectiveDef): string {
 export default function CheatSheetPage() {
   return (
     <div className="narrow">
+      <CheatSheetContent />
+    </div>
+  )
+}
+
+export function CheatSheetContent() {
+  return (
+    <>
       <table className="cheat-table">
         <thead>
           <tr>
@@ -70,6 +78,6 @@ export default function CheatSheetPage() {
           </span>
         ))}
       </p>
-    </div>
+    </>
   )
 }

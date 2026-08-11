@@ -13,7 +13,6 @@ export default function Header() {
       <p className="tagline">A Deadlock Companion</p>
       <nav className="site-nav">
         <NavLink to="/timers">Timers</NavLink>
-        <NavLink to="/cheat-sheet">Cheat Sheet</NavLink>
         <NavLink to="/players" end>
           Players
         </NavLink>
