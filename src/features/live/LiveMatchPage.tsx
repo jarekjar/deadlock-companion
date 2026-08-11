@@ -4,11 +4,13 @@ import { averageBadge, objectivesStanding, rankName, type ActiveMatch } from '..
 import { TEAMS } from '../../lib/teams'
 import {
   useActiveMatches,
+  useHeroAnalytics,
   useHeroes,
   useRankAssets,
   useRanks,
   useSteamProfilesBatch,
 } from '../../lib/queries'
+import { winRateClass } from '../../lib/winrate'
 import RankBadge from '../../components/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
@@ -43,6 +45,7 @@ export default function LiveMatchPage() {
 function LiveDetail({ match }: { match: ActiveMatch }) {
   const navigate = useNavigate()
   const heroes = useHeroes()
+  const analytics = useHeroAnalytics()
   const accountIds = useMemo(() => match.players.map((p) => p.account_id), [match])
   const profiles = useSteamProfilesBatch(accountIds)
   const badges = useRanks(accountIds)
@@ -118,35 +121,59 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
           : 'Souls are even'}
       </div>
 
-      {([0, 1] as const).map((team) => (
-        <section key={team} className="team-section">
-          <div className="team-title" style={{ borderLeftColor: TEAMS[team].color }}>
-            <h3>{TEAMS[team].name}</h3>
-          </div>
-          <ul className="live-roster">
-            {match.players
-              .filter((p) => p.team === team)
-              .map((p) => {
-                const hero = heroes.data?.get(p.hero_id)
-                const persona = profiles.data?.get(p.account_id)?.personaname
-                return (
-                  <li key={p.account_id}>
-                    {hero && (
-                      <img className="hero" src={hero.images.icon_image_small_webp} alt="" />
-                    )}
-                    <span>{hero?.name ?? `Hero ${p.hero_id}`}</span>
-                    <span className="persona-cell">
-                      <Link className="player-link" to={`/players/${p.account_id}`}>
-                        {persona ?? `#${p.account_id}`}
-                      </Link>
-                      <RankBadge badge={badges.get(p.account_id)} />
-                    </span>
-                  </li>
-                )
-              })}
-          </ul>
-        </section>
-      ))}
+      <div className="team-grid">
+        {([0, 1] as const).map((team) => (
+          <section key={team} className="team-section">
+            <div className="team-title" style={{ borderLeftColor: TEAMS[team].color }}>
+              <h3>{TEAMS[team].name}</h3>
+            </div>
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Hero</th>
+                    <th>WR 30d</th>
+                    <th>Player</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {match.players
+                    .filter((p) => p.team === team)
+                    .map((p) => {
+                      const hero = heroes.data?.get(p.hero_id)
+                      const stat = analytics.data?.find((s) => s.hero_id === p.hero_id)
+                      const wr = stat && stat.matches > 0 ? (stat.wins / stat.matches) * 100 : null
+                      const persona = profiles.data?.get(p.account_id)?.personaname
+                      return (
+                        <tr key={p.account_id}>
+                          <td>
+                            <span className="hero-cell">
+                              {hero && (
+                                <img src={hero.images.icon_image_small_webp} alt="" />
+                              )}
+                              {hero?.name ?? `Hero ${p.hero_id}`}
+                            </span>
+                          </td>
+                          <td className={`mono ${wr !== null ? winRateClass(wr) : ''}`}>
+                            {wr !== null ? `${wr.toFixed(1)}%` : '—'}
+                          </td>
+                          <td>
+                            <span className="persona-cell">
+                              <Link className="player-link" to={`/players/${p.account_id}`}>
+                                {persona ?? `#${p.account_id}`}
+                              </Link>
+                              <RankBadge badge={badges.get(p.account_id)} />
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))}
+      </div>
 
       <p className="live-note">
         Live data comes from the spectator system: it refreshes every 30 seconds and can lag a

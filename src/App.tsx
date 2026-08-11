@@ -10,6 +10,7 @@ import HeroPage from './features/heroes/HeroPage'
 import MatchupsPage from './features/heroes/MatchupsPage'
 import LiveMatchesPage from './features/live/LiveMatchesPage'
 import LiveMatchPage from './features/live/LiveMatchPage'
+import MyMatchPage from './features/live/MyMatchPage'
 import HomePage from './features/home/HomePage'
 import ItemsPage from './features/items/ItemsPage'
 import ItemPage from './features/items/ItemPage'
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/items/:itemId" element={<ItemPage />} />
           <Route path="/live" element={<LiveMatchesPage />} />
           <Route path="/live/:matchId" element={<LiveMatchPage />} />
+          <Route path="/my-match" element={<MyMatchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

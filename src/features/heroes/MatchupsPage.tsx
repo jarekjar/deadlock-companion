@@ -177,7 +177,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
   )
 }
 
-function CounterItems({
+export function CounterItems({
   heroId,
   enemy,
   heroName,
