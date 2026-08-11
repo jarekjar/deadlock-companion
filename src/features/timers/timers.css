@@ -306,6 +306,116 @@
   color: var(--ink-faint);
 }
 
+/* ---- mini timers (My Match) ---- */
+
+.mini-timers {
+  border: 1px solid var(--rule);
+  background: var(--bg-veil);
+  margin-bottom: 26px;
+}
+
+.mini-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+
+.mini-title {
+  font-size: 11px;
+  color: var(--brass);
+  letter-spacing: 0.26em;
+}
+
+.mini-clock {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mini-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-right: 1px solid var(--rule-faint);
+  border-top: 1px solid var(--rule-faint);
+  margin-top: -1px;
+}
+
+.mini-row:last-child {
+  border-right: none;
+}
+
+.mini-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.mini-status {
+  margin-left: auto;
+}
+
+.mini-status .mono {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-status .mono.soon {
+  color: var(--brass-bright);
+}
+
+.mini-status .state-up {
+  font-size: 11px;
+  color: var(--brass);
+  animation: glow-pulse 1.8s ease-in-out infinite;
+}
+
+.mini-act {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mini-act .btn-quiet:disabled {
+  color: var(--rule);
+  text-decoration: none;
+  cursor: default;
+}
+
+.mini-sync {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.mini-sync input {
+  width: 68px;
+  text-align: center;
+  font-family: var(--font-mono);
+  padding: 5px 6px;
+  font-size: 13px;
+}
+
 /* ---- cheat sheet modal ---- */
 
 .modal-overlay {

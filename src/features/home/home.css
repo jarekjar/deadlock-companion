@@ -97,6 +97,45 @@
   }
 }
 
+/* ---- my match promo ---- */
+
+.home-promo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  border: 1px solid var(--brass-dim);
+  background: var(--bg-veil);
+  padding: 20px 24px;
+  margin-bottom: 40px;
+}
+
+.home-promo .promo-text h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 7px;
+}
+
+.home-promo .promo-text h3::before {
+  content: '\25C6';
+  font-size: 8px;
+  color: var(--brass-dim);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.home-promo .promo-text p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  max-width: 760px;
+}
+
 /* ---- live now ---- */
 
 .home-live {

@@ -109,6 +109,20 @@ export default function HomePage() {
         </div>
       )}
 
+      <div className="home-promo">
+        <div className="promo-text">
+          <h3>Prep your next match</h3>
+          <p>
+            Pick your hero and the enemy team on the My Match board and get matchup win rates,
+            counter items, spawn timers, and lane tracking — ready before the horn. Sign in
+            through Steam and it can even fill itself from your live game.
+          </p>
+        </div>
+        <Link className="btn btn-solid" to="/my-match">
+          Try My Match
+        </Link>
+      </div>
+
       <LiveNow />
 
       <div className="home-features">

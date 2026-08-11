@@ -6,6 +6,7 @@ import {
   useHeroCounters,
   useHeroes,
   useLiveMatchForPlayer,
+  useMapAsset,
   useRanks,
   useSteamProfilesBatch,
 } from '../../lib/queries'
@@ -15,6 +16,7 @@ import RankBadge from '../../shared/RankBadge'
 import { CounterItems, MatchupSummary } from '../heroes/MatchupsPage'
 import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
+import MiniTimers from '../timers/MiniTimers'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './live.css'
@@ -55,6 +57,7 @@ export default function MyMatchPage() {
   const [liveCtx, setLiveCtx] = useState<{ match: ActiveMatch; myAccountId: number } | null>(null)
   const [picker, setPicker] = useState<'mine' | 'enemy' | null>(null)
   const [openCounters, setOpenCounters] = useState<number | null>(null)
+  const [focusHeroId, setFocusHeroId] = useState<number | null>(null)
   const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
 
   useEffect(() => {
@@ -120,6 +123,13 @@ export default function MyMatchPage() {
     setOpenCounters(null)
   }
 
+  function setLane(index: number, lane: string) {
+    setPrep((p) => ({
+      ...p,
+      enemies: p.enemies.map((en, i) => (i === index ? { ...en, lane } : en)),
+    }))
+  }
+
   function pickHero(heroId: number) {
     if (picker === 'mine') {
       setPrep((p) => ({ ...p, myHeroId: heroId }))
@@ -136,6 +146,15 @@ export default function MyMatchPage() {
   const gameTime = liveCtx ? Math.max(0, nowSec - liveCtx.match.start_time) : 0
   const showLiveBanner =
     session.data && live.data && liveCtx?.match.match_id !== live.data.match_id
+
+  const draftAverage = useMemo(() => {
+    if (!prep.myHeroId || prep.enemies.length < 3) return null
+    const rates = prep.enemies
+      .map((e) => matchupWinRates.get(e.heroId))
+      .filter((v): v is number => v !== undefined)
+    if (rates.length < 3) return null
+    return rates.reduce((sum, v) => sum + v, 0) / rates.length
+  }, [prep.myHeroId, prep.enemies, matchupWinRates])
 
   return (
     <>
@@ -189,6 +208,8 @@ export default function MyMatchPage() {
         </div>
       )}
 
+      <MiniTimers liveStartTime={liveCtx?.match.start_time} />
+
       <section className="team-section">
         <div className="team-title" style={{ borderLeftColor: 'var(--brass)' }}>
           <h3>Your hero</h3>
@@ -225,8 +246,15 @@ export default function MyMatchPage() {
           <span className="team-note">
             {prep.enemies.length}/{MAX_ENEMIES} · counter items are for{' '}
             {myHero?.name ?? 'your hero'}
+            {draftAverage !== null && (
+              <>
+                {' · your matchups average '}
+                <span className={winRateClass(draftAverage)}>{draftAverage.toFixed(1)}%</span>
+              </>
+            )}
           </span>
         </div>
+        <div className="prep-grid">
         <div className="enemy-list">
           {prep.enemies.map((enemy, index) => {
             const hero = heroes.data?.get(enemy.heroId)
@@ -240,7 +268,11 @@ export default function MyMatchPage() {
             const isOpen = openCounters === enemy.heroId
             return (
               <div key={enemy.heroId} className="enemy-block">
-                <div className="enemy-row">
+                <div
+                  className="enemy-row"
+                  onMouseEnter={() => setFocusHeroId(enemy.heroId)}
+                  onMouseLeave={() => setFocusHeroId(null)}
+                >
                   <img
                     className="enemy-hero"
                     src={hero.images.icon_hero_card_webp}
@@ -284,25 +316,18 @@ export default function MyMatchPage() {
                   </span>
                   <span className="enemy-stat">
                     <span className="stat-label">Lane</span>
-                    <select
-                      value={enemy.lane}
-                      onChange={(e) =>
-                        setPrep((p) => ({
-                          ...p,
-                          enemies: p.enemies.map((en, i) =>
-                            i === index ? { ...en, lane: e.target.value } : en,
-                          ),
-                        }))
-                      }
-                      aria-label="Assign lane"
-                    >
-                      <option value="">—</option>
+                    <span className="lane-seg" role="group" aria-label="Assign lane">
                       {LANES.map((lane) => (
-                        <option key={lane} value={lane}>
-                          {lane}
-                        </option>
+                        <button
+                          key={lane}
+                          className={`seg${enemy.lane === lane ? ' on' : ''}`}
+                          title={lane}
+                          onClick={() => setLane(index, enemy.lane === lane ? '' : lane)}
+                        >
+                          {lane === 'Flex' ? 'FX' : lane[0]}
+                        </button>
                       ))}
-                    </select>
+                    </span>
                   </span>
                   <button
                     className="btn btn-small"
@@ -342,6 +367,15 @@ export default function MyMatchPage() {
             </div>
           )}
         </div>
+        <aside className="prep-map">
+          <LaneMap
+            enemies={prep.enemies}
+            heroes={heroes.data}
+            focusHeroId={focusHeroId}
+            onFocus={setFocusHeroId}
+          />
+        </aside>
+        </div>
       </section>
 
       {(prep.myHeroId !== null || prep.enemies.length > 0) && (
@@ -370,6 +404,75 @@ export default function MyMatchPage() {
         />
       )}
     </>
+  )
+}
+
+const LANE_POSITIONS: Record<string, { left: number; top: number }> = {
+  Left: { left: 0.26, top: 0.28 },
+  Mid: { left: 0.5, top: 0.28 },
+  Right: { left: 0.73, top: 0.28 },
+  Flex: { left: 0.5, top: 0.44 },
+}
+
+function LaneMap({
+  enemies,
+  heroes,
+  focusHeroId,
+  onFocus,
+}: {
+  enemies: PrepEnemy[]
+  heroes: Map<number, HeroAsset> | undefined
+  focusHeroId: number | null
+  onFocus: (heroId: number | null) => void
+}) {
+  const map = useMapAsset()
+  if (!map.data) return null
+
+  const byLane = new Map<string, PrepEnemy[]>()
+  for (const enemy of enemies) {
+    if (!enemy.lane) continue
+    byLane.set(enemy.lane, [...(byLane.get(enemy.lane) ?? []), enemy])
+  }
+  const placed = [...byLane.entries()].flatMap(([lane, group]) => {
+    const base = LANE_POSITIONS[lane]
+    if (!base) return []
+    return group.map((enemy, i) => ({
+      enemy,
+      left: base.left + (i - (group.length - 1) / 2) * 0.085,
+      top: base.top,
+    }))
+  })
+
+  return (
+    <div className="lane-map-wrap">
+      <div className="lane-map">
+        <img
+          className="lane-base"
+          src={map.data.images.minimap}
+          alt="Deadlock minimap"
+          loading="lazy"
+        />
+        {placed.map(({ enemy, left, top }) => {
+          const hero = heroes?.get(enemy.heroId)
+          if (!hero) return null
+          return (
+            <img
+              key={enemy.heroId}
+              className={`lane-hero${focusHeroId === enemy.heroId ? ' focus' : ''}`}
+              src={hero.images.icon_image_small_webp}
+              alt={hero.name}
+              title={`${hero.name} — ${enemy.lane}`}
+              style={{ left: `${left * 100}%`, top: `${top * 100}%` }}
+              onMouseEnter={() => onFocus(enemy.heroId)}
+              onMouseLeave={() => onFocus(null)}
+            />
+          )
+        })}
+      </div>
+      <p className="map-caption">
+        Assign lanes to place enemies on the map (enemy side up, positions approximate).
+      </p>
+    </div>
   )
 }
 
