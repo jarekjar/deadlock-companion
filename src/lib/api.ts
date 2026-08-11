@@ -77,9 +77,14 @@ export interface ItemAsset {
   id: number
   name: string
   type: string
-  tier?: number
+  item_tier?: number
+  item_slot_type?: string
+  cost?: number
+  activation?: string
+  is_active_item?: boolean
   image?: string
   shopable?: boolean
+  description?: { desc?: string }
 }
 
 export interface MatchPlayerStatsSample {
@@ -141,6 +146,41 @@ export const searchPlayers = (query: string) =>
 export const fetchHeroes = () => get<HeroAsset[]>(`/v1/assets/heroes?only_active=true`)
 
 export const fetchItems = () => get<ItemAsset[]>(`/v1/assets/items`)
+
+export interface HeroCounterStat {
+  hero_id: number
+  enemy_hero_id: number
+  wins: number
+  matches_played: number
+}
+
+export interface AnalyticsHeroStat {
+  hero_id: number
+  matches: number
+  wins: number
+}
+
+export interface ItemStat {
+  item_id: number
+  wins: number
+  matches: number
+  players: number
+  avg_buy_time_s: number
+}
+
+export const fetchHeroCounterStats = (sinceUnix: number) =>
+  get<HeroCounterStat[]>(`/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}`)
+
+export const fetchAnalyticsHeroStats = (sinceUnix: number) =>
+  get<AnalyticsHeroStat[]>(`/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`)
+
+export const fetchHeroItemStats = (heroId: number, sinceUnix: number) =>
+  get<ItemStat[]>(`/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}`)
+
+export const fetchCounterItemStats = (heroId: number, enemyHeroId: number, sinceUnix: number) =>
+  get<ItemStat[]>(
+    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}`,
+  )
 
 export const fetchMatchMetadata = (matchId: number) =>
   get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import RankBadge from '../../components/RankBadge'
 import { isWin, rankName, type HeroAsset, type MatchHistoryEntry } from '../../lib/api'
 import {
   useHeroes,
@@ -79,7 +80,10 @@ function Profile({ accountId }: { accountId: number }) {
               </>
             )}
           </div>
-          <span className="rank">{rankName(rank.data?.badge ?? 0, rankAssets.data)}</span>
+          <span className="rank">
+            <RankBadge badge={rank.data?.badge} />
+            {rankName(rank.data?.badge ?? 0, rankAssets.data)}
+          </span>
         </div>
         <div className="actions">
           <button
@@ -149,6 +153,7 @@ function MatchTable({
   matches: MatchHistoryEntry[]
   heroes: Map<number, HeroAsset> | undefined
 }) {
+  const navigate = useNavigate()
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
     key: 'start_time',
     desc: true,
@@ -205,7 +210,11 @@ function MatchTable({
             {sorted.slice(0, visible).map((m) => {
               const hero = heroes?.get(m.hero_id)
               return (
-                <tr key={m.match_id}>
+                <tr
+                  key={m.match_id}
+                  className="row-link"
+                  onClick={() => navigate(`/matches/${m.match_id}`)}
+                >
                   <td>
                     <span className="hero-cell">
                       {hero && <img src={hero.images.icon_image_small_webp} alt="" />}
@@ -220,7 +229,9 @@ function MatchTable({
                   <td className="mono">{formatClock(m.match_duration_s)}</td>
                   <td className="dim">{dateFmt.format(m.start_time * 1000)}</td>
                   <td className="mono">
-                    <Link to={`/matches/${m.match_id}`}>view</Link>
+                    <Link to={`/matches/${m.match_id}`} onClick={(e) => e.stopPropagation()}>
+                      view
+                    </Link>
                   </td>
                 </tr>
               )

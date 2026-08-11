@@ -1,6 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import {
+  fetchAnalyticsHeroStats,
+  fetchCounterItemStats,
+  fetchHeroCounterStats,
   fetchHeroes,
+  fetchHeroItemStats,
   fetchItems,
   fetchMatchHistory,
   fetchMatchMetadata,
@@ -13,6 +17,9 @@ import {
   type ItemAsset,
   type SteamProfile,
 } from './api'
+
+/** 30-day analytics window, midnight-aligned so query keys stay stable. */
+const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
 
 const FOREVER = Number.POSITIVE_INFINITY
 
@@ -88,6 +95,55 @@ export const useSteamProfilesBatch = (accountIds: number[]) =>
     staleTime: 5 * 60 * 1000,
     select: (profiles): Map<number, SteamProfile> =>
       new Map(profiles.map((p) => [p.account_id, p])),
+  })
+
+/** Per-player ranks, fanned out through the query cache (batch MMR is deprecated). */
+export function useRanks(accountIds: number[]) {
+  return useQueries({
+    queries: accountIds.map((id) => ({
+      queryKey: ['rank', id],
+      queryFn: () => fetchRank(id),
+      staleTime: 5 * 60 * 1000,
+      retry: false,
+    })),
+    combine: (results) => {
+      const badges = new Map<number, number>()
+      results.forEach((r, i) => {
+        if (r.data?.badge) badges.set(accountIds[i], r.data.badge)
+      })
+      return badges
+    },
+  })
+}
+
+export const useHeroAnalytics = () =>
+  useQuery({
+    queryKey: ['heroAnalytics', SINCE_30D],
+    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D),
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useHeroCounters = () =>
+  useQuery({
+    queryKey: ['heroCounters', SINCE_30D],
+    queryFn: () => fetchHeroCounterStats(SINCE_30D),
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useHeroItemStats = (heroId: number) =>
+  useQuery({
+    queryKey: ['heroItemStats', heroId, SINCE_30D],
+    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D),
+    enabled: heroId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
+  useQuery({
+    queryKey: ['counterItems', heroId, enemyHeroId, SINCE_30D],
+    queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D),
+    enabled: heroId > 0 && enemyHeroId !== null,
+    staleTime: 30 * 60 * 1000,
   })
 
 export const usePlayerSearch = (query: string) =>

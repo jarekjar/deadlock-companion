@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { parsePlayerInput } from '../../lib/steamid'
 import { resolveVanity } from '../../lib/api'
-import { usePlayerSearch } from '../../lib/queries'
+import { usePlayerSearch, useRanks } from '../../lib/queries'
 import { useFavorites } from '../../lib/favorites'
+import RankBadge from '../../components/RankBadge'
 import './players.css'
 
 export default function PlayersPage() {
@@ -13,6 +14,10 @@ export default function PlayersPage() {
   const [resolving, setResolving] = useState(false)
   const search = usePlayerSearch(query)
   const { favorites, toggle } = useFavorites()
+  const badges = useRanks([
+    ...(search.data?.map((p) => p.account_id) ?? []),
+    ...favorites.map((f) => f.accountId),
+  ])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +69,7 @@ export default function PlayersPage() {
             <Link key={p.account_id} className="player-row" to={`/players/${p.account_id}`}>
               <img src={p.avatarmedium} alt="" />
               <span className="persona">{p.personaname}</span>
+              <RankBadge badge={badges.get(p.account_id)} />
               <span className="meta">
                 {p.matches_played_last_30d > 0
                   ? `${p.matches_played_last_30d} matches in 30d`
@@ -81,6 +87,7 @@ export default function PlayersPage() {
             <Link key={f.accountId} className="player-row" to={`/players/${f.accountId}`}>
               <img src={f.avatar} alt="" />
               <span className="persona">{f.personaname}</span>
+              <RankBadge badge={badges.get(f.accountId)} />
               <span className="meta">#{f.accountId}</span>
               <button
                 className="btn-quiet remove"

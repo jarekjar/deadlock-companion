@@ -238,6 +238,10 @@
   background: var(--bg-raised);
 }
 
+.data-table tbody tr.row-link {
+  cursor: pointer;
+}
+
 .data-table td.mono {
   font-family: var(--font-mono);
 }

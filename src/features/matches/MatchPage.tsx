@@ -1,21 +1,27 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { rankName, type MatchInfo, type MatchPlayer } from '../../lib/api'
+import { rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
 import {
   useHeroes,
   useItems,
   useMatchMetadata,
   useRankAssets,
+  useRanks,
   useSteamProfilesBatch,
 } from '../../lib/queries'
+import RankBadge from '../../components/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import './match.css'
 
-/* Validated against the dark surface (dataviz six-checks): amber/sapphire. */
+/*
+ * Team 0 was The Amber Hand, team 1 The Sapphire Flame; the "Old Gods, New
+ * Blood" update (2026-01) renamed them to their patrons. Colors keep the old
+ * amber/sapphire identity (validated against the dark surface, dataviz six-checks).
+ */
 const TEAMS = [
-  { name: 'The Amber Hand', short: 'Amber', color: '#c9822f' },
-  { name: 'The Sapphire Flame', short: 'Sapphire', color: '#5b8dd6' },
+  { name: 'The Hidden King', short: 'Hidden King', color: '#c9822f' },
+  { name: 'The Archmother', short: 'Archmother', color: '#5b8dd6' },
 ] as const
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
@@ -48,13 +54,15 @@ function MatchDetail({ info }: { info: MatchInfo }) {
   const ranks = useRankAssets()
   const accountIds = useMemo(() => info.players.map((p) => p.account_id), [info])
   const profiles = useSteamProfilesBatch(accountIds)
+  const badges = useRanks(accountIds)
+  const [openBuild, setOpenBuild] = useState<number | null>(null)
 
   const persona = (accountId: number) =>
     profiles.data?.get(accountId)?.personaname ?? `#${accountId}`
   const heroFor = (heroId: number) => heroes.data?.get(heroId)
 
   const winner = TEAMS[info.winning_team === 1 ? 1 : 0]
-  const badges = [info.average_badge_team0, info.average_badge_team1].map((b) =>
+  const teamBadges = [info.average_badge_team0, info.average_badge_team1].map((b) =>
     rankName(b ?? 0, ranks.data),
   )
 
@@ -70,7 +78,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
         </div>
         <div className="meta">
           {dateFmt.format(info.start_time * 1000)} · {formatClock(info.duration_s)} · avg ranks{' '}
-          {badges[0]} vs {badges[1]}
+          {teamBadges[0]} vs {teamBadges[1]}
         </div>
       </div>
 
@@ -81,7 +89,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
           <div className="team-title" style={{ borderLeftColor: TEAMS[team].color }}>
             <h3>{TEAMS[team].name}</h3>
             <span className="team-note">
-              {team === info.winning_team ? 'victory' : 'defeat'} · avg {badges[team]}
+              {team === info.winning_team ? 'victory' : 'defeat'} · avg {teamBadges[team]}
             </span>
           </div>
           <div className="table-wrap">
@@ -99,13 +107,15 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                   <th>LH</th>
                   <th>DN</th>
                   <th>Level</th>
+                  <th>Build</th>
                 </tr>
               </thead>
               <tbody>
-                {teamPlayers(team).map((p) => {
+                {teamPlayers(team).flatMap((p) => {
                   const hero = heroFor(p.hero_id)
                   const finalStats = p.stats[p.stats.length - 1]
-                  return (
+                  const isOpen = openBuild === p.account_id
+                  const rows = [
                     <tr key={p.account_id}>
                       <td>
                         <span className="hero-cell">
@@ -114,9 +124,12 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                         </span>
                       </td>
                       <td>
-                        <Link className="player-link" to={`/players/${p.account_id}`}>
-                          {persona(p.account_id)}
-                        </Link>
+                        <span className="persona-cell">
+                          <Link className="player-link" to={`/players/${p.account_id}`}>
+                            {persona(p.account_id)}
+                          </Link>
+                          <RankBadge badge={badges.get(p.account_id)} />
+                        </span>
                       </td>
                       <td className="mono">{p.kills}</td>
                       <td className="mono">{p.deaths}</td>
@@ -131,31 +144,32 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                       <td className="mono">{p.last_hits}</td>
                       <td className="mono">{p.denies}</td>
                       <td className="mono">{p.level}</td>
-                    </tr>
-                  )
+                      <td>
+                        <button
+                          className="btn-quiet"
+                          onClick={() => setOpenBuild(isOpen ? null : p.account_id)}
+                        >
+                          {isOpen ? 'hide' : 'view'}
+                        </button>
+                      </td>
+                    </tr>,
+                  ]
+                  if (isOpen) {
+                    rows.push(
+                      <tr key={`${p.account_id}-build`} className="build-tr">
+                        <td colSpan={12}>
+                          <BuildStrip player={p} items={items.data} />
+                        </td>
+                      </tr>,
+                    )
+                  }
+                  return rows
                 })}
               </tbody>
             </table>
           </div>
         </section>
       ))}
-
-      <section className="data-section">
-        <h3>Item Builds</h3>
-        <div className="table-wrap">
-          {[0, 1].flatMap((team) =>
-            teamPlayers(team).map((p) => (
-              <BuildRow
-                key={p.account_id}
-                player={p}
-                persona={persona(p.account_id)}
-                heroIcon={heroFor(p.hero_id)?.images.icon_image_small_webp}
-                items={items.data}
-              />
-            )),
-          )}
-        </div>
-      </section>
 
       {info.mid_boss && info.mid_boss.length > 0 && (
         <section className="data-section">
@@ -178,16 +192,14 @@ function MatchDetail({ info }: { info: MatchInfo }) {
   )
 }
 
-function BuildRow({
+/* ---- item build strip with hover cards ---- */
+
+function BuildStrip({
   player,
-  persona,
-  heroIcon,
   items,
 }: {
   player: MatchPlayer
-  persona: string
-  heroIcon: string | undefined
-  items: Map<number, import('../../lib/api').ItemAsset> | undefined
+  items: Map<number, ItemAsset> | undefined
 }) {
   const purchases = useMemo(
     () =>
@@ -200,25 +212,69 @@ function BuildRow({
         }),
     [player.items, items],
   )
+  if (purchases.length === 0) return <span className="dim">No shop purchases recorded</span>
   return (
-    <div className="build-row">
-      <span className="who">
-        {heroIcon && <img src={heroIcon} alt="" />}
-        <span>{persona}</span>
-      </span>
-      <span className="build-items">
-        {purchases.map((p, i) => (
-          <img
-            key={`${p.item.id}-${i}`}
-            src={p.item.image}
-            alt={p.item.name}
-            className={p.sold_time_s > 0 ? 'sold' : ''}
-            title={`${p.item.name} · ${formatClock(p.game_time_s)}${p.sold_time_s > 0 ? ' (sold)' : ''}`}
-            loading="lazy"
-          />
-        ))}
-      </span>
-    </div>
+    <span className="build-items">
+      {purchases.map((p, i) => (
+        <ItemChip
+          key={`${p.item.id}-${i}`}
+          item={p.item}
+          boughtAt={p.game_time_s}
+          soldAt={p.sold_time_s}
+        />
+      ))}
+    </span>
+  )
+}
+
+const TIER_ROMAN = ['I', 'II', 'III', 'IV']
+
+function ItemChip({
+  item,
+  boughtAt,
+  soldAt,
+}: {
+  item: ItemAsset
+  boughtAt: number
+  soldAt: number
+}) {
+  const [tip, setTip] = useState<{ x: number; y: number } | null>(null)
+
+  function show(e: React.MouseEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = Math.max(140, Math.min(window.innerWidth - 140, rect.left + rect.width / 2))
+    setTip({ x, y: rect.top - 6 })
+  }
+
+  const description = (item.description?.desc ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+
+  const tier = TIER_ROMAN[(item.item_tier ?? 1) - 1] ?? ''
+  const meta = [
+    tier && `Tier ${tier}`,
+    item.item_slot_type,
+    item.cost != null && `${item.cost.toLocaleString()} souls`,
+    item.is_active_item ? 'active' : 'passive',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  return (
+    <span className="item-chip" onMouseEnter={show} onMouseLeave={() => setTip(null)}>
+      <img src={item.image} alt={item.name} className={soldAt > 0 ? 'sold' : ''} loading="lazy" />
+      {tip && (
+        <span className="item-tip" style={{ left: tip.x, top: tip.y }}>
+          <span className="tip-name">{item.name}</span>
+          <span className="tip-meta">{meta}</span>
+          {description && <span className="tip-desc">{description}</span>}
+          <span className="tip-times">
+            bought {formatClock(boughtAt)}
+            {soldAt > 0 ? ` · sold ${formatClock(soldAt)}` : ''}
+          </span>
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -226,7 +282,7 @@ function BuildRow({
 
 const W = 800
 const H = 280
-const PAD = { l: 56, r: 88, t: 14, b: 30 }
+const PAD = { l: 56, r: 108, t: 14, b: 30 }
 
 function SoulsChart({ info }: { info: MatchInfo }) {
   const [hover, setHover] = useState<{ index: number; px: number; py: number } | null>(null)
@@ -243,7 +299,7 @@ function SoulsChart({ info }: { info: MatchInfo }) {
     if (!byTime.has(0)) byTime.set(0, [0, 0])
     return [...byTime.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([t, [amber, sapphire]]) => ({ t, values: [amber, sapphire] as const }))
+      .map(([t, [team0, team1]]) => ({ t, values: [team0, team1] as const }))
   }, [info])
 
   if (samples.length < 2) return null
@@ -257,7 +313,9 @@ function SoulsChart({ info }: { info: MatchInfo }) {
   const y = (v: number) => PAD.t + (1 - v / vMax) * (H - PAD.t - PAD.b)
 
   const path = (team: 0 | 1) =>
-    samples.map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.t).toFixed(1)},${y(s.values[team]).toFixed(1)}`).join(' ')
+    samples
+      .map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.t).toFixed(1)},${y(s.values[team]).toFixed(1)}`)
+      .join(' ')
 
   const xTickStep = tMax > 2700 ? 600 : 300
   const xTicks: number[] = []
@@ -312,13 +370,28 @@ function SoulsChart({ info }: { info: MatchInfo }) {
           {yTicks.map((v) => (
             <g key={v}>
               <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} stroke="#2a2114" />
-              <text x={PAD.l - 8} y={y(v) + 3} textAnchor="end" fontSize="10" fill="#7c6f58" fontFamily="IBM Plex Mono, monospace">
+              <text
+                x={PAD.l - 8}
+                y={y(v) + 3}
+                textAnchor="end"
+                fontSize="10"
+                fill="#7c6f58"
+                fontFamily="IBM Plex Mono, monospace"
+              >
                 {compact.format(v)}
               </text>
             </g>
           ))}
           {xTicks.map((t) => (
-            <text key={t} x={x(t)} y={H - 10} textAnchor="middle" fontSize="10" fill="#7c6f58" fontFamily="IBM Plex Mono, monospace">
+            <text
+              key={t}
+              x={x(t)}
+              y={H - 10}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#7c6f58"
+              fontFamily="IBM Plex Mono, monospace"
+            >
               {t / 60}m
             </text>
           ))}
@@ -335,13 +408,25 @@ function SoulsChart({ info }: { info: MatchInfo }) {
           ))}
 
           {([0, 1] as const).map((team) => (
-            <path key={team} d={path(team)} fill="none" stroke={TEAMS[team].color} strokeWidth="2" />
+            <path
+              key={team}
+              d={path(team)}
+              fill="none"
+              stroke={TEAMS[team].color}
+              strokeWidth="2"
+            />
           ))}
 
           {([0, 1] as const).map((team) => (
             <g key={team}>
               <circle cx={x(last.t) + 6} cy={endY[team]} r="3" fill={TEAMS[team].color} />
-              <text x={x(last.t) + 13} y={endY[team] + 3} fontSize="11" fill="#b0a186" fontFamily="Josefin Sans, sans-serif">
+              <text
+                x={x(last.t) + 13}
+                y={endY[team] + 3}
+                fontSize="11"
+                fill="#b0a186"
+                fontFamily="Josefin Sans, sans-serif"
+              >
                 {TEAMS[team].short}
               </text>
             </g>
@@ -396,8 +481,8 @@ function SoulsChart({ info }: { info: MatchInfo }) {
           <thead>
             <tr>
               <th>Time</th>
-              <th>Amber</th>
-              <th>Sapphire</th>
+              <th>{TEAMS[0].short}</th>
+              <th>{TEAMS[1].short}</th>
             </tr>
           </thead>
           <tbody>

@@ -155,59 +155,89 @@
   color: var(--ink);
 }
 
-/* ---- builds ---- */
+/* ---- builds (expandable row + item hover cards) ---- */
 
-.build-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--rule-faint);
-}
-
-.build-row:last-child {
-  border-bottom: none;
-}
-
-.build-row .who {
-  display: flex;
+.persona-cell {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 190px;
-  min-width: 0;
 }
 
-.build-row .who img {
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--rule);
-  object-fit: cover;
-}
-
-.build-row .who span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
+.build-tr td {
+  background: var(--bg-raised);
+  padding: 10px 14px;
+  text-align: left;
+  white-space: normal;
 }
 
 .build-items {
   display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding: 2px 0;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .build-items img {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--rule);
-  background: var(--bg-raised);
+  background: var(--bg-inset);
+  display: block;
 }
 
 .build-items img.sold {
   opacity: 0.35;
+}
+
+.item-chip {
+  position: relative;
+  display: inline-block;
+}
+
+.item-tip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  width: 260px;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  padding: 10px 12px;
+  z-index: 10;
+  pointer-events: none;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.item-tip > span {
+  display: block;
+}
+
+.item-tip .tip-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.item-tip .tip-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-transform: capitalize;
+}
+
+.item-tip .tip-desc {
+  margin-top: 6px;
+  color: var(--ink-dim);
+  white-space: pre-line;
+}
+
+.item-tip .tip-times {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 
 /* ---- timeline ---- */

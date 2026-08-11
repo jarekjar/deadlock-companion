@@ -152,6 +152,18 @@ input[type='checkbox'] {
   height: 14px;
 }
 
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rank-badge img {
+  height: 20px;
+  width: auto;
+  display: block;
+}
+
 /* ---- layout shell ---- */
 
 .shell {

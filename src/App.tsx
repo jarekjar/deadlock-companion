@@ -5,6 +5,9 @@ import CheatSheetPage from './features/timers/CheatSheetPage'
 import PlayersPage from './features/players/PlayersPage'
 import PlayerProfilePage from './features/players/PlayerProfilePage'
 import MatchPage from './features/matches/MatchPage'
+import HeroesPage from './features/heroes/HeroesPage'
+import HeroPage from './features/heroes/HeroPage'
+import MatchupsPage from './features/heroes/MatchupsPage'
 import timersData from './data/timers.json'
 
 export default function App() {
@@ -19,6 +22,10 @@ export default function App() {
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:accountId" element={<PlayerProfilePage />} />
           <Route path="/matches/:matchId" element={<MatchPage />} />
+          <Route path="/heroes" element={<HeroesPage />} />
+          <Route path="/heroes/:heroId" element={<HeroPage />} />
+          <Route path="/matchups" element={<MatchupsPage />} />
+          <Route path="/matchups/:heroId" element={<MatchupsPage />} />
           <Route path="*" element={<Navigate to="/timers" replace />} />
         </Routes>
       </main>
