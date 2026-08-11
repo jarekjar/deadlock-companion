@@ -302,16 +302,21 @@ select option::checkmark {
   flex-direction: column;
 }
 
-/* subtle poster art behind every page; hero pages swap in their own */
+/* poster art behind every page; hero pages swap in their own via App */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: url('https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/backgrounds/infernus_bg.webp')
-    right top / cover no-repeat;
-  opacity: 0.09;
+  background-size: cover;
+  background-position: right top;
+  background-repeat: no-repeat;
+  opacity: 0.14;
   pointer-events: none;
-  mask-image: linear-gradient(250deg, black 15%, transparent 75%);
+  mask-image: linear-gradient(250deg, black 20%, transparent 80%);
+}
+
+.app-bg.strong {
+  opacity: 0.38;
 }
 
 .shell > :not(.app-bg) {

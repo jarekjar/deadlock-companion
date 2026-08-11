@@ -78,12 +78,6 @@ function Hero({ heroId }: { heroId: number }) {
 
   return (
     <div className="hero-page">
-      {hero.images.background_image_webp && (
-        <div
-          className="hero-page-bg"
-          style={{ backgroundImage: `url(${hero.images.background_image_webp})` }}
-        />
-      )}
       <div className="hero-hero">
         <img className="hero-art" src={hero.images.icon_hero_card_webp} alt="" />
         <div className="hero-intro">

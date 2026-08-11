@@ -275,31 +275,6 @@
   line-height: 1.65;
 }
 
-/* ---- hero page poster background ---- */
-
-.hero-page {
-  position: relative;
-}
-
-.hero-page-bg {
-  position: absolute;
-  top: -32px;
-  right: -24px;
-  width: min(58vw, 860px);
-  height: 920px;
-  background-size: cover;
-  background-position: top right;
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 0;
-  mask-image: linear-gradient(250deg, black 20%, transparent 78%);
-}
-
-.hero-page > :not(.hero-page-bg) {
-  position: relative;
-  z-index: 1;
-}
-
 /* ---- base stats ---- */
 
 .stats-grid {

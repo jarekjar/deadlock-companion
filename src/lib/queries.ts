@@ -206,6 +206,7 @@ export const useLiveMatchForPlayer = (accountId: number) =>
   useQuery({
     queryKey: ['liveMatch', accountId],
     queryFn: () => fetchActiveMatchForPlayer(accountId),
+    enabled: accountId > 0,
     refetchInterval: 60 * 1000,
     staleTime: 50 * 1000,
     retry: false,

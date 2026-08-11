@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { averageBadge, rankName, type ActiveMatch } from '../../lib/api'
-import { TEAMS } from '../../lib/teams'
+import { type ActiveMatch, type HeroAsset } from '../../lib/api'
 import {
   useHeroAnalytics,
   useHeroCounters,
   useHeroes,
   useLiveMatchForPlayer,
-  useRankAssets,
   useRanks,
   useSteamProfilesBatch,
 } from '../../lib/queries'
@@ -22,72 +20,58 @@ import '../heroes/heroes.css'
 import './live.css'
 
 const LANES = ['Left', 'Mid', 'Right', 'Flex'] as const
+const PREP_KEY = 'dc.prepBoard.v1'
+const MAX_ENEMIES = 6
+
+interface PrepEnemy {
+  heroId: number
+  lane: string
+}
+
+interface PrepState {
+  myHeroId: number | null
+  enemies: PrepEnemy[]
+}
+
+function loadPrep(): PrepState {
+  try {
+    const raw = localStorage.getItem(PREP_KEY)
+    if (raw) return JSON.parse(raw) as PrepState
+  } catch {
+    // fall through to an empty board
+  }
+  return { myHeroId: null, enemies: [] }
+}
 
 export default function MyMatchPage() {
-  const session = useSession()
-  if (session.isPending) return <div className="page-note">Checking sign-in</div>
-  if (!session.data) {
-    return (
-      <div className="page-note">
-        Sign in through Steam to use My Match — it finds your live game automatically.{' '}
-        <a href="/api/auth/login" rel="nofollow">
-          Steam Sign-In
-        </a>
-      </div>
-    )
-  }
-  return <MyMatch accountId={session.data} />
-}
-
-function MyMatch({ accountId }: { accountId: number }) {
-  const live = useLiveMatchForPlayer(accountId)
-  if (live.isPending) return <div className="page-note">Looking for your live match</div>
-  if (live.isError) return <div className="page-note error">Could not check for a live match</div>
-  if (!live.data) {
-    return (
-      <div className="page-note">
-        No live match detected for your account. This page rechecks every minute. Note: only
-        the top ~200 spectate-able games are visible to the watch system.
-      </div>
-    )
-  }
-  return <MyMatchDetail match={live.data} accountId={accountId} />
-}
-
-function loadLanes(matchId: number): Record<number, string> {
-  try {
-    return JSON.parse(localStorage.getItem(`dc.lanes.${matchId}`) ?? '{}') as Record<
-      number,
-      string
-    >
-  } catch {
-    return {}
-  }
-}
-
-function MyMatchDetail({ match, accountId }: { match: ActiveMatch; accountId: number }) {
   const navigate = useNavigate()
   const heroes = useHeroes()
   const analytics = useHeroAnalytics()
   const counters = useHeroCounters()
-  const rankAssets = useRankAssets()
-  const accountIds = useMemo(() => match.players.map((p) => p.account_id), [match])
-  const profiles = useSteamProfilesBatch(accountIds)
-  const badges = useRanks(accountIds)
+  const session = useSession()
+  const live = useLiveMatchForPlayer(session.data ?? 0)
+
+  const [prep, setPrep] = useState<PrepState>(loadPrep)
+  const [liveCtx, setLiveCtx] = useState<{ match: ActiveMatch; myAccountId: number } | null>(null)
+  const [picker, setPicker] = useState<'mine' | 'enemy' | null>(null)
+  const [openCounters, setOpenCounters] = useState<number | null>(null)
   const [nowSec, setNowSec] = useState(() => Date.now() / 1000)
-  const [lanes, setLanes] = useState<Record<number, string>>(() => loadLanes(match.match_id))
-  const [openEnemy, setOpenEnemy] = useState<number | null>(null)
 
   useEffect(() => {
+    try {
+      localStorage.setItem(PREP_KEY, JSON.stringify(prep))
+    } catch {
+      // storage unavailable; board just won't persist
+    }
+  }, [prep])
+
+  useEffect(() => {
+    if (!liveCtx) return
     const id = window.setInterval(() => setNowSec(Date.now() / 1000), 1000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [liveCtx])
 
-  const me = match.players.find((p) => p.account_id === accountId)
-  const myTeam = me?.team === 1 ? 1 : 0
-  const myHero = me ? heroes.data?.get(me.hero_id) : undefined
-  const allies = match.players.filter((p) => p.team === myTeam)
-  const enemies = match.players.filter((p) => p.team !== myTeam)
+  const myHero = prep.myHeroId ? heroes.data?.get(prep.myHeroId) : undefined
 
   const heroWinRates = useMemo(() => {
     const map = new Map<number, number>()
@@ -99,105 +83,192 @@ function MyMatchDetail({ match, accountId }: { match: ActiveMatch; accountId: nu
 
   const matchupWinRates = useMemo(() => {
     const map = new Map<number, number>()
-    if (!me) return map
+    if (!prep.myHeroId) return map
     for (const c of counters.data ?? []) {
-      if (c.hero_id === me.hero_id && c.matches_played > 0) {
+      if (c.hero_id === prep.myHeroId && c.matches_played > 0) {
         map.set(c.enemy_hero_id, (c.wins / c.matches_played) * 100)
       }
     }
     return map
-  }, [counters.data, me])
+  }, [counters.data, prep.myHeroId])
 
-  function setLane(enemyAccountId: number, lane: string) {
-    setLanes((prev) => {
-      const next = { ...prev, [enemyAccountId]: lane }
-      if (lane === '') delete next[enemyAccountId]
-      try {
-        localStorage.setItem(`dc.lanes.${match.match_id}`, JSON.stringify(next))
-      } catch {
-        // storage unavailable; lanes just won't persist
-      }
-      return next
+  /** heroId -> enemy account id, when the board was filled from a live match */
+  const liveEnemyByHero = useMemo(() => {
+    if (!liveCtx) return new Map<number, number>()
+    const me = liveCtx.match.players.find((p) => p.account_id === liveCtx.myAccountId)
+    const myTeam = me?.team ?? 0
+    return new Map(
+      liveCtx.match.players
+        .filter((p) => p.team !== myTeam)
+        .map((p) => [p.hero_id, p.account_id] as const),
+    )
+  }, [liveCtx])
+  const liveAccountIds = useMemo(() => [...liveEnemyByHero.values()], [liveEnemyByHero])
+  const profiles = useSteamProfilesBatch(liveAccountIds)
+  const badges = useRanks(liveAccountIds)
+
+  function fillFromLive(match: ActiveMatch, accountId: number) {
+    const me = match.players.find((p) => p.account_id === accountId)
+    if (!me) return
+    setPrep({
+      myHeroId: me.hero_id,
+      enemies: match.players
+        .filter((p) => p.team !== me.team)
+        .map((p) => ({ heroId: p.hero_id, lane: '' })),
     })
+    setLiveCtx({ match, myAccountId: accountId })
+    setOpenCounters(null)
   }
 
-  const sortedEnemies = useMemo(() => {
-    const order = (p: { account_id: number }) => {
-      const lane = lanes[p.account_id]
-      const idx = lane ? LANES.indexOf(lane as (typeof LANES)[number]) : -1
-      return idx === -1 ? LANES.length : idx
+  function pickHero(heroId: number) {
+    if (picker === 'mine') {
+      setPrep((p) => ({ ...p, myHeroId: heroId }))
+    } else if (picker === 'enemy') {
+      setPrep((p) =>
+        p.enemies.length >= MAX_ENEMIES || p.enemies.some((e) => e.heroId === heroId)
+          ? p
+          : { ...p, enemies: [...p.enemies, { heroId, lane: '' }] },
+      )
     }
-    return [...enemies].sort((a, b) => order(a) - order(b))
-  }, [enemies, lanes])
+    setPicker(null)
+  }
 
-  const persona = (id: number) => profiles.data?.get(id)?.personaname ?? `#${id}`
-  const gameTime = Math.max(0, nowSec - match.start_time)
-  const avgBadge = averageBadge(accountIds.map((id) => badges.get(id) ?? 0))
+  const gameTime = liveCtx ? Math.max(0, nowSec - liveCtx.match.start_time) : 0
+  const showLiveBanner =
+    session.data && live.data && liveCtx?.match.match_id !== live.data.match_id
 
   return (
     <>
-      <div className="live-head">
-        <div className="live-row">
-          <span className="live-chip">My Match</span>
-          <span className="match-id">Match #{match.match_id}</span>
+      <p className="grid-note prep-intro">
+        Build your match board: pick your hero and the enemy team to see matchup win rates,
+        counter items, and lane tracking — for every match, no sign-in needed.
+      </p>
+
+      {showLiveBanner && live.data && session.data && (
+        <div className="live-banner">
+          <span className="live-chip">Live</span>
+          <span className="banner-text">You appear to be in match #{live.data.match_id}.</span>
+          <button className="btn btn-solid" onClick={() => fillFromLive(live.data!, session.data!)}>
+            Fill board from my live match
+          </button>
         </div>
-        <div className="clock">{formatClock(gameTime)}</div>
-        <div className="meta">
-          {match.match_mode_parsed ?? 'Unknown mode'}
-          {match.region_mode_parsed ? ` · ${match.region_mode_parsed}` : ''}
-          {avgBadge !== null && ` · avg rank ${rankName(avgBadge, rankAssets.data)}`}
-          {myHero && ` · you are playing ${myHero.name}`}
+      )}
+      {!session.data && (
+        <p className="grid-note">
+          Tip: sign in through Steam and this page can fill itself from your live match.
+        </p>
+      )}
+      {session.data && live.isFetched && !live.data && !liveCtx && (
+        <p className="grid-note">
+          No live match detected for your account right now (only the top ~200 spectate-able
+          games are visible) — build the board manually below.
+        </p>
+      )}
+
+      {liveCtx && (
+        <div className="live-head prep-live-head">
+          <div className="clock">{formatClock(gameTime)}</div>
+          <div className="meta">
+            Live match #{liveCtx.match.match_id}
+            {liveCtx.match.match_mode_parsed ? ` · ${liveCtx.match.match_mode_parsed}` : ''}
+          </div>
+          <div className="actions">
+            <button
+              className="btn btn-solid"
+              onClick={() => {
+                syncClockFromLive(Math.max(0, Date.now() / 1000 - liveCtx.match.start_time))
+                navigate('/timers')
+              }}
+            >
+              Sync spawn timers
+            </button>{' '}
+            <Link className="btn" to={`/live/${liveCtx.match.match_id}`}>
+              Live view
+            </Link>
+          </div>
         </div>
-        <div className="actions">
-          <button
-            className="btn btn-solid"
-            onClick={() => {
-              syncClockFromLive(Math.max(0, Date.now() / 1000 - match.start_time))
-              navigate('/timers')
-            }}
-          >
-            Sync spawn timers
-          </button>{' '}
-          <Link className="btn" to={`/live/${match.match_id}`}>
-            Live view
-          </Link>
+      )}
+
+      <section className="team-section">
+        <div className="team-title" style={{ borderLeftColor: 'var(--brass)' }}>
+          <h3>Your hero</h3>
         </div>
-      </div>
+        {myHero ? (
+          <div className="prep-myhero">
+            <img src={myHero.images.icon_hero_card_webp} alt="" />
+            <span className="enemy-who">
+              <Link className="enemy-name" to={`/heroes/${myHero.id}`}>
+                {myHero.name}
+              </Link>
+              <span className="hl-sub">
+                {heroWinRates.get(myHero.id) !== undefined
+                  ? `${heroWinRates.get(myHero.id)!.toFixed(1)}% win rate, last 30 days`
+                  : ''}
+              </span>
+            </span>
+            <button className="btn" onClick={() => setPicker('mine')}>
+              Change
+            </button>
+          </div>
+        ) : (
+          <div className="prep-empty">
+            <button className="btn btn-solid" onClick={() => setPicker('mine')}>
+              Pick your hero
+            </button>
+          </div>
+        )}
+      </section>
 
       <section className="team-section">
         <div className="team-title" style={{ borderLeftColor: '#a33c2e' }}>
-          <h3>Enemies — {TEAMS[myTeam === 0 ? 1 : 0].name}</h3>
+          <h3>Enemy team</h3>
           <span className="team-note">
-            assign lanes to keep track · counter items are for {myHero?.name ?? 'your hero'}
+            {prep.enemies.length}/{MAX_ENEMIES} · counter items are for{' '}
+            {myHero?.name ?? 'your hero'}
           </span>
         </div>
         <div className="enemy-list">
-          {sortedEnemies.map((p) => {
-            const hero = heroes.data?.get(p.hero_id)
-            const heroWr = heroWinRates.get(p.hero_id)
-            const vsWr = matchupWinRates.get(p.hero_id)
-            const isOpen = openEnemy === p.account_id
+          {prep.enemies.map((enemy, index) => {
+            const hero = heroes.data?.get(enemy.heroId)
+            if (!hero) return null
+            const heroWr = heroWinRates.get(enemy.heroId)
+            const vsWr = matchupWinRates.get(enemy.heroId)
+            const liveAccountId = liveEnemyByHero.get(enemy.heroId)
+            const persona = liveAccountId
+              ? profiles.data?.get(liveAccountId)?.personaname
+              : undefined
+            const isOpen = openCounters === enemy.heroId
             return (
-              <div key={p.account_id} className="enemy-block">
+              <div key={enemy.heroId} className="enemy-block">
                 <div className="enemy-row">
-                  {hero && (
-                    <img
-                      className="enemy-hero"
-                      src={hero.images.icon_hero_card_webp}
-                      alt=""
-                      loading="lazy"
-                    />
-                  )}
+                  <img
+                    className="enemy-hero"
+                    src={hero.images.icon_hero_card_webp}
+                    alt=""
+                    loading="lazy"
+                  />
                   <span className="enemy-who">
-                    <Link className="enemy-name" to={`/heroes/${p.hero_id}`}>
-                      {hero?.name ?? `Hero ${p.hero_id}`}
+                    <Link className="enemy-name" to={`/heroes/${hero.id}`}>
+                      {hero.name}
                     </Link>
-                    <span className="persona-cell">
-                      <Link className="player-link dim-link" to={`/players/${p.account_id}`}>
-                        {persona(p.account_id)}
-                      </Link>
-                      <RankBadge badge={badges.get(p.account_id)} />
-                    </span>
+                    {liveAccountId ? (
+                      <span className="persona-cell">
+                        <Link className="player-link dim-link" to={`/players/${liveAccountId}`}>
+                          {persona ?? `#${liveAccountId}`}
+                        </Link>
+                        <RankBadge badge={badges.get(liveAccountId)} />
+                      </span>
+                    ) : (
+                      <button className="btn-quiet" onClick={() => {
+                        setPrep((p) => ({
+                          ...p,
+                          enemies: p.enemies.filter((_, i) => i !== index),
+                        }))
+                        if (isOpen) setOpenCounters(null)
+                      }}>
+                        remove
+                      </button>
+                    )}
                   </span>
                   <span className="enemy-stat">
                     <span className="stat-label">Hero WR</span>
@@ -214,8 +285,15 @@ function MyMatchDetail({ match, accountId }: { match: ActiveMatch; accountId: nu
                   <span className="enemy-stat">
                     <span className="stat-label">Lane</span>
                     <select
-                      value={lanes[p.account_id] ?? ''}
-                      onChange={(e) => setLane(p.account_id, e.target.value)}
+                      value={enemy.lane}
+                      onChange={(e) =>
+                        setPrep((p) => ({
+                          ...p,
+                          enemies: p.enemies.map((en, i) =>
+                            i === index ? { ...en, lane: e.target.value } : en,
+                          ),
+                        }))
+                      }
                       aria-label="Assign lane"
                     >
                       <option value="">—</option>
@@ -228,58 +306,117 @@ function MyMatchDetail({ match, accountId }: { match: ActiveMatch; accountId: nu
                   </span>
                   <button
                     className="btn btn-small"
-                    onClick={() => setOpenEnemy(isOpen ? null : p.account_id)}
+                    disabled={!myHero}
+                    title={myHero ? undefined : 'Pick your hero first'}
+                    onClick={() => setOpenCounters(isOpen ? null : enemy.heroId)}
                   >
                     {isOpen ? 'Hide counters' : 'Counters'}
                   </button>
                 </div>
-                {isOpen && me && hero && (
+                {isOpen && myHero && (
                   <div className="enemy-counters">
-                    <CounterItems
-                      heroId={me.hero_id}
-                      enemy={hero}
-                      heroName={myHero?.name ?? 'you'}
-                    />
+                    <CounterItems heroId={myHero.id} enemy={hero} heroName={myHero.name} />
                   </div>
                 )}
               </div>
             )
           })}
+          {prep.enemies.length < MAX_ENEMIES && (
+            <div className="enemy-add">
+              <button className="btn" onClick={() => setPicker('enemy')}>
+                Add enemy hero
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="team-section">
-        <div className="team-title" style={{ borderLeftColor: TEAMS[myTeam].color }}>
-          <h3>Your team — {TEAMS[myTeam].name}</h3>
-        </div>
-        <ul className="live-roster">
-          {allies.map((p) => {
-            const hero = heroes.data?.get(p.hero_id)
-            return (
-              <li key={p.account_id}>
-                <Link className="hero-cell" to={`/heroes/${p.hero_id}`}>
-                  {hero && (
-                    <img className="hero" src={hero.images.icon_image_small_webp} alt="" />
-                  )}
-                  {hero?.name ?? `Hero ${p.hero_id}`}
-                  {p.account_id === accountId ? ' (you)' : ''}
-                </Link>
-                <span className="persona-cell">
-                  <Link className="player-link" to={`/players/${p.account_id}`}>
-                    {persona(p.account_id)}
-                  </Link>
-                  <RankBadge badge={badges.get(p.account_id)} />
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+      {(prep.myHeroId !== null || prep.enemies.length > 0) && (
+        <p className="prep-clear">
+          <button
+            className="btn-quiet"
+            onClick={() => {
+              setPrep({ myHeroId: null, enemies: [] })
+              setLiveCtx(null)
+              setOpenCounters(null)
+            }}
+          >
+            clear board
+          </button>
+        </p>
+      )}
 
-      <p className="live-note">
-        Live data refreshes every minute and can lag a couple of minutes behind the true game
-        state. Lane assignments are saved on this device for this match only.
-      </p>
+      {picker && heroes.data && (
+        <HeroPickerModal
+          heroes={[...heroes.data.values()]}
+          exclude={
+            picker === 'enemy' ? new Set(prep.enemies.map((e) => e.heroId)) : new Set<number>()
+          }
+          onPick={pickHero}
+          onClose={() => setPicker(null)}
+        />
+      )}
     </>
+  )
+}
+
+function HeroPickerModal({
+  heroes,
+  exclude,
+  onPick,
+  onClose,
+}: {
+  heroes: HeroAsset[]
+  exclude: Set<number>
+  onPick: (heroId: number) => void
+  onClose: () => void
+}) {
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const needle = search.trim().toLowerCase()
+  const list = heroes
+    .filter((h) => !exclude.has(h.id) && (!needle || h.name.toLowerCase().includes(needle)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-panel"
+        role="dialog"
+        aria-label="Pick a hero"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <span className="caps modal-title">Pick a hero</span>
+          <button className="btn-quiet" onClick={onClose}>
+            close
+          </button>
+        </div>
+        <input
+          autoFocus
+          className="picker-search"
+          placeholder="Search heroes"
+          aria-label="Search heroes"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="picker-grid">
+          {list.map((hero) => (
+            <button key={hero.id} className="picker-hero" onClick={() => onPick(hero.id)}>
+              <img src={hero.images.icon_image_small_webp} alt="" loading="lazy" />
+              <span>{hero.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }

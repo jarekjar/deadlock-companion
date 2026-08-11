@@ -199,6 +199,38 @@
   }
 }
 
+/* ---- timers layout: board left, map right ---- */
+
+.timers-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 28px;
+  align-items: start;
+}
+
+.timers-side {
+  position: sticky;
+  top: 24px;
+}
+
+.timers-side .map-panel-section {
+  margin-top: 0;
+}
+
+@media (max-width: 1020px) {
+  .timers-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .timers-side {
+    position: static;
+  }
+
+  .timers-side .map-panel-section {
+    margin-top: 32px;
+  }
+}
+
 /* ---- map panel ---- */
 
 .map-panel-section {

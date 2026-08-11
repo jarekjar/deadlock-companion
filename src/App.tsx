@@ -15,14 +15,26 @@ import HomePage from './features/home/HomePage'
 import ItemsPage from './features/items/ItemsPage'
 import ItemPage from './features/items/ItemPage'
 import timersData from './data/timers.json'
+import { useHeroes } from './lib/queries'
+
+const DEFAULT_BG =
+  'https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/backgrounds/infernus_bg.webp'
 
 export default function App() {
   const location = useLocation()
-  // hero detail pages bring their own poster background
-  const showDefaultBg = !/^\/heroes\/\d+/.test(location.pathname)
+  const heroes = useHeroes()
+  // hero detail pages swap the ambient poster for that hero's own art
+  const heroMatch = /^\/heroes\/(\d+)/.exec(location.pathname)
+  const heroBg = heroMatch
+    ? heroes.data?.get(Number(heroMatch[1]))?.images.background_image_webp
+    : undefined
   return (
     <div className="shell">
-      {showDefaultBg && <div className="app-bg" aria-hidden />}
+      <div
+        className={`app-bg${heroBg ? ' strong' : ''}`}
+        style={{ backgroundImage: `url(${heroBg ?? DEFAULT_BG})` }}
+        aria-hidden
+      />
       <Header />
       <main className="shell-main">
         <Routes>

@@ -24,9 +24,9 @@ export default function Header() {
         </NavLink>
         <NavLink to="/matchups">Matchups</NavLink>
         <NavLink to="/live">Live</NavLink>
+        <NavLink to="/my-match">My Match</NavLink>
         {session.data ? (
           <>
-            <NavLink to="/my-match">My Match</NavLink>
             <NavLink to={`/players/${session.data}`}>My Profile</NavLink>
             <button className="nav-action" onClick={() => signOut.mutate()}>
               Sign Out

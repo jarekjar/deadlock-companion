@@ -254,6 +254,111 @@
   background: var(--bg-raised);
 }
 
+/* ---- prep board ---- */
+
+.prep-intro {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.live-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid var(--rule);
+  background: var(--bg-veil);
+  padding: 14px 18px;
+  margin-bottom: 22px;
+}
+
+.live-banner .banner-text {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.prep-live-head {
+  padding-bottom: 16px;
+}
+
+.prep-myhero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--rule);
+  background: var(--bg-veil);
+  padding: 12px 16px;
+}
+
+.prep-myhero img {
+  width: 56px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid var(--brass-dim);
+}
+
+.prep-myhero .btn {
+  margin-left: auto;
+}
+
+.prep-empty {
+  border: 1px solid var(--rule);
+  background: var(--bg-veil);
+  padding: 22px 16px;
+  text-align: center;
+}
+
+.enemy-add {
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.prep-clear {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.picker-search {
+  width: 100%;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.picker-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--rule);
+  background: var(--bg-inset);
+  padding: 10px 6px 8px;
+  color: var(--ink-dim);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.picker-hero img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+}
+
+.picker-hero:hover {
+  border-color: var(--brass);
+  color: var(--ink);
+}
+
 /* ---- live match list ---- */
 
 .hero-cluster {

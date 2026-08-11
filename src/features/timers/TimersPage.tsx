@@ -143,7 +143,8 @@ export default function TimersPage() {
   }
 
   return (
-    <div className="narrow">
+    <div className="timers-layout">
+      <div className="timers-main">
       <section className="clock-panel">
         <div className="clock-label caps">Match Clock</div>
         <div className="clock-time">{formatClock(t)}</div>
@@ -248,14 +249,17 @@ export default function TimersPage() {
           />
         ))}
       </section>
+      </div>
 
-      <MapPanel
-        states={states}
-        t={t}
-        started={clock !== null}
-        focusId={focusId}
-        onFocus={setFocusId}
-      />
+      <aside className="timers-side">
+        <MapPanel
+          states={states}
+          t={t}
+          started={clock !== null}
+          focusId={focusId}
+          onFocus={setFocusId}
+        />
+      </aside>
 
       {showCheatSheet && (
         <div className="modal-overlay" onClick={() => setShowCheatSheet(false)}>
