@@ -119,9 +119,9 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
           <button
             className="cb-dir"
             onClick={() => setDescending((d) => !d)}
-            title={descending ? 'Descending' : 'Ascending'}
+            title="Toggle sort direction"
           >
-            {descending ? '▼' : '▲'}
+            {descending ? 'Desc' : 'Asc'}
           </button>
         </span>
       </div>

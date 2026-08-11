@@ -78,9 +78,9 @@ export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => st
           <button
             className="cb-dir"
             onClick={() => setDescending((d) => !d)}
-            title={descending ? 'Descending' : 'Ascending'}
+            title="Toggle sort direction"
           >
-            {descending ? '▼' : '▲'}
+            {descending ? 'Desc' : 'Asc'}
           </button>
         </span>
         <span className="cb-group">

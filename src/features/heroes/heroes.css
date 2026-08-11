@@ -135,13 +135,20 @@
   appearance: none;
   border: none;
   height: 44px;
-  background: transparent
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='6'><path d='M1 1l3.5 3.5L8 1' fill='none' stroke='%238f7434' stroke-width='1.4'/></svg>")
-    no-repeat right center;
+  color-scheme: dark;
+  background-color: var(--bg-inset);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='6'><path d='M1 1l3.5 3.5L8 1' fill='none' stroke='%238f7434' stroke-width='1.4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right center;
   padding: 0 18px 0 0;
   color: var(--ink);
   font-size: 13px;
   cursor: pointer;
+}
+
+.control-bar select option {
+  background-color: var(--bg-inset);
+  color: var(--ink);
 }
 
 .control-bar select:focus {
@@ -150,16 +157,19 @@
 }
 
 .cb-dir {
-  align-self: stretch;
-  padding: 0 14px;
-  border-left: 1px solid var(--rule-faint);
-  color: var(--brass);
+  font-family: var(--font-heading);
+  font-weight: 600;
   font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--brass-dim);
 }
 
 .cb-dir:hover {
   color: var(--brass-bright);
-  background: var(--bg-raised);
+  border-bottom-color: var(--brass);
 }
 
 @media (max-width: 680px) {
