@@ -96,7 +96,7 @@ export default function TimersPage() {
   }
 
   return (
-    <>
+    <div className="narrow">
       <section className="clock-panel">
         <div className="clock-label caps">Match Clock</div>
         <div className="clock-time">{formatClock(t)}</div>
@@ -192,7 +192,7 @@ export default function TimersPage() {
           />
         ))}
       </section>
-    </>
+    </div>
   )
 }
 

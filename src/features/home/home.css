@@ -1,0 +1,124 @@
+.home-intro {
+  text-align: center;
+  max-width: 640px;
+  margin: 8px auto 36px;
+}
+
+.home-intro h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: clamp(20px, 3.5vw, 28px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.home-intro p {
+  margin-top: 12px;
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* ---- hero art strip ---- */
+
+.home-art {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 44px;
+  padding: 0 12px;
+}
+
+.home-art a {
+  display: block;
+  width: clamp(72px, 10vw, 128px);
+  border: 1px solid var(--brass-dim);
+  outline: 1px solid var(--bg);
+  margin-left: -14px;
+  transition: transform 120ms ease;
+  line-height: 0;
+  background: var(--bg-raised);
+}
+
+.home-art a:first-child {
+  margin-left: 0;
+}
+
+.home-art a:nth-child(even) {
+  transform: translateY(10px);
+}
+
+.home-art a:hover {
+  transform: translateY(-6px);
+  border-color: var(--brass);
+  z-index: 2;
+  position: relative;
+}
+
+.home-art img {
+  width: 100%;
+  aspect-ratio: 3 / 4.4;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+
+@media (max-width: 620px) {
+  .home-art a:nth-child(n + 6) {
+    display: none;
+  }
+}
+
+/* ---- feature tiles ---- */
+
+.home-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.feature-tile {
+  display: block;
+  border: 1px solid var(--rule);
+  padding: 20px 22px 22px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.feature-tile:hover {
+  border-color: var(--brass-dim);
+  background: var(--bg-raised);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.feature-tile h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.feature-tile h3::before {
+  content: '\25C6';
+  font-size: 8px;
+  color: var(--brass-dim);
+  margin-right: 10px;
+  vertical-align: 2px;
+}
+
+.feature-tile p {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+
+.home-cta {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-faint);
+}

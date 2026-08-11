@@ -10,6 +10,7 @@ import HeroPage from './features/heroes/HeroPage'
 import MatchupsPage from './features/heroes/MatchupsPage'
 import LiveMatchesPage from './features/live/LiveMatchesPage'
 import LiveMatchPage from './features/live/LiveMatchPage'
+import HomePage from './features/home/HomePage'
 import timersData from './data/timers.json'
 
 export default function App() {
@@ -18,7 +19,7 @@ export default function App() {
       <Header />
       <main className="shell-main">
         <Routes>
-          <Route path="/" element={<Navigate to="/timers" replace />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/timers" element={<TimersPage />} />
           <Route path="/cheat-sheet" element={<CheatSheetPage />} />
           <Route path="/players" element={<PlayersPage />} />
@@ -30,7 +31,7 @@ export default function App() {
           <Route path="/matchups/:heroId" element={<MatchupsPage />} />
           <Route path="/live" element={<LiveMatchesPage />} />
           <Route path="/live/:matchId" element={<LiveMatchPage />} />
-          <Route path="*" element={<Navigate to="/timers" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <footer className="site-footer">

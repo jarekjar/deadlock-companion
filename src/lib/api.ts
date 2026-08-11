@@ -187,6 +187,10 @@ export const fetchAnalyticsHeroStats = (sinceUnix: number) =>
 export const fetchHeroItemStats = (heroId: number, sinceUnix: number) =>
   get<ItemStat[]>(`/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}`)
 
+/** Lifetime item usage for one player — the basis for "favorite items". */
+export const fetchPlayerItemStats = (accountId: number) =>
+  get<ItemStat[]>(`/v1/analytics/item-stats?account_ids=${accountId}&min_matches=1`)
+
 export const fetchCounterItemStats = (heroId: number, enemyHeroId: number, sinceUnix: number) =>
   get<ItemStat[]>(
     `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}`,

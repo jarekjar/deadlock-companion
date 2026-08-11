@@ -43,7 +43,7 @@ export default function PlayersPage() {
   }
 
   return (
-    <>
+    <div className="narrow">
       <form className="search-form" onSubmit={handleSubmit}>
         <input
           value={input}
@@ -102,6 +102,6 @@ export default function PlayersPage() {
           ))}
         </div>
       )}
-    </>
+    </div>
   )
 }

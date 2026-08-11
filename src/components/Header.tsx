@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useSession, useSignOut } from '../lib/session'
 
 export default function Header() {
@@ -7,7 +7,9 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <h1 className="wordmark">The Cursed Apple</h1>
+      <h1 className="wordmark">
+        <Link to="/">The Cursed Apple</Link>
+      </h1>
       <p className="tagline">A Deadlock Companion</p>
       <nav className="site-nav">
         <NavLink to="/timers">Timers</NavLink>

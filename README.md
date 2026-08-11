@@ -1,21 +1,32 @@
 # The Cursed Apple — a Deadlock companion
 
-Spawn timers, match tracking, and player stats for Valve's Deadlock.
+**Live at [deadlock-companion.pages.dev](https://deadlock-companion.pages.dev)**
+
+Spawn timers, player stats, hero meta, and live matches for Valve's Deadlock, in a
+1930s-noir dress. Free, no account needed.
 
 ## Features
 
-- **Spawn timers** — a match clock you sync with the in-game timer, with live countdowns
-  for jungle camps, boxes & golden statues, bridge buffs, Sinner's Sacrifice, the Mid-Boss
-  (with its 7:00 / 6:00 / 5:00 respawn ladder), and the Soul Urn. Optional chime and
-  browser-notification alerts before each spawn.
-- **Cheat sheet** — the full objective timing table for the current patch, with sources.
-- **Player profiles** — find any player by Steam URL, ID, or name; win rate, KDA,
-  souls/min, per-hero stats, and a sortable match history. Favorites are saved locally.
-- **Steam sign-in** — optional OpenID login (via Cloudflare Pages Functions) that pins
-  "My Profile" in the nav. No password ever touches this app; Steam vouches for you.
+- **Spawn timers** — a match clock you sync once (or sync automatically from a live
+  match), with countdowns for jungle camps, boxes & golden statues, bridge buffs,
+  Sinner's Sacrifice, the Mid-Boss (7:00 / 6:00 / 5:00 respawn ladder), and the Soul
+  Urn. Optional chime and browser-notification alerts, plus a full cheat sheet.
+- **Player profiles** — find any player by Steam link, ID, or name: win rate, KDA,
+  souls/min, favorite and best heroes, favorite items, per-hero stats, rank badges,
+  and a match history filterable by hero and date range.
+- **Match breakdowns** — team scoreboards, the souls race over time, every player's
+  item build with hover details and buy times, and the Mid-Boss log.
+- **Hero meta** — 30-day win and pick rates for every hero, and the most popular
+  items per tier with their win rates.
+- **Matchups & counters** — how a hero fares into every opponent, with the items
+  that actually win those specific matchups.
+- **Live matches** — browse ongoing games with live soul counts, follow a friend's
+  match, and sync the spawn timers to it in one click.
+- **Steam sign-in** — optional OpenID login (via Cloudflare Pages Functions) that
+  pins "My Profile" in the nav. No password ever touches this app.
 
-Planned: per-match breakdowns, hero/item win rates, and live match stats — powered by
-the community [Deadlock API](https://deadlock-api.com).
+Stats come from the community [Deadlock API](https://deadlock-api.com); game art is
+served from its assets service.
 
 ## Development
 

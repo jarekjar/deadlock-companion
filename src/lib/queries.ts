@@ -11,6 +11,7 @@ import {
   fetchMatchHistory,
   fetchMatchMetadata,
   fetchPlayerHeroStats,
+  fetchPlayerItemStats,
   fetchRank,
   fetchRankAssets,
   fetchSteamProfiles,
@@ -146,6 +147,13 @@ export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
     queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D),
     enabled: heroId > 0 && enemyHeroId !== null,
     staleTime: 30 * 60 * 1000,
+  })
+
+export const usePlayerItemStats = (accountId: number) =>
+  useQuery({
+    queryKey: ['playerItemStats', accountId],
+    queryFn: () => fetchPlayerItemStats(accountId),
+    staleTime: 5 * 60 * 1000,
   })
 
 export const useActiveMatches = () =>

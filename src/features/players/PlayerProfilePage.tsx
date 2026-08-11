@@ -1,12 +1,21 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import RankBadge from '../../components/RankBadge'
-import { isWin, rankName, type HeroAsset, type MatchHistoryEntry } from '../../lib/api'
+import {
+  isWin,
+  itemIcon,
+  rankName,
+  type HeroAsset,
+  type MatchHistoryEntry,
+  type PlayerHeroStats,
+} from '../../lib/api'
 import {
   useHeroes,
+  useItems,
   useLiveMatchForPlayer,
   useMatchHistory,
   usePlayerHeroStats,
+  usePlayerItemStats,
   useRank,
   useRankAssets,
   useSteamProfile,
@@ -129,6 +138,14 @@ function Profile({ accountId }: { accountId: number }) {
             </div>
           )}
 
+          {heroStats.data && heroStats.data.length > 0 && (
+            <Highlights
+              accountId={accountId}
+              heroStats={heroStats.data}
+              heroes={heroes.data}
+            />
+          )}
+
           <MatchTable matches={history.data} heroes={heroes.data} />
 
           {heroStats.data && heroStats.data.length > 0 && (
@@ -145,6 +162,93 @@ function StatTile({ label, value }: { label: string; value: string }) {
     <div className="stat-tile">
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
+    </div>
+  )
+}
+
+const MIN_BEST_HERO_MATCHES = 5
+
+function Highlights({
+  accountId,
+  heroStats,
+  heroes,
+}: {
+  accountId: number
+  heroStats: PlayerHeroStats[]
+  heroes: Map<number, HeroAsset> | undefined
+}) {
+  const itemStats = usePlayerItemStats(accountId)
+  const items = useItems()
+
+  const favorite = useMemo(
+    () => [...heroStats].sort((a, b) => b.matches_played - a.matches_played)[0],
+    [heroStats],
+  )
+  const best = useMemo(() => {
+    const eligible = heroStats.filter((s) => s.matches_played >= MIN_BEST_HERO_MATCHES)
+    const pool = eligible.length > 0 ? eligible : heroStats
+    return [...pool].sort((a, b) => b.wins / b.matches_played - a.wins / a.matches_played)[0]
+  }, [heroStats])
+
+  const favoriteItems = useMemo(() => {
+    if (!itemStats.data || !items.data) return null
+    return itemStats.data
+      .flatMap((row) => {
+        const item = items.data.get(row.item_id)
+        if (!item || item.type !== 'upgrade' || item.shopable === false) return []
+        if (!itemIcon(item)) return []
+        return [{ item, matches: row.matches }]
+      })
+      .sort((a, b) => b.matches - a.matches)
+      .slice(0, 6)
+  }, [itemStats.data, items.data])
+
+  const heroPanel = (stat: PlayerHeroStats, sub: string) => {
+    const hero = heroes?.get(stat.hero_id)
+    return (
+      <span className="hl-hero">
+        {hero && <img src={hero.images.icon_hero_card_webp} alt="" loading="lazy" />}
+        <span>
+          <span className="hl-name">{hero?.name ?? `Hero ${stat.hero_id}`}</span>
+          <span className="hl-sub">{sub}</span>
+        </span>
+      </span>
+    )
+  }
+
+  return (
+    <div className="highlight-row">
+      <div className="highlight-panel">
+        <div className="stat-label">Favorite hero</div>
+        {heroPanel(favorite, `${favorite.matches_played} matches`)}
+      </div>
+      <div className="highlight-panel">
+        <div className="stat-label">Best hero</div>
+        {heroPanel(
+          best,
+          `${((best.wins / best.matches_played) * 100).toFixed(0)}% win rate over ${best.matches_played} matches`,
+        )}
+      </div>
+      <div className="highlight-panel">
+        <div className="stat-label">Favorite items</div>
+        {favoriteItems === null ? (
+          <span className="hl-sub">Loading</span>
+        ) : favoriteItems.length === 0 ? (
+          <span className="hl-sub">No item data</span>
+        ) : (
+          <span className="hl-items">
+            {favoriteItems.map(({ item, matches }) => (
+              <img
+                key={item.id}
+                src={itemIcon(item)}
+                alt={item.name}
+                title={`${item.name} · bought in ${matches.toLocaleString()} matches`}
+                loading="lazy"
+              />
+            ))}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
