@@ -2,30 +2,42 @@
 
 **Live at [deadlock-companion.pages.dev](https://deadlock-companion.pages.dev)**
 
-Spawn timers, player stats, hero meta, and live matches for Valve's Deadlock, in a
-1930s-noir dress. Free, no account needed.
+Spawn timers, match prep, player stats, hero and item meta, leaderboards, and live
+matches for Valve's Deadlock — in a 1930s-noir dress. Free, no account needed.
+
+![The Cursed Apple home page](docs/home.png)
 
 ## Features
 
-- **Spawn timers** — a match clock you sync once (or sync automatically from a live
-  match), with countdowns for jungle camps, boxes & golden statues, bridge buffs,
-  Sinner's Sacrifice, the Mid-Boss (7:00 / 6:00 / 5:00 respawn ladder), and the Soul
-  Urn. Optional chime and browser-notification alerts, plus a full cheat sheet.
-- **Player profiles** — find any player by Steam link, ID, or name: win rate, KDA,
-  souls/min, favorite and best heroes, favorite items, per-hero stats, rank badges,
-  and a match history filterable by hero and date range.
+- **Spawn timers** — a match clock you sync once (or auto-sync from your live match),
+  with countdowns for camps, boxes & golden statues, bridge buffs, Sinner's Sacrifice,
+  the Mid-Boss ladder, and the Soul Urn — plus an objective map, spawn alerts, and a
+  cheat sheet.
+- **My Match** — a prep board for every game: pick your hero and the enemy team for
+  matchup win rates, data-driven counter items, lane tracking on a minimap, and a
+  compact spawn-timer strip. Signed in, it fills itself from your live match with
+  player names and ranks.
+- **Player profiles** — find anyone by Steam link, ID, or name: win rate, KDA,
+  favorite and best heroes, favorite items, rank badges, and a match history
+  filterable by hero and date.
 - **Match breakdowns** — team scoreboards, the souls race over time, every player's
   item build with hover details and buy times, and the Mid-Boss log.
-- **Hero meta** — 30-day win and pick rates for every hero, and the most popular
-  items per tier with their win rates.
-- **Matchups & counters** — how a hero fares into every opponent, with the items
-  that actually win those specific matchups.
+- **Heroes** — lore, abilities with rank buffs, base stats and weapon data, 30-day
+  win rates, and the most popular items per tier for all heroes.
 - **Items** — every shop item with what it does, usage and win rates, and pick rate
-  per hero; hovering any item anywhere shows its details.
-- **Live matches** — browse ongoing games with live soul counts, follow a friend's
-  match, and sync the spawn timers to it in one click.
+  per hero; hovering an item anywhere shows its details.
+- **Matchups & counters** — how a hero fares into every opponent, why the matchup
+  leans that way (souls, kill trades, denies, objective pressure), and the items that
+  actually win those games.
+- **Ranks** — regional top-1000 leaderboards with player search and find-me, and the
+  full rank distribution with your percentile when signed in.
+- **Live matches** — ongoing games with live soul counts and average ranks, a watch
+  link into Deadlock, and one-click spawn-timer sync.
 - **Steam sign-in** — optional OpenID login (via Cloudflare Pages Functions) that
-  pins "My Profile" in the nav. No password ever touches this app.
+  unlocks the self-filling My Match board, your profile, and your spot on the rank
+  distribution. No password ever touches this app.
+
+![My Match prep board](docs/my-match.png)
 
 Stats come from the community [Deadlock API](https://deadlock-api.com); game art is
 served from its assets service.

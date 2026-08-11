@@ -110,9 +110,9 @@ export default function LeaderboardPage() {
           ) : rows.length === 0 ? (
             <div className="page-note">No players match</div>
           ) : (
-            <>
+            <div className="narrow">
               <div className="table-wrap">
-                <table className="data-table">
+                <table className="data-table lb-table">
                   <thead>
                     <tr>
                       <th>#</th>
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                   Show more ({rows.length - visible} remaining)
                 </button>
               )}
-            </>
+            </div>
           )}
         </>
       ) : (
@@ -181,8 +181,8 @@ export default function LeaderboardPage() {
 /* ---- rank distribution chart ---- */
 
 const W = 800
-const H = 300
-const PAD = { l: 52, r: 16, t: 18, b: 40 }
+const H = 330
+const PAD = { l: 52, r: 16, t: 18, b: 70 }
 
 function DistributionView() {
   const distribution = useRankDistribution()
@@ -219,6 +219,10 @@ function DistributionView() {
 
   const tierLabel = (tier: number) =>
     rankAssets.data?.find((r) => r.tier === tier)?.name ?? `Tier ${tier}`
+  const tierImage = (tier: number) => {
+    const images = rankAssets.data?.find((r) => r.tier === tier)?.images
+    return images?.large_webp ?? images?.large
+  }
 
   const hovered = hover !== null ? buckets[hover] : null
 
@@ -283,17 +287,28 @@ function DistributionView() {
                     onMouseEnter={() => setHover(i)}
                   />
                   {bucket.rank % 10 === 3 && (
-                    <text
-                      x={x(i) + barWidth}
-                      y={H - 10}
-                      textAnchor="middle"
-                      fontSize="9"
-                      fill="#7c6f58"
-                      fontFamily="Josefin Sans, sans-serif"
-                      letterSpacing="1"
-                    >
-                      {tierLabel(tier).toUpperCase()}
-                    </text>
+                    <>
+                      {tierImage(tier) && (
+                        <image
+                          href={tierImage(tier)}
+                          x={x(i) + barWidth - 17}
+                          y={H - 56}
+                          width="34"
+                          height="34"
+                        />
+                      )}
+                      <text
+                        x={x(i) + barWidth}
+                        y={H - 10}
+                        textAnchor="middle"
+                        fontSize="9"
+                        fill="#7c6f58"
+                        fontFamily="Josefin Sans, sans-serif"
+                        letterSpacing="1"
+                      >
+                        {tierLabel(tier).toUpperCase()}
+                      </text>
+                    </>
                   )}
                   {bucket.rank === myBadge && (
                     <text

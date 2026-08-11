@@ -1,6 +1,21 @@
 .rank-col {
   color: var(--brass);
   font-weight: 600;
+  width: 64px;
+}
+
+.lb-table td:nth-child(2),
+.lb-table th:nth-child(2) {
+  text-align: left;
+}
+
+.lb-table td:nth-child(2) {
+  font-size: 15px;
+}
+
+.lb-table .hero-cluster img {
+  width: 30px;
+  height: 30px;
 }
 
 .me-row {
