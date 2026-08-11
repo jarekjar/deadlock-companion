@@ -86,6 +86,8 @@ export interface ItemAsset {
   class_name?: string
   type: string
   properties?: Record<string, { value?: unknown } | undefined>
+  /** Ability rank-ups (3 tiers, costing 1/2/5 ability points). */
+  upgrades?: { property_upgrades?: { name: string; bonus?: string }[] }[]
   item_tier?: number
   item_slot_type?: string
   cost?: number

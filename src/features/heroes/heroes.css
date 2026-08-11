@@ -250,30 +250,69 @@
   line-height: 1.65;
 }
 
-.about-lore {
-  margin-top: 12px;
+/* ---- hero page header: full art + lore ---- */
+
+.hero-hero {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 24px;
 }
 
-.about-lore summary {
-  cursor: pointer;
+.hero-hero .hero-art {
+  width: 200px;
+  flex: 0 0 auto;
+  aspect-ratio: 3 / 4.2;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid var(--brass-dim);
+}
+
+.hero-intro {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-title-row h2 {
   font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-faint);
 }
 
-.about-lore summary:hover {
-  color: var(--brass);
-}
-
-.about-lore p {
-  margin-top: 10px;
-  max-width: 760px;
+.hero-lore {
+  margin-top: 14px;
   color: var(--ink-dim);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
+  font-style: italic;
+}
+
+@media (max-width: 680px) {
+  .hero-hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-hero .hero-art {
+    width: 160px;
+  }
+
+  .hero-title-row {
+    justify-content: center;
+  }
 }
 
 .ability-grid {
@@ -327,6 +366,32 @@
   line-height: 1.6;
   color: var(--ink-dim);
   white-space: pre-line;
+}
+
+.ability-upgrades {
+  list-style: none;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ability-upgrades li {
+  font-size: 12.5px;
+  color: var(--ink-dim);
+}
+
+.ability-upgrades .ap {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--brass);
+  border: 1px solid var(--brass-dim);
+  padding: 2px 6px 1px;
+  margin-right: 9px;
+  vertical-align: 1px;
 }
 
 .scaling-list {

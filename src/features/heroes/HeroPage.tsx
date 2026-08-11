@@ -78,14 +78,17 @@ function Hero({ heroId }: { heroId: number }) {
 
   return (
     <>
-      <div className="hero-head">
-        <img src={hero.images.icon_hero_card_webp} alt="" style={{ objectPosition: 'top' }} />
-        <h2>{hero.name}</h2>
-        <span className="actions">
-          <Link className="btn" to={`/matchups/${hero.id}`}>
-            Matchups
-          </Link>
-        </span>
+      <div className="hero-hero">
+        <img className="hero-art" src={hero.images.icon_hero_card_webp} alt="" />
+        <div className="hero-intro">
+          <div className="hero-title-row">
+            <h2>{hero.name}</h2>
+            <Link className="btn" to={`/matchups/${hero.id}`}>
+              Matchups
+            </Link>
+          </div>
+          {hero.description?.lore && <p className="hero-lore">{hero.description.lore}</p>}
+        </div>
       </div>
 
       <div className="stat-row">
@@ -168,23 +171,32 @@ function Hero({ heroId }: { heroId: number }) {
 
 function AboutSection({ hero }: { hero: HeroAsset }) {
   const d = hero.description
-  if (!d?.role && !d?.playstyle && !d?.lore) return null
+  if (!d?.role && !d?.playstyle) return null
   return (
     <section className="data-section hero-about">
       <h3>About</h3>
       {d.role && <p className="about-role">{d.role}</p>}
       {d.playstyle && <p className="about-playstyle">{d.playstyle}</p>}
-      {d.lore && (
-        <details className="about-lore">
-          <summary>Lore</summary>
-          <p>{d.lore}</p>
-        </details>
-      )}
     </section>
   )
 }
 
 const SIGNATURE_SLOTS = ['signature1', 'signature2', 'signature3', 'signature4']
+const AP_COSTS = [1, 2, 5]
+
+function upgradeText(p: { name: string; bonus?: string }): string {
+  const isPercent = /percent/i.test(p.name)
+  let label = p.name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/ ?Percent/gi, '')
+    .split(' ')
+    .map((w) => (w === 'Tech' ? 'Spirit' : w))
+    .join(' ')
+  label = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
+  const n = Number(p.bonus)
+  const sign = Number.isFinite(n) && n > 0 ? '+' : ''
+  return `${sign}${p.bonus ?? ''}${isPercent ? '%' : ''} ${label}`
+}
 
 function AbilitiesSection({ hero }: { hero: HeroAsset }) {
   const byClassName = useItemsByClassName()
@@ -223,6 +235,20 @@ function AbilitiesSection({ hero }: { hero: HeroAsset }) {
                 </div>
               </div>
               <p className="ability-desc">{itemDescription(ability).replace(/[ \t]+/g, ' ')}</p>
+              {ability.upgrades && ability.upgrades.length > 0 && (
+                <ul className="ability-upgrades">
+                  {ability.upgrades.map((tier, tierIndex) => {
+                    const parts = (tier.property_upgrades ?? []).map(upgradeText)
+                    if (parts.length === 0) return null
+                    return (
+                      <li key={tierIndex}>
+                        <span className="ap">{AP_COSTS[tierIndex] ?? tierIndex + 1} AP</span>
+                        {parts.join(' · ')}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
           )
         })}
