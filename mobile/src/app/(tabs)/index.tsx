@@ -1,283 +1,175 @@
-import { useEffect, useRef, useState } from 'react'
-import { Alert, StyleSheet, Switch, Text, TextInput, View } from 'react-native'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { Image } from 'expo-image'
+import { useRouter, type Href } from 'expo-router'
+import { useMemo } from 'react'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Body } from '../../components/ui'
 import timersData from '../../data/timers.json'
-import { Btn, Card, Mono, Note, Screen, SectionTitle } from '../../components/ui'
-import {
-  clearSpawnAlerts,
-  ensureNotifyPermission,
-  rescheduleSpawnAlerts,
-} from '../../lib/notifications'
-import { loadJson, saveJson } from '../../lib/storage'
-import {
-  emptyState,
-  formatClock,
-  nextSpawn,
-  parseGameTime,
-  type ObjectiveDef,
-} from '../../lib/timerEngine'
-import { useMatchClock } from '../../lib/useMatchClock'
+import { useHeroAnalytics, useHeroes } from '../../lib/queries'
 import { c, f } from '../../theme'
 
-const objectives = timersData.objectives as ObjectiveDef[]
-const SETTINGS_KEY = 'dc.alertSettings.v1'
-const SOON_SEC = 30
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap
 
-interface AlertSettings {
-  notify: boolean
-  leadSec: number
-}
+const FEATURES: { to: Href; icon: IconName; title: string; text: string }[] = [
+  {
+    to: '/timers',
+    icon: 'timer-outline',
+    title: 'Spawn Timers',
+    text: 'Every objective countdown, with alerts that buzz your phone even when the screen is off.',
+  },
+  {
+    to: '/match',
+    icon: 'sword-cross',
+    title: 'My Match',
+    text: 'Pick your hero and the enemy team for matchup win rates and counter items before the horn.',
+  },
+  {
+    to: '/heroes',
+    icon: 'account-group',
+    title: 'Heroes',
+    text: 'Win rates, abilities, typical build paths, and the matchups that matter.',
+  },
+  {
+    to: '/items',
+    icon: 'diamond-stone',
+    title: 'Items',
+    text: 'What every item does, who buys it, and how often it wins.',
+  },
+  {
+    to: '/players',
+    icon: 'magnify',
+    title: 'Players',
+    text: 'Look up anyone by Steam link, ID, or name — rank, stats, and match history.',
+  },
+]
 
-export default function TimersScreen() {
-  const {
-    ready,
-    clock,
-    t,
-    states,
-    startMatch,
-    pauseMatch,
-    resumeMatch,
-    resyncMatch,
-    resetMatch,
-    recordEvent,
-    undoEvent,
-  } = useMatchClock()
-  const [settings, setSettings] = useState<AlertSettings>({ notify: false, leadSec: 20 })
-  const [syncInput, setSyncInput] = useState('')
-  const settingsLoaded = useRef(false)
+export default function HomeScreen() {
+  const router = useRouter()
+  const insets = useSafeAreaInsets()
+  const heroes = useHeroes()
+  const analytics = useHeroAnalytics()
 
-  useEffect(() => {
-    void loadJson<AlertSettings>(SETTINGS_KEY).then((saved) => {
-      if (saved) setSettings(saved)
-      settingsLoaded.current = true
-    })
-  }, [])
-  useEffect(() => {
-    if (settingsLoaded.current) void saveJson(SETTINGS_KEY, settings)
-  }, [settings])
-
-  // Re-plan the scheduled notifications whenever the clock anchor, recorded
-  // events, or alert settings change. (The anchor only changes on start /
-  // pause / resume / sync — not every tick.)
-  useEffect(() => {
-    if (!ready) return
-    if (settings.notify) {
-      void rescheduleSpawnAlerts(objectives, clock, states, settings.leadSec)
-    } else {
-      void clearSpawnAlerts()
-    }
-  }, [ready, clock, states, settings])
-
-  async function toggleNotify(enabled: boolean) {
-    if (!enabled) {
-      setSettings((s) => ({ ...s, notify: false }))
-      return
-    }
-    const granted = await ensureNotifyPermission()
-    if (!granted) {
-      Alert.alert('Notifications blocked', 'Allow notifications for The Cursed Apple in Android settings to get spawn alerts.')
-    }
-    setSettings((s) => ({ ...s, notify: granted }))
-  }
-
-  function handleSync() {
-    const seconds = parseGameTime(syncInput)
-    if (seconds === null) return
-    resyncMatch(seconds)
-    setSyncInput('')
-  }
+  const marquee = useMemo(() => {
+    if (!heroes.data || !analytics.data) return null
+    return [...analytics.data]
+      .sort((a, b) => b.matches - a.matches)
+      .flatMap((stat) => {
+        const hero = heroes.data.get(stat.hero_id)
+        return hero ? [hero] : []
+      })
+      .slice(0, 12)
+  }, [heroes.data, analytics.data])
 
   return (
-    <Screen title="Spawn Timers">
-      <Card style={styles.clockCard}>
-        <Text style={styles.clockLabel}>Match Clock</Text>
-        <Text style={styles.clock}>{formatClock(t)}</Text>
-        <View style={styles.controls}>
-          {!clock && <Btn label="Start Match" solid onPress={startMatch} />}
-          {clock?.running && <Btn label="Pause" onPress={pauseMatch} />}
-          {clock && !clock.running && <Btn label="Resume" solid onPress={resumeMatch} />}
-          {clock && (
-            <Btn
-              label="Reset"
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 26 }]}
+    >
+      <View style={styles.mast}>
+        <Text style={styles.wordmark}>The Cursed Apple</Text>
+        <Text style={styles.tagline}>A Deadlock Companion</Text>
+      </View>
+
+      <Body dim style={styles.blurb}>
+        Your one-stop shop for Deadlock — spawn timers next to your keyboard, a prep board
+        for every match, and the full hero and item meta in your pocket.
+      </Body>
+
+      {marquee && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.marquee}
+        >
+          {marquee.map((hero) => (
+            <Pressable
+              key={hero.id}
               onPress={() =>
-                Alert.alert('Reset the match clock?', undefined, [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Reset', style: 'destructive', onPress: resetMatch },
-                ])
+                router.push({ pathname: '/heroes/[id]', params: { id: String(hero.id) } })
               }
-            />
-          )}
-        </View>
-        <View style={styles.syncRow}>
-          <TextInput
-            style={styles.syncInput}
-            value={syncInput}
-            onChangeText={setSyncInput}
-            placeholder="12:34"
-            placeholderTextColor={c.inkFaint}
-            keyboardType="numbers-and-punctuation"
-            onSubmitEditing={handleSync}
-          />
-          <Btn label="Sync" small onPress={handleSync} />
-        </View>
-        {!clock && (
-          <Note>
-            Press Start when the in-game clock hits 0:00 — or type the current game time and
-            Sync mid-match.
-          </Note>
-        )}
-      </Card>
-
-      <Card style={styles.alertCard}>
-        <View style={styles.alertRow}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={styles.alertTitle}>Spawn alerts</Text>
-            <Note>
-              Fire as notifications even with the screen off — keep the phone next to your
-              keyboard.
-            </Note>
-          </View>
-          <Switch
-            value={settings.notify}
-            onValueChange={(v) => void toggleNotify(v)}
-            trackColor={{ false: c.rule, true: c.brassDim }}
-            thumbColor={settings.notify ? c.brassBright : c.inkFaint}
-          />
-        </View>
-        {settings.notify && (
-          <View style={styles.leadRow}>
-            <Text style={styles.leadLabel}>Lead time</Text>
-            {[10, 20, 30].map((sec) => (
-              <Btn
-                key={sec}
-                small
-                solid={settings.leadSec === sec}
-                label={`${sec}s`}
-                onPress={() => setSettings((s) => ({ ...s, leadSec: sec }))}
+            >
+              <Image
+                source={hero.images.icon_hero_card_webp}
+                style={styles.marqueeArt}
+                contentFit="cover"
+                transition={120}
               />
-            ))}
-          </View>
-        )}
-      </Card>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
-      <SectionTitle>Objectives</SectionTitle>
-      {objectives.map((def) => (
-        <ObjectiveRow
-          key={def.id}
-          def={def}
-          t={t}
-          events={states[def.id]?.events ?? []}
-          onEvent={() => recordEvent(def.id)}
-          onUndo={() => undoEvent(def.id)}
-        />
-      ))}
-      <Note>
-        Timings as of patch {timersData.patch}. Camps and boxes respawn per-instance after
-        clear, so only their first spawn is tracked.
-      </Note>
-    </Screen>
-  )
-}
-
-function ObjectiveRow({
-  def,
-  t,
-  events,
-  onEvent,
-  onUndo,
-}: {
-  def: ObjectiveDef
-  t: number
-  events: number[]
-  onEvent: () => void
-  onUndo: () => void
-}) {
-  const status = nextSpawn(def, events.length ? { events } : emptyState(), t)
-  const remaining = status.kind === 'waiting' ? status.spawnsAt - t : 0
-  const soon = status.kind === 'waiting' && remaining <= SOON_SEC
-
-  return (
-    <Card style={styles.objCard}>
-      <View style={{ flex: 1, gap: 3 }}>
-        <View style={styles.objNameRow}>
-          <Text style={styles.objName}>{def.name}</Text>
-          {def.tier ? <Text style={styles.objTier}>{def.tier}</Text> : null}
-        </View>
-        {def.note ? <Note>{def.note}</Note> : null}
-        {events.length > 0 && (
-          <Text style={styles.eventCount}>
-            {def.eventLabel ?? 'Marked'} ×{events.length} · last at {formatClock(events[events.length - 1])}
-          </Text>
-        )}
+      <View style={{ gap: 10 }}>
+        {FEATURES.map((feature) => (
+          <Pressable
+            key={feature.title}
+            style={({ pressed }) => [styles.feature, pressed && { opacity: 0.75 }]}
+            onPress={() => router.push(feature.to)}
+          >
+            <MaterialCommunityIcons name={feature.icon} size={26} color={c.brass} />
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={styles.featureTitle}>{feature.title}</Text>
+              <Text style={styles.featureText}>{feature.text}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={22} color={c.brassDim} />
+          </Pressable>
+        ))}
       </View>
-      <View style={styles.objRight}>
-        {status.kind === 'waiting' ? (
-          <Mono size={20} color={soon ? c.brassBright : c.ink} style={styles.countdown}>
-            {formatClock(remaining)}
-          </Mono>
-        ) : (
-          <Text style={styles.upBadge}>{status.kind === 'up' ? 'UP' : 'SPAWNED'}</Text>
-        )}
-        {def.eventLabel && (
-          <View style={styles.eventBtns}>
-            {status.kind === 'up' && <Btn small label={def.eventLabel} onPress={onEvent} />}
-            {events.length > 0 && <Btn small label="Undo" onPress={onUndo} />}
-          </View>
-        )}
-      </View>
-    </Card>
+
+      <Text style={styles.foot}>
+        Timings as of patch {timersData.patch} · stats from the community Deadlock API ·
+        thecursedapple.app
+      </Text>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  clockCard: { alignItems: 'center', gap: 12 },
-  clockLabel: {
-    fontFamily: f.bodyBold,
+  screen: { flex: 1, backgroundColor: c.bg },
+  content: { paddingHorizontal: 16, paddingBottom: 32, gap: 18 },
+  mast: { alignItems: 'center', gap: 6 },
+  wordmark: {
+    fontFamily: f.display,
+    fontSize: 30,
+    color: c.brassBright,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  tagline: {
+    fontFamily: f.bodySemi,
     fontSize: 11,
-    letterSpacing: 2.5,
+    letterSpacing: 3.5,
     textTransform: 'uppercase',
     color: c.inkFaint,
   },
-  clock: { fontFamily: f.monoSemi, fontSize: 54, color: c.brassBright },
-  controls: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
-  syncRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-  syncInput: {
+  blurb: { textAlign: 'center' },
+  marquee: { gap: 10 },
+  marqueeArt: { width: 96, height: 128, borderWidth: 1, borderColor: c.rule },
+  feature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: c.bgRaised,
     borderWidth: 1,
     borderColor: c.rule,
     borderRadius: 2,
-    backgroundColor: c.bgInset,
-    color: c.ink,
-    fontFamily: f.mono,
-    fontSize: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    width: 100,
+    padding: 14,
+  },
+  featureTitle: {
+    fontFamily: f.bodyBold,
+    fontSize: 14,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: c.brassBright,
+  },
+  featureText: { fontFamily: f.body, fontSize: 13, color: c.inkDim, lineHeight: 18 },
+  foot: {
+    fontFamily: f.body,
+    fontSize: 11,
+    color: c.inkFaint,
     textAlign: 'center',
+    lineHeight: 17,
   },
-  alertCard: { gap: 12 },
-  alertRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  alertTitle: { fontFamily: f.bodySemi, fontSize: 15, color: c.ink },
-  leadRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  leadLabel: { fontFamily: f.bodySemi, fontSize: 12, color: c.inkFaint, marginRight: 4 },
-  objCard: { flexDirection: 'row', gap: 12, paddingVertical: 12 },
-  objNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  objName: { fontFamily: f.bodySemi, fontSize: 15, color: c.ink },
-  objTier: {
-    fontFamily: f.bodyBold,
-    fontSize: 10,
-    color: c.brass,
-    borderWidth: 1,
-    borderColor: c.brassDim,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  eventCount: { fontFamily: f.mono, fontSize: 11, color: c.inkFaint },
-  objRight: { alignItems: 'flex-end', gap: 8, justifyContent: 'center' },
-  countdown: { fontVariant: ['tabular-nums'] },
-  upBadge: {
-    fontFamily: f.bodyBold,
-    fontSize: 13,
-    letterSpacing: 1.5,
-    color: c.up,
-  },
-  eventBtns: { flexDirection: 'row', gap: 6 },
 })
