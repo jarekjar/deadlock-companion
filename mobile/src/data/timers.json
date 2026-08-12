@@ -1,0 +1,133 @@
+{
+  "patch": "2026-03-09",
+  "verifiedOn": "2026-08-11",
+  "sources": [
+    "https://lockbuilds.com/match-timeline",
+    "https://steamcommunity.com/sharedfiles/filedetails/?id=3676353238",
+    "https://deadlock.wiki/Neutral"
+  ],
+  "objectives": [
+    {
+      "id": "small-camps",
+      "name": "Small Camps",
+      "tier": "T1",
+      "firstSpawn": 120,
+      "mode": "info",
+      "note": "Respawn ~1:25 after clear"
+    },
+    {
+      "id": "boxes-statues",
+      "name": "Boxes & Golden Statues",
+      "firstSpawn": 120,
+      "mode": "info",
+      "note": "Statues respawn ~3:00"
+    },
+    {
+      "id": "bridge-buffs",
+      "name": "Bridge Buffs",
+      "firstSpawn": 300,
+      "mode": "interval",
+      "interval": 300,
+      "note": "New wave on all four bridges",
+      "mapSpots": [
+        {
+          "left": 0.4,
+          "top": 0.42
+        },
+        {
+          "left": 0.6,
+          "top": 0.42
+        },
+        {
+          "left": 0.4,
+          "top": 0.58
+        },
+        {
+          "left": 0.6,
+          "top": 0.58
+        }
+      ]
+    },
+    {
+      "id": "medium-camps",
+      "name": "Medium Camps",
+      "tier": "T2",
+      "firstSpawn": 300,
+      "mode": "info",
+      "note": "Respawn ~5:00 after clear"
+    },
+    {
+      "id": "hard-camps",
+      "name": "Hard Camps",
+      "tier": "T3",
+      "firstSpawn": 480,
+      "mode": "info",
+      "note": "Respawn ~5:35 after clear"
+    },
+    {
+      "id": "sinners",
+      "name": "Sinner's Sacrifice",
+      "firstSpawn": 480,
+      "mode": "event",
+      "respawn": 300,
+      "eventLabel": "Broken",
+      "note": "Respawns 5:00 after broken, per machine",
+      "mapSpots": [
+        {
+          "left": 0.28,
+          "top": 0.33
+        },
+        {
+          "left": 0.72,
+          "top": 0.33
+        },
+        {
+          "left": 0.28,
+          "top": 0.67
+        },
+        {
+          "left": 0.72,
+          "top": 0.67
+        }
+      ]
+    },
+    {
+      "id": "midboss",
+      "name": "Mid-Boss",
+      "firstSpawn": 600,
+      "mode": "ladder",
+      "ladder": [
+        420,
+        360,
+        300
+      ],
+      "eventLabel": "Killed",
+      "note": "Respawns 7:00, then 6:00, then 5:00",
+      "mapSpots": [
+        {
+          "left": 0.5,
+          "top": 0.5
+        }
+      ]
+    },
+    {
+      "id": "urn",
+      "name": "Soul Urn",
+      "firstSpawn": 600,
+      "mode": "event",
+      "respawn": 300,
+      "eventLabel": "Delivered",
+      "note": "Respawns 5:00 after delivery",
+      "mapSpots": [
+        {
+          "left": 0.18,
+          "top": 0.5
+        },
+        {
+          "left": 0.82,
+          "top": 0.5
+        }
+      ]
+    }
+  ]
+}

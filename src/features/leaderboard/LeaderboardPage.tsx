@@ -15,7 +15,6 @@ import '../heroes/heroes.css'
 import '../live/live.css'
 import '../matches/match.css'
 import './leaderboard.css'
-import { isNative } from '../../lib/native'
 
 const PAGE_SIZE = 100
 
@@ -239,7 +238,7 @@ function DistributionView() {
         {percentile !== null &&
           ` You are ${rankName(myBadge, rankAssets.data)} — top ${percentile.toFixed(1)}% of ranked players.`}
         {session.data && myBadge === 0 && ' Play ranked matches to appear on this chart.'}
-        {!session.data && !isNative && ' Sign in through Steam to see where you land.'}
+        {!session.data && ' Sign in through Steam to see where you land.'}
       </p>
       <div className="chart-panel">
         <div className="chart-wrap">

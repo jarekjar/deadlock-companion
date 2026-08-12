@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "The Cursed Apple",
+    "slug": "cursed-apple",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "cursedapple",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#17110b",
+    "ios": {
+      "bundleIdentifier": "app.thecursedapple",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.thecursedapple",
+      "adaptiveIcon": {
+        "backgroundColor": "#17110b",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#17110b",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 140
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#c9a24b"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

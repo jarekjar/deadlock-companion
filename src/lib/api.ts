@@ -3,8 +3,6 @@
  * CORS is open and no key is needed at standard rate limits (100 req/s per IP).
  * Types are trimmed to the fields this app actually reads.
  */
-import { FUNCTIONS_BASE } from './native'
-
 const API_BASE = 'https://api.deadlock-api.com'
 
 export interface MatchHistoryEntry {
@@ -367,7 +365,7 @@ export const isWin = (m: MatchHistoryEntry) => m.match_result === m.player_team
  */
 export async function resolveVanity(name: string): Promise<number | null> {
   try {
-    const res = await fetch(`${FUNCTIONS_BASE}/api/resolve-vanity?name=${encodeURIComponent(name)}`)
+    const res = await fetch(`/api/resolve-vanity?name=${encodeURIComponent(name)}`)
     if (!res.ok) return null
     const body = (await res.json()) as { accountId: number }
     return body.accountId

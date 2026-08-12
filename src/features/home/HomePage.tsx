@@ -14,7 +14,6 @@ import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../live/live.css'
 import './home.css'
-import { isNative } from '../../lib/native'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
 
@@ -120,8 +119,8 @@ export default function HomePage() {
           <h3>Prep your next match</h3>
           <p>
             Pick your hero and the enemy team on the My Match board and get matchup win rates,
-            counter items, spawn timers, and lane tracking — ready before the horn.
-            {!isNative && ' Sign in through Steam and it can even fill itself from your live game.'}
+            counter items, spawn timers, and lane tracking — ready before the horn. Sign in
+            through Steam and it can even fill itself from your live game.
           </p>
         </div>
         <Link className="btn btn-solid" to="/my-match">
@@ -142,7 +141,7 @@ export default function HomePage() {
 
       <p className="home-cta">
         Open My Match before your next game, or paste your Steam profile link under Players.
-        {!isNative && ' Sign in through Steam to pin your profile and auto-fill your live match.'}
+        Sign in through Steam to pin your profile and auto-fill your live match.
       </p>
     </>
   )

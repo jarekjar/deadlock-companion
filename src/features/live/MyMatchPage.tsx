@@ -22,7 +22,6 @@ import { useRankFilter } from '../../lib/rankFilter'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './live.css'
-import { isNative } from '../../lib/native'
 
 const LANES = ['Left', 'Mid', 'Right', 'Flex'] as const
 const PREP_KEY = 'dc.prepBoard.v1'
@@ -180,7 +179,7 @@ export default function MyMatchPage() {
           </button>
         </div>
       )}
-      {!session.data && !isNative && (
+      {!session.data && (
         <p className="grid-note">
           Tip: sign in through Steam and this page can fill itself from your live match.
         </p>

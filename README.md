@@ -42,6 +42,13 @@ matches for Valve's Deadlock — in a 1930s-noir dress. Free, no account needed.
 Stats come from the community [Deadlock API](https://deadlock-api.com); game art is
 served from its assets service.
 
+## Mobile app
+
+A separate Android app lives in [`mobile/`](mobile/) — built with React Native and
+designed for the phone rather than wrapped from the website. Its headline feature is
+native spawn-alert notifications that fire even with the screen off. See the
+[mobile README](mobile/README.md) for building and sideloading.
+
 ## Development
 
 ```sh
