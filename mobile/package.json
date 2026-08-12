@@ -43,8 +43,9 @@
     "android": "expo run:android",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "prebuild:android": "expo prebuild --platform android && node scripts/patch-android-windows.mjs",
-    "apk": "cd android && gradlew assembleRelease"
+    "prebuild:android": "expo prebuild --platform android && node scripts/patch-android-windows.mjs && node scripts/patch-android-release.mjs",
+    "apk": "cd android && .\\gradlew.bat assembleRelease",
+    "aab": "cd android && .\\gradlew.bat bundleRelease"
   },
   "private": true
 }
