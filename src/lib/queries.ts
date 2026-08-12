@@ -1,5 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import {
+  fetchAbilityOrderStats,
   fetchActiveMatches,
   fetchActiveMatchForPlayer,
   fetchAllItemStats,
@@ -137,47 +138,55 @@ export function useRanks(accountIds: number[]) {
   })
 }
 
-export const useHeroAnalytics = () =>
+export const useHeroAnalytics = (minBadge = 0) =>
   useQuery({
-    queryKey: ['heroAnalytics', SINCE_30D],
-    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D),
+    queryKey: ['heroAnalytics', SINCE_30D, minBadge],
+    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D, minBadge),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroCounters = () =>
+export const useHeroCounters = (minBadge = 0) =>
   useQuery({
-    queryKey: ['heroCounters', SINCE_30D],
-    queryFn: () => fetchHeroCounterStats(SINCE_30D),
+    queryKey: ['heroCounters', SINCE_30D, minBadge],
+    queryFn: () => fetchHeroCounterStats(SINCE_30D, minBadge),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroItemStats = (heroId: number) =>
+export const useHeroItemStats = (heroId: number, minBadge = 0) =>
   useQuery({
-    queryKey: ['heroItemStats', heroId, SINCE_30D],
-    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D),
+    queryKey: ['heroItemStats', heroId, SINCE_30D, minBadge],
+    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D, minBadge),
     enabled: heroId > 0,
     staleTime: 30 * 60 * 1000,
   })
 
-export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
+export const useAbilityOrders = (heroId: number, minBadge = 0) =>
   useQuery({
-    queryKey: ['counterItems', heroId, enemyHeroId, SINCE_30D],
-    queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D),
+    queryKey: ['abilityOrders', heroId, SINCE_30D, minBadge],
+    queryFn: () => fetchAbilityOrderStats(heroId, SINCE_30D, minBadge),
+    enabled: heroId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useCounterItems = (heroId: number, enemyHeroId: number | null, minBadge = 0) =>
+  useQuery({
+    queryKey: ['counterItems', heroId, enemyHeroId, SINCE_30D, minBadge],
+    queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D, minBadge),
     enabled: heroId > 0 && enemyHeroId !== null,
     staleTime: 30 * 60 * 1000,
   })
 
-export const useAllItemStats = () =>
+export const useAllItemStats = (minBadge = 0) =>
   useQuery({
-    queryKey: ['allItemStats', SINCE_30D],
-    queryFn: () => fetchAllItemStats(SINCE_30D),
+    queryKey: ['allItemStats', SINCE_30D, minBadge],
+    queryFn: () => fetchAllItemStats(SINCE_30D, minBadge),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroStatsWithItem = (itemId: number) =>
+export const useHeroStatsWithItem = (itemId: number, minBadge = 0) =>
   useQuery({
-    queryKey: ['heroStatsWithItem', itemId, SINCE_30D],
-    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D),
+    queryKey: ['heroStatsWithItem', itemId, SINCE_30D, minBadge],
+    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D, minBadge),
     enabled: itemId > 0,
     staleTime: 30 * 60 * 1000,
   })

@@ -413,7 +413,7 @@ select option::checkmark {
   }
 }
 
-.shell > :not(.app-bg) {
+.shell > :not(.app-bg, .palette-overlay) {
   position: relative;
   z-index: 1;
 }

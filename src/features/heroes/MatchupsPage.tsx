@@ -6,6 +6,8 @@ import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib
 import { winRateClass } from '../../lib/winrate'
 import HeroBrowser from './HeroBrowser'
 import { usePageMeta } from '../../lib/usePageMeta'
+import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
+import RankFilterControl from '../../shared/RankFilterControl'
 import '../players/players.css'
 import './heroes.css'
 
@@ -63,7 +65,8 @@ export default function MatchupsPage() {
 type MatchupSortKey = 'win' | 'matches' | 'name'
 
 function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, HeroAsset> }) {
-  const counters = useHeroCounters()
+  const { minBadge } = useRankFilter()
+  const counters = useHeroCounters(minBadge)
   const [openEnemy, setOpenEnemy] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<MatchupSortKey>('win')
@@ -107,7 +110,9 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
 
   return (
     <section className="data-section">
-      <h3>{hero.name} — matchups, last 30 days</h3>
+      <h3>
+        {hero.name} — matchups, last 30 days · {bracketLabel(minBadge)}
+      </h3>
       <div className="control-bar">
         <span className="cb-group cb-search">
           <input
@@ -136,6 +141,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
             {descending ? 'Desc' : 'Asc'}
           </button>
         </span>
+        <RankFilterControl />
       </div>
       <span className="dim-note">win rate ascending = toughest opponents first</span>
       <div className="table-wrap">
@@ -302,7 +308,8 @@ export function CounterItems({
   enemy: HeroAsset
   heroName: string
 }) {
-  const stats = useCounterItems(heroId, enemy.id)
+  const { minBadge } = useRankFilter()
+  const stats = useCounterItems(heroId, enemy.id, minBadge)
   const items = useItems()
 
   const rows = useMemo(() => {

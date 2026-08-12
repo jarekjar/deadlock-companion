@@ -11,6 +11,8 @@ import {
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
 import { usePageMeta } from '../../lib/usePageMeta'
+import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
+import RankFilterControl from '../../shared/RankFilterControl'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './items.css'
@@ -31,9 +33,10 @@ export default function ItemPage() {
 
 function Item({ itemId }: { itemId: number }) {
   const items = useItems()
-  const allStats = useAllItemStats()
-  const heroAnalytics = useHeroAnalytics()
-  const withItem = useHeroStatsWithItem(itemId)
+  const { minBadge } = useRankFilter()
+  const allStats = useAllItemStats(minBadge)
+  const heroAnalytics = useHeroAnalytics(minBadge)
+  const withItem = useHeroStatsWithItem(itemId, minBadge)
   const heroes = useHeroes()
 
   const item = items.data?.get(itemId)
@@ -169,6 +172,7 @@ function Item({ itemId }: { itemId: number }) {
               {descending ? 'Desc' : 'Asc'}
             </button>
           </span>
+          <RankFilterControl />
         </div>
         {!heroRows ? (
           <div className="page-note">Loading hero data</div>
@@ -206,8 +210,8 @@ function Item({ itemId }: { itemId: number }) {
           </div>
         )}
         <p className="grid-note" style={{ marginTop: 14 }}>
-          Last 30 days, all ranks. Pick rate is the share of that hero's matches where the item
-          was bought.
+          Last 30 days · {bracketLabel(minBadge)}. Pick rate is the share of that hero's matches
+          where the item was bought.
         </p>
       </section>
     </>

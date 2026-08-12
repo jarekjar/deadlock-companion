@@ -18,6 +18,7 @@ import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
 import MiniTimers from '../timers/MiniTimers'
 import { usePageMeta } from '../../lib/usePageMeta'
+import { useRankFilter } from '../../lib/rankFilter'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './live.css'
@@ -53,8 +54,9 @@ export default function MyMatchPage() {
   )
   const navigate = useNavigate()
   const heroes = useHeroes()
-  const analytics = useHeroAnalytics()
-  const counters = useHeroCounters()
+  const { minBadge } = useRankFilter()
+  const analytics = useHeroAnalytics(minBadge)
+  const counters = useHeroCounters(minBadge)
   const session = useSession()
   const live = useLiveMatchForPlayer(session.data ?? 0)
 

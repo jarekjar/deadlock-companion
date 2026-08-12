@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useSession, useSignOut } from '../lib/session'
+import { OPEN_PALETTE_EVENT } from './CommandPalette'
 
 export default function Header() {
   const session = useSession()
@@ -38,6 +39,13 @@ export default function Header() {
             Steam Sign-In
           </a>
         )}
+        <button
+          className="nav-action"
+          title="Quick search (Ctrl+K)"
+          onClick={() => window.dispatchEvent(new Event(OPEN_PALETTE_EVENT))}
+        >
+          Search
+        </button>
       </nav>
     </header>
   )

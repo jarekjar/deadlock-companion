@@ -234,32 +234,57 @@ export interface ItemStat {
   avg_buy_time_s: number
 }
 
-export const fetchHeroCounterStats = (sinceUnix: number) =>
-  get<HeroCounterStat[]>(`/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}`)
+/** `&min_average_badge=71` etc.; empty for all ranks. */
+const badgeParam = (minBadge: number) => (minBadge > 0 ? `&min_average_badge=${minBadge}` : '')
 
-export const fetchAnalyticsHeroStats = (sinceUnix: number) =>
-  get<AnalyticsHeroStat[]>(`/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`)
+export const fetchHeroCounterStats = (sinceUnix: number, minBadge = 0) =>
+  get<HeroCounterStat[]>(
+    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+  )
 
-export const fetchHeroItemStats = (heroId: number, sinceUnix: number) =>
-  get<ItemStat[]>(`/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}`)
+export const fetchAnalyticsHeroStats = (sinceUnix: number, minBadge = 0) =>
+  get<AnalyticsHeroStat[]>(
+    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+  )
+
+export const fetchHeroItemStats = (heroId: number, sinceUnix: number, minBadge = 0) =>
+  get<ItemStat[]>(
+    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+  )
+
+export interface AbilityOrderStat {
+  abilities: number[]
+  matches: number
+  wins: number
+}
+
+export const fetchAbilityOrderStats = (heroId: number, sinceUnix: number, minBadge = 0) =>
+  get<AbilityOrderStat[]>(
+    `/v1/analytics/ability-order-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}&min_matches=100${badgeParam(minBadge)}`,
+  )
 
 /** Global per-item stats over a window: usage and win rate for every item. */
-export const fetchAllItemStats = (sinceUnix: number) =>
-  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}`)
+export const fetchAllItemStats = (sinceUnix: number, minBadge = 0) =>
+  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`)
 
 /** Per-hero stats restricted to matches where the given item was bought. */
-export const fetchHeroStatsWithItem = (itemId: number, sinceUnix: number) =>
+export const fetchHeroStatsWithItem = (itemId: number, sinceUnix: number, minBadge = 0) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}`,
+    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
   )
 
 /** Lifetime item usage for one player — the basis for "favorite items". */
 export const fetchPlayerItemStats = (accountId: number) =>
   get<ItemStat[]>(`/v1/analytics/item-stats?account_ids=${accountId}&min_matches=1`)
 
-export const fetchCounterItemStats = (heroId: number, enemyHeroId: number, sinceUnix: number) =>
+export const fetchCounterItemStats = (
+  heroId: number,
+  enemyHeroId: number,
+  sinceUnix: number,
+  minBadge = 0,
+) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
   )
 
 export const fetchMatchMetadata = (matchId: number) =>

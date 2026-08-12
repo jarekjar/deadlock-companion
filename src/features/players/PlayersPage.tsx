@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { parsePlayerInput } from '../../lib/steamid'
 import { resolveVanity } from '../../lib/api'
 import { usePlayerSearch, useRanks } from '../../lib/queries'
@@ -14,8 +14,10 @@ export default function PlayersPage() {
     'Look up any Deadlock player by Steam link, ID, or name: win rate, KDA, hero stats, rank, and full match history.',
   )
   const navigate = useNavigate()
-  const [input, setInput] = useState('')
-  const [query, setQuery] = useState('')
+  const [params] = useSearchParams()
+  const initialQuery = params.get('q') ?? ''
+  const [input, setInput] = useState(initialQuery)
+  const [query, setQuery] = useState(initialQuery)
   const [resolving, setResolving] = useState(false)
   const search = usePlayerSearch(query)
   const { favorites, toggle } = useFavorites()

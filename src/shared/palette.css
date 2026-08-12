@@ -1,0 +1,99 @@
+/* Self-contained: the palette mounts on every page, so it can't lean on the
+   modal classes that ship with the lazy timers chunk. */
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 7, 4, 0.72);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 20px 20px;
+  z-index: 20;
+}
+
+.palette-panel {
+  background: var(--bg);
+  border: 1px solid var(--brass-dim);
+  max-width: 560px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.palette-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg-inset);
+  padding: 16px 18px;
+  font-size: 16px;
+}
+
+.palette-input:focus {
+  outline: none;
+  border-bottom-color: var(--brass-dim);
+}
+
+.palette-results {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 18px;
+  text-align: left;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+
+.palette-row.selected {
+  background: var(--bg-raised);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--brass);
+}
+
+.palette-row img {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--rule);
+  background: var(--bg-inset);
+  object-fit: cover;
+}
+
+.palette-glyph {
+  width: 26px;
+  text-align: center;
+  color: var(--brass-dim);
+  font-size: 11px;
+}
+
+.palette-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette-kind {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.palette-hint {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  padding: 10px;
+  border-top: 1px solid var(--rule-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}

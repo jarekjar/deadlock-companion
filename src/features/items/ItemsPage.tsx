@@ -5,6 +5,8 @@ import { useAllItemStats, useHeroAnalytics, useItems } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import ItemHover from '../../shared/ItemHover'
 import { usePageMeta } from '../../lib/usePageMeta'
+import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
+import RankFilterControl from '../../shared/RankFilterControl'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './items.css'
@@ -19,8 +21,9 @@ export default function ItemsPage() {
   )
   const navigate = useNavigate()
   const items = useItems()
-  const stats = useAllItemStats()
-  const analytics = useHeroAnalytics()
+  const { minBadge } = useRankFilter()
+  const stats = useAllItemStats(minBadge)
+  const analytics = useHeroAnalytics(minBadge)
   const [search, setSearch] = useState('')
   const [slot, setSlot] = useState('all')
   const [tier, setTier] = useState(0)
@@ -121,8 +124,9 @@ export default function ItemsPage() {
             {descending ? 'Desc' : 'Asc'}
           </button>
         </span>
+        <RankFilterControl />
       </div>
-      <p className="grid-note">Usage and win rates from all matches in the last 30 days.</p>
+      <p className="grid-note">Usage and win rates, last 30 days · {bracketLabel(minBadge)}.</p>
       {!rows ? (
         <div className="page-note">Loading items</div>
       ) : rows.length === 0 ? (

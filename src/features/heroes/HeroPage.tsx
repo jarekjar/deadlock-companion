@@ -9,12 +9,15 @@ import {
 } from '../../lib/api'
 import ItemHover from '../../shared/ItemHover'
 import {
+  useAbilityOrders,
   useHeroAnalytics,
   useHeroes,
   useHeroItemStats,
   useItems,
   useItemsByClassName,
 } from '../../lib/queries'
+import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
+import RankFilterControl from '../../shared/RankFilterControl'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
 import { usePageMeta } from '../../lib/usePageMeta'
@@ -35,6 +38,7 @@ export default function HeroPage() {
 
 function Hero({ heroId }: { heroId: number }) {
   const heroes = useHeroes()
+  const { minBadge } = useRankFilter()
   const heroName = heroes.data?.get(heroId)?.name
   usePageMeta(
     heroName
@@ -44,8 +48,8 @@ function Hero({ heroId }: { heroId: number }) {
       ? `${heroName} guide for Deadlock: abilities and rank buffs, base stats and weapon, win rate, and the most popular items per tier.`
       : undefined,
   )
-  const analytics = useHeroAnalytics()
-  const itemStats = useHeroItemStats(heroId)
+  const analytics = useHeroAnalytics(minBadge)
+  const itemStats = useHeroItemStats(heroId, minBadge)
   const items = useItems()
 
   const hero = heroes.data?.get(heroId)
@@ -101,6 +105,11 @@ function Hero({ heroId }: { heroId: number }) {
         </div>
       </div>
 
+      <div className="control-bar hero-rank-bar">
+        <RankFilterControl />
+        <span className="cb-group cb-count">stats: last 30 days · {bracketLabel(minBadge)}</span>
+      </div>
+
       <div className="stat-row">
         <div className="stat-tile">
           <div className="stat-label">Win rate</div>
@@ -132,7 +141,9 @@ function Hero({ heroId }: { heroId: number }) {
       <AboutSection hero={hero} />
       <BaseStatsSection hero={hero} />
       <AbilitiesSection hero={hero} />
+      <AbilityOrderSection heroId={heroId} minBadge={minBadge} />
       <ScalingSection hero={hero} />
+      <BuildPathSection byTier={byTier} />
 
       {byTier ? (
         byTier.map((rows, tier) =>
@@ -173,8 +184,9 @@ function Hero({ heroId }: { heroId: number }) {
         <div className="page-note">Loading item stats</div>
       )}
       <p className="grid-note" style={{ marginTop: 18 }}>
-        Last 30 days, all ranks. Win rate is for matches where the item was bought — popular
-        late-game items skew high because buying them means the game already went well.
+        Last 30 days · {bracketLabel(minBadge)}. Item win rate is for matches where the item was
+        bought — popular late-game items skew high because buying them means the game already
+        went well.
       </p>
     </div>
   )
@@ -273,6 +285,90 @@ function BaseStatsSection({ hero }: { hero: HeroAsset }) {
         {panel('Vitality', vitalityLines)}
         {panel('Spirit', spiritLines)}
       </div>
+    </section>
+  )
+}
+
+type TierRow = { item: ItemAsset; stats: ItemStat; usage: number; winRate: number }
+
+function BuildPathSection({ byTier }: { byTier: TierRow[][] | null }) {
+  if (!byTier) return null
+  const steps = byTier
+    .flat()
+    .filter((row) => row.usage >= 25)
+    .sort((a, b) => a.stats.avg_buy_time_s - b.stats.avg_buy_time_s)
+    .slice(0, 10)
+  if (steps.length < 3) return null
+  return (
+    <section className="data-section">
+      <h3>Typical Build Path</h3>
+      <div className="build-path">
+        {steps.map(({ item, stats, usage }) => (
+          <span key={item.id} className="bp-step">
+            <ItemHover
+              item={item}
+              size={46}
+              extraLine={`bought in ${usage.toFixed(0)}% of matches · avg ${formatClock(stats.avg_buy_time_s)}`}
+            />
+            <span>{formatClock(stats.avg_buy_time_s)}</span>
+          </span>
+        ))}
+      </div>
+      <p className="grid-note left-note">
+        The most popular items, ordered by when players typically buy them.
+      </p>
+    </section>
+  )
+}
+
+function AbilityOrderSection({ heroId, minBadge }: { heroId: number; minBadge: number }) {
+  const orders = useAbilityOrders(heroId, minBadge)
+  const items = useItems()
+
+  const rows = useMemo(() => {
+    if (!orders.data || !items.data) return null
+    return [...orders.data]
+      .filter((o) => o.matches >= 300 && o.abilities.length >= 8)
+      .sort((a, b) => b.matches - a.matches)
+      .slice(0, 3)
+      .map((o) => ({ ...o, winRate: (o.wins / o.matches) * 100 }))
+  }, [orders.data, items.data])
+
+  if (!rows || rows.length === 0 || !items.data) return null
+
+  return (
+    <section className="data-section">
+      <h3>Popular Ability Orders</h3>
+      <div className="order-list">
+        {rows.map((order, index) => (
+          <div key={index} className="order-row">
+            <span className="order-seq">
+              {order.abilities.map((abilityId, step) => {
+                const ability = items.data.get(abilityId)
+                const icon = ability ? itemIcon(ability) : undefined
+                return icon ? (
+                  <img
+                    key={step}
+                    src={icon}
+                    alt={ability!.name}
+                    title={`${step + 1}. ${ability!.name}`}
+                    loading="lazy"
+                  />
+                ) : null
+              })}
+            </span>
+            <span className="order-meta">
+              <span className={`mono ${winRateClass(order.winRate)}`}>
+                {order.winRate.toFixed(1)}%
+              </span>{' '}
+              <span className="dim-count">({order.matches.toLocaleString()} matches)</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="grid-note left-note">
+        Each row is a complete ability-point order, first purchase to last.
+      </p>
     </section>
   )
 }

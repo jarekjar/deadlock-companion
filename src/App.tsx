@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './shared/Header'
+import CommandPalette from './shared/CommandPalette'
 import HomePage from './features/home/HomePage'
 import timersData from './data/timers.json'
 import { useHeroes } from './lib/queries'
@@ -44,6 +45,7 @@ export default function App() {
         aria-hidden
       />
       <Header />
+      <CommandPalette />
       <main key={location.pathname} className="shell-main">
         <Suspense fallback={<div className="page-note">Loading</div>}>
           <Routes>
