@@ -22,6 +22,7 @@ import {
   type AlertSettings,
 } from './alerts'
 import './timers.css'
+import { isNative } from '../../lib/native'
 
 const objectives = timersData.objectives as ObjectiveDef[]
 const SETTINGS_KEY = 'dc.alertSettings.v1'
@@ -179,9 +180,11 @@ export default function TimersPage() {
               Reset
             </button>
           )}
-          <button className="btn" onClick={() => void syncMyMatch()} disabled={liveSync.busy}>
-            {liveSync.busy ? 'Searching' : 'Sync My Match'}
-          </button>
+          {!isNative && (
+            <button className="btn" onClick={() => void syncMyMatch()} disabled={liveSync.busy}>
+              {liveSync.busy ? 'Searching' : 'Sync My Match'}
+            </button>
+          )}
           <button className="btn" onClick={() => setShowCheatSheet(true)}>
             Cheat Sheet
           </button>
@@ -201,8 +204,8 @@ export default function TimersPage() {
         {liveSync.message && <p className="clock-hint">{liveSync.message}</p>}
         {!clock && !liveSync.message && (
           <p className="clock-hint">
-            Press Start when the in-game clock hits 0:00, type the current game time and press
-            Sync — or use Sync My Match to find your live game (Steam sign-in required).
+            Press Start when the in-game clock hits 0:00, or type the current game time and press
+            Sync{isNative ? '.' : ' — or use Sync My Match to find your live game (Steam sign-in required).'}
           </p>
         )}
         <div className="alert-controls">

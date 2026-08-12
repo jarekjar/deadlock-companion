@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import { isNative } from '../lib/native'
 import { useSession, useSignOut } from '../lib/session'
 import { OPEN_PALETTE_EVENT } from './CommandPalette'
 
@@ -34,7 +35,7 @@ export default function Header() {
               Sign Out
             </button>
           </>
-        ) : (
+        ) : isNative ? null : (
           <a href="/api/auth/login" rel="nofollow">
             Steam Sign-In
           </a>

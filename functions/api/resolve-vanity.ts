@@ -24,6 +24,11 @@ export const onRequestGet = async (context: { request: Request }) => {
 function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // public lookup, no cookies involved — the native app calls this
+      // cross-origin from its local WebView origin
+      'Access-Control-Allow-Origin': '*',
+    },
   })
 }

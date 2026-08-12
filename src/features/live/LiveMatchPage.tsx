@@ -16,6 +16,7 @@ import { formatClock } from '../timers/timerEngine'
 import { syncClockFromLive } from '../timers/useMatchClock'
 import '../players/players.css'
 import './live.css'
+import { isNative } from '../../lib/native'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
 
@@ -86,12 +87,16 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
           >
             Sync spawn timers to this match
           </button>{' '}
-          <a className="btn" href="steam://rungameid/1422450">
-            Watch in Deadlock
-          </a>
-          <div className="watch-hint">
-            The watch button opens Deadlock — find match #{match.match_id} in the Watch tab.
-          </div>
+          {!isNative && (
+            <>
+              <a className="btn" href="steam://rungameid/1422450">
+                Watch in Deadlock
+              </a>
+              <div className="watch-hint">
+                The watch button opens Deadlock — find match #{match.match_id} in the Watch tab.
+              </div>
+            </>
+          )}
         </div>
       </div>
 
