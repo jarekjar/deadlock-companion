@@ -169,7 +169,9 @@ function LiveNow() {
   const badges = useRanks(allIds)
   const rankAssets = useRankAssets()
 
-  if (!top || top.length === 0) return null
+  // reserve the section's height while loading so the grid below doesn't shift
+  if (!top) return <section className="home-live home-live-pending" aria-hidden />
+  if (top.length === 0) return null
 
   return (
     <section className="home-live">

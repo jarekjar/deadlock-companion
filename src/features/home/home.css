@@ -142,6 +142,10 @@
   margin-bottom: 40px;
 }
 
+.home-live-pending {
+  min-height: 214px;
+}
+
 .home-live-head {
   display: flex;
   align-items: center;
