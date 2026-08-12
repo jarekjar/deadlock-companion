@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './shared/Header'
 import CommandPalette from './shared/CommandPalette'
 import HomePage from './features/home/HomePage'
@@ -23,6 +23,7 @@ const LeaderboardPage = lazy(() => import('./features/leaderboard/LeaderboardPag
 const LiveMatchesPage = lazy(() => import('./features/live/LiveMatchesPage'))
 const LiveMatchPage = lazy(() => import('./features/live/LiveMatchPage'))
 const MyMatchPage = lazy(() => import('./features/live/MyMatchPage'))
+const PrivacyPage = lazy(() => import('./features/privacy/PrivacyPage'))
 
 export default function App() {
   const location = useLocation()
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/live" element={<LiveMatchesPage />} />
             <Route path="/live/:matchId" element={<LiveMatchPage />} />
             <Route path="/my-match" element={<MyMatchPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
@@ -72,7 +74,8 @@ export default function App() {
       <footer className="site-footer">
         Built by <a href="https://github.com/jarekjar">Jared Kjar</a> · timings as of patch{' '}
         {timersData.patch} · stats from the community Deadlock API ·{' '}
-        <a href="https://github.com/jarekjar/deadlock-companion">source</a>
+        <a href="https://github.com/jarekjar/deadlock-companion">source</a> ·{' '}
+        <Link to="/privacy">privacy</Link>
       </footer>
     </div>
   )
