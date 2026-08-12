@@ -16,12 +16,10 @@ import { loadJson, saveJson } from '../../lib/storage'
 import { c, f, winRateColor } from '../../theme'
 
 const PREP_KEY = 'dc.prepBoard.v1'
-const LANES = ['L', 'M', 'R', 'FX'] as const
 const MAX_ENEMIES = 6
 
 interface PrepEnemy {
   heroId: number
-  lane: string
 }
 
 interface PrepState {
@@ -34,7 +32,6 @@ export default function MyMatchScreen() {
   const heroes = useHeroes()
   const analytics = useHeroAnalytics()
   const counters = useHeroCounters()
-  const items = useItems()
 
   const [prep, setPrep] = useState<PrepState>({ myHeroId: null, enemies: [] })
   const [picker, setPicker] = useState<'mine' | 'enemy' | null>(null)
@@ -73,15 +70,6 @@ export default function MyMatchScreen() {
     return rates.reduce((sum, v) => sum + v, 0) / rates.length
   }, [prep.myHeroId, prep.enemies, matchupWinRates])
 
-  function setLane(index: number, lane: string) {
-    setPrep((p) => ({
-      ...p,
-      enemies: p.enemies.map((en, i) =>
-        i === index ? { ...en, lane: en.lane === lane ? '' : lane } : en,
-      ),
-    }))
-  }
-
   return (
     <Screen title="My Match">
       <Note>
@@ -108,7 +96,7 @@ export default function MyMatchScreen() {
       )}
 
       <SectionTitle>Enemy Team</SectionTitle>
-      {prep.enemies.map((enemy, index) => {
+      {prep.enemies.map((enemy) => {
         const hero = heroes.data?.get(enemy.heroId)
         const wr = matchupWinRates.get(enemy.heroId)
         if (!hero) return null
@@ -135,42 +123,25 @@ export default function MyMatchScreen() {
               )}
             </View>
             <View style={styles.enemyControls}>
-              <View style={styles.laneSeg}>
-                {LANES.map((lane) => (
-                  <Pressable
-                    key={lane}
-                    onPress={() => setLane(index, lane)}
-                    style={[styles.laneBtn, enemy.lane === lane && styles.laneBtnOn]}
-                  >
-                    <Text
-                      style={[styles.laneLabel, enemy.lane === lane && styles.laneLabelOn]}
-                    >
-                      {lane}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {prep.myHeroId ? (
-                  <Btn
-                    small
-                    label={openCounters === enemy.heroId ? 'Hide items' : 'Counter items'}
-                    onPress={() =>
-                      setOpenCounters(openCounters === enemy.heroId ? null : enemy.heroId)
-                    }
-                  />
-                ) : null}
+              {prep.myHeroId ? (
                 <Btn
                   small
-                  label="Remove"
+                  label={openCounters === enemy.heroId ? 'Hide items' : 'Counter items'}
                   onPress={() =>
-                    setPrep((p) => ({
-                      ...p,
-                      enemies: p.enemies.filter((e) => e.heroId !== enemy.heroId),
-                    }))
+                    setOpenCounters(openCounters === enemy.heroId ? null : enemy.heroId)
                   }
                 />
-              </View>
+              ) : null}
+              <Btn
+                small
+                label="Remove"
+                onPress={() =>
+                  setPrep((p) => ({
+                    ...p,
+                    enemies: p.enemies.filter((e) => e.heroId !== enemy.heroId),
+                  }))
+                }
+              />
             </View>
             {openCounters === enemy.heroId && prep.myHeroId ? (
               <CounterItems myHeroId={prep.myHeroId} enemyHeroId={enemy.heroId} />
@@ -219,7 +190,7 @@ export default function MyMatchScreen() {
             setPrep((p) =>
               p.enemies.length >= MAX_ENEMIES || p.enemies.some((e) => e.heroId === hero.id)
                 ? p
-                : { ...p, enemies: [...p.enemies, { heroId: hero.id, lane: '' }] },
+                : { ...p, enemies: [...p.enemies, { heroId: hero.id }] },
             )
           }
           setPicker(null)
@@ -305,12 +276,13 @@ const styles = StyleSheet.create({
   enemyHero: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   enemyIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.bgInset },
   enemyName: { fontFamily: f.bodySemi, fontSize: 15, color: c.ink },
-  enemyControls: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  laneSeg: { flexDirection: 'row', borderWidth: 1, borderColor: c.rule, borderRadius: 2 },
-  laneBtn: { paddingVertical: 6, paddingHorizontal: 12 },
-  laneBtnOn: { backgroundColor: c.brass },
-  laneLabel: { fontFamily: f.bodyBold, fontSize: 11, color: c.inkFaint },
-  laneLabelOn: { color: c.bg },
+  enemyControls: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   draftLine: { fontFamily: f.body, fontSize: 14, color: c.inkDim, lineHeight: 20 },
   counterList: { gap: 8, borderTopWidth: 1, borderTopColor: c.ruleFaint, paddingTop: 10 },
   counterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

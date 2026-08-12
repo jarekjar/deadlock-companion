@@ -1,7 +1,8 @@
 import { Image } from 'expo-image'
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import RankBadge from '../../components/RankBadge'
 import { Btn, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import { isWin, type MatchHistoryEntry } from '../../lib/api'
@@ -28,6 +29,7 @@ export default function PlayerProfileScreen() {
   const heroes = useHeroes()
   const { isFavorite, toggle } = useFavorites()
   const [visible, setVisible] = useState(PAGE)
+  const insets = useSafeAreaInsets()
 
   const summary = useMemo(() => {
     if (!history.data || history.data.length === 0) return null
@@ -64,7 +66,10 @@ export default function PlayerProfileScreen() {
   return (
     <>
       <Stack.Screen options={{ title: profile.data?.personaname ?? 'Player' }} />
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+      >
         <View style={styles.head}>
           {profile.data ? (
             <Image source={profile.data.avatarfull} style={styles.avatar} contentFit="cover" />

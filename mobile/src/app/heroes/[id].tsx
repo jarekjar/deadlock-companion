@@ -2,6 +2,7 @@ import { Image } from 'expo-image'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Body, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import {
   itemDescription,
@@ -28,11 +29,15 @@ export default function HeroDetailScreen() {
   const heroId = Number(params.id)
   const heroes = useHeroes()
   const hero = heroes.data?.get(heroId)
+  const insets = useSafeAreaInsets()
 
   return (
     <>
       <Stack.Screen options={{ title: hero?.name ?? '' }} />
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+      >
         {!hero ? <Note>Loading hero…</Note> : <HeroDetail hero={hero} />}
       </ScrollView>
     </>
@@ -91,6 +96,7 @@ function HeroDetail({ hero }: { hero: HeroAsset }) {
       <Abilities hero={hero} />
       <BuildPath hero={hero} heroMatches={stat?.matches ?? 0} />
       <Matchups heroId={hero.id} />
+      <ItemsByTier hero={hero} heroMatches={stat?.matches ?? 0} />
       <Note>Stats cover the last 30 days across all ranks.</Note>
     </>
   )
@@ -148,10 +154,57 @@ function BuildPath({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number
   const items = useItems()
   const stats = useHeroItemStats(hero.id)
 
-  const { steps, byTier } = useMemo(() => {
-    if (!items.data || !stats.data || heroMatches === 0) {
-      return { steps: null, byTier: null }
-    }
+  const steps = useMemo(() => {
+    if (!items.data || !stats.data || heroMatches === 0) return null
+    const rows = stats.data.flatMap((stat) => {
+      const item = items.data.get(stat.item_id)
+      if (!item || item.type !== 'upgrade' || item.shopable === false) return []
+      if (stat.matches === 0) return []
+      return [{ item, stat, usage: (stat.matches / heroMatches) * 100 }]
+    })
+    const steps = rows
+      .filter((row) => row.usage >= 25)
+      .sort((a, b) => a.stat.avg_buy_time_s - b.stat.avg_buy_time_s)
+      .slice(0, 10)
+    return steps.length >= 3 ? steps : null
+  }, [items.data, stats.data, heroMatches])
+
+  function openItem(item: ItemAsset) {
+    router.push({ pathname: '/items/[id]', params: { id: String(item.id) } })
+  }
+
+  if (!steps) return null
+  return (
+    <>
+      <SectionTitle>Typical Build Path</SectionTitle>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.pathRow}>
+          {steps.map(({ item, stat }, index) => (
+            <View key={item.id} style={styles.pathStep}>
+              {index > 0 && <Text style={styles.pathArrow}>›</Text>}
+              <Pressable onPress={() => openItem(item)} style={styles.pathItem}>
+                <Image source={itemIcon(item)} style={styles.pathIcon} contentFit="cover" />
+                <Mono size={10} color={c.inkFaint}>
+                  {formatClock(stat.avg_buy_time_s)}
+                </Mono>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+      <Note>The most popular items, ordered by when players typically buy them.</Note>
+    </>
+  )
+}
+
+function ItemsByTier({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number }) {
+  const router = useRouter()
+  const items = useItems()
+  const stats = useHeroItemStats(hero.id)
+  const [open, setOpen] = useState(false)
+
+  const byTier = useMemo(() => {
+    if (!items.data || !stats.data || heroMatches === 0) return null
     const rows = stats.data.flatMap((stat) => {
       const item = items.data.get(stat.item_id)
       if (!item || item.type !== 'upgrade' || item.shopable === false) return []
@@ -159,79 +212,53 @@ function BuildPath({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number
       return [
         {
           item,
-          stat,
           usage: (stat.matches / heroMatches) * 100,
           wr: (stat.wins / stat.matches) * 100,
         },
       ]
     })
-    const steps = rows
-      .filter((row) => row.usage >= 25)
-      .sort((a, b) => a.stat.avg_buy_time_s - b.stat.avg_buy_time_s)
-      .slice(0, 10)
-    const byTier = [0, 1, 2, 3].map((tier) =>
+    return [0, 1, 2, 3].map((tier) =>
       rows
         .filter((row) => (row.item.item_tier ?? 1) - 1 === tier)
         .sort((a, b) => b.usage - a.usage)
         .slice(0, 5),
     )
-    return { steps: steps.length >= 3 ? steps : null, byTier }
   }, [items.data, stats.data, heroMatches])
 
   function openItem(item: ItemAsset) {
     router.push({ pathname: '/items/[id]', params: { id: String(item.id) } })
   }
 
+  if (!byTier || byTier.every((rows) => rows.length === 0)) return null
   return (
     <>
-      {steps && (
-        <>
-          <SectionTitle>Typical Build Path</SectionTitle>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.pathRow}>
-              {steps.map(({ item, stat }, index) => (
-                <View key={item.id} style={styles.pathStep}>
-                  {index > 0 && <Text style={styles.pathArrow}>›</Text>}
-                  <Pressable onPress={() => openItem(item)} style={styles.pathItem}>
-                    <Image source={itemIcon(item)} style={styles.pathIcon} contentFit="cover" />
-                    <Mono size={10} color={c.inkFaint}>
-                      {formatClock(stat.avg_buy_time_s)}
+      <Pressable style={styles.tierToggle} onPress={() => setOpen((o) => !o)}>
+        <SectionTitle>Popular Items by Tier</SectionTitle>
+        <Text style={styles.tierToggleMark}>{open ? '–' : '+'}</Text>
+      </Pressable>
+      {open &&
+        byTier.map((rows, tier) =>
+          rows.length === 0 ? null : (
+            <Card key={tier} style={{ gap: 8 }}>
+              <Text style={styles.tierLabel}>{TIER_LABELS[tier]}</Text>
+              {rows.map(({ item, usage, wr }) => (
+                <Pressable key={item.id} style={styles.tierRow} onPress={() => openItem(item)}>
+                  <Image source={itemIcon(item)} style={styles.tierIcon} contentFit="cover" />
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <Text style={styles.tierName}>{item.name}</Text>
+                    <Text style={styles.tierMeta}>{itemMeta(item)}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Mono size={13} color={winRateColor(wr)}>
+                      {wr.toFixed(1)}%
                     </Mono>
-                  </Pressable>
-                </View>
+                    <Text style={styles.tierMeta}>{usage.toFixed(0)}% use</Text>
+                  </View>
+                </Pressable>
               ))}
-            </View>
-          </ScrollView>
-          <Note>The most popular items, ordered by when players typically buy them.</Note>
-        </>
-      )}
-      {byTier && (
-        <>
-          <SectionTitle>Popular Items by Tier</SectionTitle>
-          {byTier.map((rows, tier) =>
-            rows.length === 0 ? null : (
-              <Card key={tier} style={{ gap: 8 }}>
-                <Text style={styles.tierLabel}>{TIER_LABELS[tier]}</Text>
-                {rows.map(({ item, usage, wr }) => (
-                  <Pressable key={item.id} style={styles.tierRow} onPress={() => openItem(item)}>
-                    <Image source={itemIcon(item)} style={styles.tierIcon} contentFit="cover" />
-                    <View style={{ flex: 1, gap: 1 }}>
-                      <Text style={styles.tierName}>{item.name}</Text>
-                      <Text style={styles.tierMeta}>{itemMeta(item)}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Mono size={13} color={winRateColor(wr)}>
-                        {wr.toFixed(1)}%
-                      </Mono>
-                      <Text style={styles.tierMeta}>{usage.toFixed(0)}% use</Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </Card>
-            ),
-          )}
-        </>
-      )}
+            </Card>
+          ),
+        )}
     </>
   )
 }
@@ -332,6 +359,12 @@ const styles = StyleSheet.create({
   pathArrow: { fontFamily: f.monoSemi, fontSize: 16, color: c.brassDim, marginHorizontal: 6 },
   pathItem: { alignItems: 'center', gap: 3 },
   pathIcon: { width: 44, height: 44, borderRadius: 2, backgroundColor: c.bgInset },
+  tierToggle: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  tierToggleMark: { fontFamily: f.monoSemi, fontSize: 18, color: c.brassDim },
   tierLabel: {
     fontFamily: f.bodyBold,
     fontSize: 11,

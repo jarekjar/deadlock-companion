@@ -11,6 +11,8 @@ import { c, f, winRateColor } from '../../theme'
 const SLOTS = ['all', 'weapon', 'vitality', 'spirit'] as const
 type Slot = (typeof SLOTS)[number]
 
+type SortKey = 'usage' | 'winrate' | 'cost' | 'name'
+
 interface Row {
   item: ItemAsset
   wr: number | null
@@ -25,6 +27,7 @@ export default function ItemsScreen() {
   const analytics = useHeroAnalytics()
   const [search, setSearch] = useState('')
   const [slot, setSlot] = useState<Slot>('all')
+  const [sort, setSort] = useState<SortKey>('usage')
 
   const rows = useMemo((): Row[] | null => {
     if (!items.data) return null
@@ -49,8 +52,19 @@ export default function ItemsScreen() {
           usage: stat && totalSlots > 0 ? (stat.matches / totalSlots) * 100 : null,
         }
       })
-      .sort((a, b) => (b.usage ?? -1) - (a.usage ?? -1))
-  }, [items.data, stats.data, analytics.data, search, slot])
+      .sort((a, b) => {
+        switch (sort) {
+          case 'usage':
+            return (b.usage ?? -1) - (a.usage ?? -1)
+          case 'winrate':
+            return (b.wr ?? -1) - (a.wr ?? -1)
+          case 'cost':
+            return (a.item.cost ?? Infinity) - (b.item.cost ?? Infinity)
+          case 'name':
+            return a.item.name.localeCompare(b.item.name)
+        }
+      })
+  }, [items.data, stats.data, analytics.data, search, slot, sort])
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
@@ -64,16 +78,36 @@ export default function ItemsScreen() {
           placeholder="Search items"
           placeholderTextColor={c.inkFaint}
         />
-        <View style={styles.seg}>
-          {SLOTS.map((s) => (
-            <Pressable
-              key={s}
-              onPress={() => setSlot(s)}
-              style={[styles.segBtn, slot === s && styles.segBtnOn]}
-            >
-              <Text style={[styles.segLabel, slot === s && styles.segLabelOn]}>{s}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.segRow}>
+          <View style={styles.seg}>
+            {SLOTS.map((s) => (
+              <Pressable
+                key={s}
+                onPress={() => setSlot(s)}
+                style={[styles.segBtn, slot === s && styles.segBtnOn]}
+              >
+                <Text style={[styles.segLabel, slot === s && styles.segLabelOn]}>{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.seg}>
+            {(
+              [
+                ['usage', 'Use'],
+                ['winrate', 'WR'],
+                ['cost', 'Souls'],
+                ['name', 'A–Z'],
+              ] as const
+            ).map(([key, label]) => (
+              <Pressable
+                key={key}
+                onPress={() => setSort(key)}
+                style={[styles.segBtn, sort === key && styles.segBtnOn]}
+              >
+                <Text style={[styles.segLabel, sort === key && styles.segLabelOn]}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </View>
       {!rows ? (
@@ -135,6 +169,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
+  segRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   seg: {
     flexDirection: 'row',
     borderWidth: 1,

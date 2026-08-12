@@ -2,6 +2,7 @@ import { Image } from 'expo-image'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Body, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import { itemDescription, itemIcon, itemMeta, type ItemAsset } from '../../lib/api'
 import {
@@ -18,11 +19,15 @@ export default function ItemDetailScreen() {
   const itemId = Number(params.id)
   const items = useItems()
   const item = items.data?.get(itemId)
+  const insets = useSafeAreaInsets()
 
   return (
     <>
       <Stack.Screen options={{ title: item?.name ?? '' }} />
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+      >
         {!item ? <Note>Loading item…</Note> : <ItemDetail item={item} />}
       </ScrollView>
     </>

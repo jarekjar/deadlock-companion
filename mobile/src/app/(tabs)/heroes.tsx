@@ -76,9 +76,9 @@ export default function HeroesScreen() {
         <FlatList
           data={rows}
           keyExtractor={(row) => String(row.hero.id)}
-          numColumns={2}
-          columnWrapperStyle={{ gap: 12 }}
-          contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
+          numColumns={3}
+          columnWrapperStyle={{ gap: 10 }}
+          contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
           renderItem={({ item: row }) => (
             <Pressable
               style={({ pressed }) => [styles.card, pressed && { opacity: 0.75 }]}
@@ -97,7 +97,7 @@ export default function HeroesScreen() {
                   {row.hero.name}
                 </Text>
                 {row.wr !== null && (
-                  <Mono size={13} color={winRateColor(row.wr)}>
+                  <Mono size={12} color={winRateColor(row.wr)}>
                     {row.wr.toFixed(1)}%
                   </Mono>
                 )}
@@ -149,19 +149,17 @@ const styles = StyleSheet.create({
     color: c.inkFaint,
   },
   sortLabelOn: { color: c.bg },
-  card: { flex: 1 / 2, borderWidth: 1, borderColor: c.rule, backgroundColor: c.bgRaised },
+  card: { flex: 1 / 3, borderWidth: 1, borderColor: c.rule, backgroundColor: c.bgRaised },
   art: { width: '100%', aspectRatio: 0.8 },
   cardFoot: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 7,
   },
   name: {
-    flex: 1,
     fontFamily: f.bodySemi,
-    fontSize: 13,
+    fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: c.ink,

@@ -58,7 +58,6 @@ export default function HomeScreen() {
         const hero = heroes.data.get(stat.hero_id)
         return hero ? [hero] : []
       })
-      .slice(0, 12)
   }, [heroes.data, analytics.data])
 
   return (
@@ -146,7 +145,7 @@ const styles = StyleSheet.create({
   },
   blurb: { textAlign: 'center' },
   marquee: { gap: 10 },
-  marqueeArt: { width: 96, height: 128, borderWidth: 1, borderColor: c.rule },
+  marqueeArt: { width: 72, height: 96, borderWidth: 1, borderColor: c.rule },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
