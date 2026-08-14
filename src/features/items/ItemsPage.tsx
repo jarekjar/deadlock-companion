@@ -7,6 +7,8 @@ import ItemHover from '../../shared/ItemHover'
 import { usePageMeta } from '../../lib/usePageMeta'
 import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
 import RankFilterControl from '../../shared/RankFilterControl'
+import { modeLabel, useModeFilter } from '../../lib/modeFilter'
+import ModeFilterControl from '../../shared/ModeFilterControl'
 import '../players/players.css'
 import '../heroes/heroes.css'
 import './items.css'
@@ -22,8 +24,9 @@ export default function ItemsPage() {
   const navigate = useNavigate()
   const items = useItems()
   const { minBadge } = useRankFilter()
-  const stats = useAllItemStats(minBadge)
-  const analytics = useHeroAnalytics(minBadge)
+  const { mode } = useModeFilter()
+  const stats = useAllItemStats(minBadge, mode)
+  const analytics = useHeroAnalytics(minBadge, mode)
   const [search, setSearch] = useState('')
   const [slot, setSlot] = useState('all')
   const [tier, setTier] = useState(0)
@@ -125,8 +128,11 @@ export default function ItemsPage() {
           </button>
         </span>
         <RankFilterControl />
+        <ModeFilterControl />
       </div>
-      <p className="grid-note">Usage and win rates, last 30 days · {bracketLabel(minBadge)}.</p>
+      <p className="grid-note">
+        Usage and win rates, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}.
+      </p>
       {!rows ? (
         <div className="page-note">Loading items</div>
       ) : rows.length === 0 ? (

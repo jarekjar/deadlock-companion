@@ -20,6 +20,11 @@ const MatchupsPage = lazy(() => import('./features/heroes/MatchupsPage'))
 const ItemsPage = lazy(() => import('./features/items/ItemsPage'))
 const ItemPage = lazy(() => import('./features/items/ItemPage'))
 const LeaderboardPage = lazy(() => import('./features/leaderboard/LeaderboardPage'))
+const BuildsPage = lazy(() => import('./features/builds/BuildsPage'))
+const BuildPage = lazy(() => import('./features/builds/BuildPage'))
+const PatchReportPage = lazy(() => import('./features/patch/PatchReportPage'))
+const RecordsPage = lazy(() => import('./features/records/RecordsPage'))
+const DraftPage = lazy(() => import('./features/draft/DraftPage'))
 const LiveMatchesPage = lazy(() => import('./features/live/LiveMatchesPage'))
 const LiveMatchPage = lazy(() => import('./features/live/LiveMatchPage'))
 const MyMatchPage = lazy(() => import('./features/live/MyMatchPage'))
@@ -62,6 +67,11 @@ export default function App() {
             <Route path="/matchups/:heroId" element={<MatchupsPage />} />
             <Route path="/items" element={<ItemsPage />} />
             <Route path="/items/:itemId" element={<ItemPage />} />
+            <Route path="/builds" element={<BuildsPage />} />
+            <Route path="/builds/:buildId" element={<BuildPage />} />
+            <Route path="/patch-report" element={<PatchReportPage />} />
+            <Route path="/records" element={<RecordsPage />} />
+            <Route path="/draft" element={<DraftPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/live" element={<LiveMatchesPage />} />
             <Route path="/live/:matchId" element={<LiveMatchPage />} />

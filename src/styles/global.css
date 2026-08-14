@@ -443,6 +443,13 @@ select option::checkmark {
   text-align: center;
 }
 
+/* above .shell-main (z-index 1), or open nav dropdowns paint underneath it;
+   .shell > prefix out-specifies the .shell > :not(...) rule that sets 1 */
+.shell > .site-header {
+  position: relative;
+  z-index: 2;
+}
+
 .site-header .wordmark {
   font-family: var(--font-display);
   font-weight: 400;
@@ -542,6 +549,64 @@ select option::checkmark {
 
 .site-nav a.active::after {
   transform: scaleX(1);
+}
+
+/* ---- nav dropdown groups ---- */
+
+.nav-group {
+  position: relative;
+  /* lay the button out like the sibling links (top-aligned flex item),
+     not on the wrapper's body-font baseline, which sat it a few px low */
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.nav-group .nav-caret {
+  display: inline-block;
+  font-size: 15px;
+  line-height: 0;
+  margin-left: 4px;
+  vertical-align: -1px;
+  color: var(--ink-dim);
+}
+
+.nav-group .nav-action.active {
+  color: var(--brass);
+}
+
+.nav-group .nav-action.active::after {
+  transform: scaleX(1);
+}
+
+.nav-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  padding: 6px 0;
+  z-index: 40;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.site-nav .nav-menu a {
+  padding: 9px 18px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.site-nav .nav-menu a::after {
+  content: none;
+}
+
+.site-nav .nav-menu a:hover {
+  background: var(--bg-inset);
 }
 
 .site-footer {

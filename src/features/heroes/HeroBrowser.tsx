@@ -4,6 +4,8 @@ import { useHeroAnalytics, useHeroes } from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
 import RankFilterControl from '../../shared/RankFilterControl'
+import { modeLabel, useModeFilter } from '../../lib/modeFilter'
+import ModeFilterControl from '../../shared/ModeFilterControl'
 import '../players/players.css'
 import './heroes.css'
 
@@ -16,7 +18,8 @@ type SortKey = 'pick' | 'win' | 'name'
 export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => string }) {
   const heroes = useHeroes()
   const { minBadge } = useRankFilter()
-  const analytics = useHeroAnalytics(minBadge)
+  const { mode } = useModeFilter()
+  const analytics = useHeroAnalytics(minBadge, mode)
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('pick')
   const [descending, setDescending] = useState(true)
@@ -100,9 +103,10 @@ export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => st
           </select>
         </span>
         <RankFilterControl />
+        <ModeFilterControl />
       </div>
       <p className="grid-note">
-        Win and pick rates, last 30 days · {bracketLabel(minBadge)}.
+        Win and pick rates, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}.
       </p>
       {!rows ? (
         <div className="page-note">Loading hero stats</div>

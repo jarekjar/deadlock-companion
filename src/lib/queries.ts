@@ -5,16 +5,27 @@ import {
   fetchActiveMatchForPlayer,
   fetchAllItemStats,
   fetchAnalyticsHeroStats,
+  fetchBuild,
+  fetchBuilds,
   fetchCounterItemStats,
+  fetchEnemyStats,
+  fetchHeroScoreboard,
+  fetchHeroStatsBetween,
   fetchHeroCounterStats,
   fetchHeroes,
   fetchHeroItemStats,
   fetchHeroStatsWithItem,
+  fetchHeroSynergyStats,
   fetchItems,
+  fetchItemStatsBetween,
+  fetchItemTimingStats,
   fetchLeaderboard,
   fetchMapAsset,
   fetchMatchHistory,
   fetchMatchMetadata,
+  fetchMateStats,
+  fetchPatches,
+  fetchPlayerScoreboard,
   fetchPlayerHeroStats,
   fetchPlayerItemStats,
   fetchRank,
@@ -22,14 +33,17 @@ import {
   fetchRankDistribution,
   fetchSteamProfiles,
   searchPlayers,
+  type BuildSearch,
   type HeroAsset,
   type ItemAsset,
   type LeaderboardRegion,
+  type ModeFilterValue,
+  type ScoreboardQuery,
   type SteamProfile,
 } from './api'
 
 /** 30-day analytics window, midnight-aligned so query keys stay stable. */
-const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
+export const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
 
 const FOREVER = Number.POSITIVE_INFINITY
 
@@ -57,6 +71,20 @@ export const useMatchHistory = (accountId: number) =>
     queryKey: ['matchHistory', accountId],
     queryFn: () => fetchMatchHistory(accountId),
     staleTime: 60 * 1000,
+  })
+
+export const useMateStats = (accountId: number) =>
+  useQuery({
+    queryKey: ['mateStats', accountId],
+    queryFn: () => fetchMateStats(accountId),
+    staleTime: 5 * 60 * 1000,
+  })
+
+export const useEnemyStats = (accountId: number) =>
+  useQuery({
+    queryKey: ['enemyStats', accountId],
+    queryFn: () => fetchEnemyStats(accountId),
+    staleTime: 5 * 60 * 1000,
   })
 
 export const usePlayerHeroStats = (accountId: number) =>
@@ -138,55 +166,75 @@ export function useRanks(accountIds: number[]) {
   })
 }
 
-export const useHeroAnalytics = (minBadge = 0) =>
+export const useHeroAnalytics = (minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroAnalytics', SINCE_30D, minBadge],
-    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D, minBadge),
+    queryKey: ['heroAnalytics', SINCE_30D, minBadge, mode],
+    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D, minBadge, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroCounters = (minBadge = 0) =>
+export const useHeroCounters = (minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroCounters', SINCE_30D, minBadge],
-    queryFn: () => fetchHeroCounterStats(SINCE_30D, minBadge),
+    queryKey: ['heroCounters', SINCE_30D, minBadge, mode],
+    queryFn: () => fetchHeroCounterStats(SINCE_30D, minBadge, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroItemStats = (heroId: number, minBadge = 0) =>
+export const useHeroSynergies = (minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroItemStats', heroId, SINCE_30D, minBadge],
-    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D, minBadge),
+    queryKey: ['heroSynergies', SINCE_30D, minBadge, mode],
+    queryFn: () => fetchHeroSynergyStats(SINCE_30D, minBadge, mode),
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useHeroItemStats = (heroId: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
+  useQuery({
+    queryKey: ['heroItemStats', heroId, SINCE_30D, minBadge, mode],
+    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D, minBadge, mode),
     enabled: heroId > 0,
     staleTime: 30 * 60 * 1000,
   })
 
-export const useAbilityOrders = (heroId: number, minBadge = 0) =>
+export const useAbilityOrders = (heroId: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['abilityOrders', heroId, SINCE_30D, minBadge],
-    queryFn: () => fetchAbilityOrderStats(heroId, SINCE_30D, minBadge),
+    queryKey: ['abilityOrders', heroId, SINCE_30D, minBadge, mode],
+    queryFn: () => fetchAbilityOrderStats(heroId, SINCE_30D, minBadge, mode),
     enabled: heroId > 0,
     staleTime: 30 * 60 * 1000,
   })
 
-export const useCounterItems = (heroId: number, enemyHeroId: number | null, minBadge = 0) =>
+export const useCounterItems = (
+  heroId: number,
+  enemyHeroId: number | null,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   useQuery({
-    queryKey: ['counterItems', heroId, enemyHeroId, SINCE_30D, minBadge],
-    queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D, minBadge),
+    queryKey: ['counterItems', heroId, enemyHeroId, SINCE_30D, minBadge, mode],
+    queryFn: () => fetchCounterItemStats(heroId, enemyHeroId!, SINCE_30D, minBadge, mode),
     enabled: heroId > 0 && enemyHeroId !== null,
     staleTime: 30 * 60 * 1000,
   })
 
-export const useAllItemStats = (minBadge = 0) =>
+export const useAllItemStats = (minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['allItemStats', SINCE_30D, minBadge],
-    queryFn: () => fetchAllItemStats(SINCE_30D, minBadge),
+    queryKey: ['allItemStats', SINCE_30D, minBadge, mode],
+    queryFn: () => fetchAllItemStats(SINCE_30D, minBadge, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroStatsWithItem = (itemId: number, minBadge = 0) =>
+export const useHeroStatsWithItem = (itemId: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroStatsWithItem', itemId, SINCE_30D, minBadge],
-    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D, minBadge),
+    queryKey: ['heroStatsWithItem', itemId, SINCE_30D, minBadge, mode],
+    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D, minBadge, mode),
+    enabled: itemId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useItemTiming = (itemId: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
+  useQuery({
+    queryKey: ['itemTiming', itemId, SINCE_30D, minBadge, mode],
+    queryFn: () => fetchItemTimingStats(itemId, SINCE_30D, minBadge, mode),
     enabled: itemId > 0,
     staleTime: 30 * 60 * 1000,
   })
@@ -244,4 +292,62 @@ export const usePlayerSearch = (query: string) =>
     queryFn: () => searchPlayers(query),
     enabled: query.length > 0,
     staleTime: 60 * 1000,
+  })
+
+export const useBuilds = (search: BuildSearch) =>
+  useQuery({
+    queryKey: ['builds', search],
+    queryFn: () => fetchBuilds(search),
+    staleTime: 5 * 60 * 1000,
+    // keep the previous page on screen while "show more" or a filter refetches
+    placeholderData: (prev) => prev,
+  })
+
+export const useBuild = (buildId: number, heroId?: number) =>
+  useQuery({
+    queryKey: ['build', buildId, heroId ?? 0],
+    queryFn: () => fetchBuild(buildId, heroId),
+    enabled: buildId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const usePatches = () =>
+  useQuery({
+    queryKey: ['patches'],
+    queryFn: fetchPatches,
+    staleTime: 60 * 60 * 1000,
+  })
+
+export const useHeroStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>
+  useQuery({
+    queryKey: ['heroStatsBetween', fromUnix, toUnix, minBadge],
+    queryFn: () => fetchHeroStatsBetween(fromUnix, toUnix, minBadge),
+    enabled: fromUnix > 0 && toUnix > fromUnix,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useItemStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>
+  useQuery({
+    queryKey: ['itemStatsBetween', fromUnix, toUnix, minBadge],
+    queryFn: () => fetchItemStatsBetween(fromUnix, toUnix, minBadge),
+    enabled: fromUnix > 0 && toUnix > fromUnix,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const usePlayerScoreboard = (query: ScoreboardQuery, enabled = true) =>
+  useQuery({
+    queryKey: ['playerScoreboard', query],
+    queryFn: () => fetchPlayerScoreboard(query),
+    enabled,
+    staleTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  })
+
+export const useHeroScoreboard = (query: ScoreboardQuery, enabled = true) =>
+  useQuery({
+    queryKey: ['heroScoreboard', query],
+    queryFn: () => fetchHeroScoreboard(query),
+    enabled,
+    staleTime: 30 * 60 * 1000,
+    placeholderData: (prev) => prev,
   })

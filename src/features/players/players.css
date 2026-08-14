@@ -382,3 +382,34 @@ a.hl-hero:hover .hl-name {
 .page-note.error {
   color: var(--danger);
 }
+
+/* ---- mates & nemeses ---- */
+
+.pair-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0 28px;
+  align-items: start;
+}
+
+@media (max-width: 740px) {
+  .pair-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.avatar-cell img {
+  width: 26px;
+  height: 26px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.delta-up {
+  color: var(--up);
+}
+
+.delta-down {
+  color: var(--danger);
+}

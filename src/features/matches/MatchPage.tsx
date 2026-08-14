@@ -14,6 +14,7 @@ import {
 import RankBadge from '../../shared/RankBadge'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
+import '../../shared/charts.css'
 import './match.css'
 
 import { TEAMS } from '../../lib/teams'

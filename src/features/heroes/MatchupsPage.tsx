@@ -1,13 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { type HeroAsset } from '../../lib/api'
 import ItemHover from '../../shared/ItemHover'
-import { useCounterItems, useHeroCounters, useHeroes, useItems } from '../../lib/queries'
+import {
+  useCounterItems,
+  useHeroCounters,
+  useHeroes,
+  useHeroSynergies,
+  useItems,
+} from '../../lib/queries'
 import { winRateClass } from '../../lib/winrate'
 import HeroBrowser from './HeroBrowser'
 import { usePageMeta } from '../../lib/usePageMeta'
 import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
 import RankFilterControl from '../../shared/RankFilterControl'
+import { modeLabel, useModeFilter } from '../../lib/modeFilter'
+import ModeFilterControl from '../../shared/ModeFilterControl'
 import '../players/players.css'
 import './heroes.css'
 
@@ -17,6 +25,8 @@ export default function MatchupsPage() {
   const params = useParams()
   const heroId = params.heroId ? Number(params.heroId) : null
   const heroes = useHeroes()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') === 'with' ? 'with' : 'against'
   const heroName = heroId !== null ? heroes.data?.get(heroId)?.name : undefined
   usePageMeta(
     heroName
@@ -57,7 +67,30 @@ export default function MatchupsPage() {
           ))}
         </div>
       )}
-      {heroes.data && <MatchupTable heroId={heroId} heroes={heroes.data} />}
+      <div className="tab-row" role="tablist">
+        <button
+          role="tab"
+          aria-selected={tab === 'against'}
+          className={`tab${tab === 'against' ? ' selected' : ''}`}
+          onClick={() => setSearchParams({}, { replace: true })}
+        >
+          Versus opponents
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === 'with'}
+          className={`tab${tab === 'with' ? ' selected' : ''}`}
+          onClick={() => setSearchParams({ tab: 'with' }, { replace: true })}
+        >
+          With allies
+        </button>
+      </div>
+      {heroes.data &&
+        (tab === 'against' ? (
+          <MatchupTable heroId={heroId} heroes={heroes.data} />
+        ) : (
+          <SynergyTable heroId={heroId} heroes={heroes.data} />
+        ))}
     </>
   )
 }
@@ -66,7 +99,8 @@ type MatchupSortKey = 'win' | 'matches' | 'name'
 
 function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, HeroAsset> }) {
   const { minBadge } = useRankFilter()
-  const counters = useHeroCounters(minBadge)
+  const { mode } = useModeFilter()
+  const counters = useHeroCounters(minBadge, mode)
   const [openEnemy, setOpenEnemy] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<MatchupSortKey>('win')
@@ -111,7 +145,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
   return (
     <section className="data-section">
       <h3>
-        {hero.name} — matchups, last 30 days · {bracketLabel(minBadge)}
+        {hero.name} — matchups, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
       </h3>
       <div className="control-bar">
         <span className="cb-group cb-search">
@@ -142,6 +176,7 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
           </button>
         </span>
         <RankFilterControl />
+        <ModeFilterControl />
       </div>
       <span className="dim-note">win rate ascending = toughest opponents first</span>
       <div className="table-wrap">
@@ -193,6 +228,119 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
                 </tr>,
               ]
             })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+function SynergyTable({ heroId, heroes }: { heroId: number; heroes: Map<number, HeroAsset> }) {
+  const { minBadge } = useRankFilter()
+  const { mode } = useModeFilter()
+  const synergies = useHeroSynergies(minBadge, mode)
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<MatchupSortKey>('win')
+  const [descending, setDescending] = useState(true)
+
+  const rows = useMemo(() => {
+    if (!synergies.data) return null
+    const needle = search.trim().toLowerCase()
+    const dir = descending ? -1 : 1
+    return synergies.data
+      .flatMap((s) => {
+        if (s.hero_id1 !== heroId && s.hero_id2 !== heroId) return []
+        const partner = heroes.get(s.hero_id1 === heroId ? s.hero_id2 : s.hero_id1)
+        if (!partner || s.matches_played === 0) return []
+        if (needle && !partner.name.toLowerCase().includes(needle)) return []
+        return [
+          {
+            partner,
+            matches: s.matches_played,
+            winRate: (s.wins / s.matches_played) * 100,
+          },
+        ]
+      })
+      .sort((a, b) => {
+        switch (sortKey) {
+          case 'win':
+            return dir * (a.winRate - b.winRate)
+          case 'matches':
+            return dir * (a.matches - b.matches)
+          case 'name':
+            return dir * b.partner.name.localeCompare(a.partner.name)
+        }
+      })
+  }, [synergies.data, heroId, heroes, search, sortKey, descending])
+
+  const hero = heroes.get(heroId)
+
+  if (synergies.isError) return <div className="page-note error">Could not load duos</div>
+  if (!rows || !hero) return <div className="page-note">Loading duos</div>
+
+  return (
+    <section className="data-section">
+      <h3>
+        {hero.name} — duos, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
+      </h3>
+      <div className="control-bar">
+        <span className="cb-group cb-search">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search allies"
+            aria-label="Search allies"
+          />
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">Sort</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as MatchupSortKey)}
+            aria-label="Sort duos"
+          >
+            <option value="win">Win rate</option>
+            <option value="matches">Matches</option>
+            <option value="name">Name</option>
+          </select>
+          <button
+            className="cb-dir"
+            onClick={() => setDescending((d) => !d)}
+            title="Toggle sort direction"
+          >
+            {descending ? 'Desc' : 'Asc'}
+          </button>
+        </span>
+        <RankFilterControl />
+        <ModeFilterControl />
+      </div>
+      <span className="dim-note">
+        win rate when {hero.name} and the ally are on the same team
+      </span>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>With</th>
+              <th>Matches</th>
+              <th>Win rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ partner, matches, winRate }) => (
+              <tr key={partner.id}>
+                <td>
+                  <span className="hero-cell">
+                    <img src={partner.images.icon_image_small_webp} alt="" loading="lazy" />
+                    <Link className="player-link" to={`/matchups/${partner.id}?tab=with`}>
+                      {partner.name}
+                    </Link>
+                  </span>
+                </td>
+                <td className="mono">{matches.toLocaleString()}</td>
+                <td className={`mono ${winRateClass(winRate)}`}>{winRate.toFixed(1)}%</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -309,7 +457,8 @@ export function CounterItems({
   heroName: string
 }) {
   const { minBadge } = useRankFilter()
-  const stats = useCounterItems(heroId, enemy.id, minBadge)
+  const { mode } = useModeFilter()
+  const stats = useCounterItems(heroId, enemy.id, minBadge, mode)
   const items = useItems()
 
   const rows = useMemo(() => {

@@ -9,10 +9,14 @@ export const OPEN_PALETTE_EVENT = 'dc:open-palette'
 const PAGES = [
   { label: 'Timers', to: '/timers' },
   { label: 'My Match', to: '/my-match' },
+  { label: 'Draft Simulator', to: '/draft' },
   { label: 'Players', to: '/players' },
   { label: 'Heroes', to: '/heroes' },
   { label: 'Items', to: '/items' },
   { label: 'Matchups', to: '/matchups' },
+  { label: 'Build Library', to: '/builds' },
+  { label: 'Patch Report', to: '/patch-report' },
+  { label: 'Records', to: '/records' },
   { label: 'Ranks', to: '/leaderboard' },
   { label: 'Live Matches', to: '/live' },
 ]

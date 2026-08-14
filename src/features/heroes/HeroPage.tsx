@@ -13,11 +13,14 @@ import {
   useHeroAnalytics,
   useHeroes,
   useHeroItemStats,
+  useHeroSynergies,
   useItems,
   useItemsByClassName,
 } from '../../lib/queries'
 import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
 import RankFilterControl from '../../shared/RankFilterControl'
+import { modeLabel, useModeFilter } from '../../lib/modeFilter'
+import ModeFilterControl from '../../shared/ModeFilterControl'
 import { formatClock } from '../timers/timerEngine'
 import { winRateClass } from '../../lib/winrate'
 import { usePageMeta } from '../../lib/usePageMeta'
@@ -39,6 +42,7 @@ export default function HeroPage() {
 function Hero({ heroId }: { heroId: number }) {
   const heroes = useHeroes()
   const { minBadge } = useRankFilter()
+  const { mode } = useModeFilter()
   const heroName = heroes.data?.get(heroId)?.name
   usePageMeta(
     heroName
@@ -48,8 +52,8 @@ function Hero({ heroId }: { heroId: number }) {
       ? `${heroName} guide for Deadlock: abilities and rank buffs, base stats and weapon, win rate, and the most popular items per tier.`
       : undefined,
   )
-  const analytics = useHeroAnalytics(minBadge)
-  const itemStats = useHeroItemStats(heroId, minBadge)
+  const analytics = useHeroAnalytics(minBadge, mode)
+  const itemStats = useHeroItemStats(heroId, minBadge, mode)
   const items = useItems()
 
   const hero = heroes.data?.get(heroId)
@@ -107,7 +111,10 @@ function Hero({ heroId }: { heroId: number }) {
 
       <div className="control-bar hero-rank-bar">
         <RankFilterControl />
-        <span className="cb-group cb-count">stats: last 30 days · {bracketLabel(minBadge)}</span>
+        <ModeFilterControl />
+        <span className="cb-group cb-count">
+          stats: last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
+        </span>
       </div>
 
       <div className="stat-row">
@@ -143,6 +150,7 @@ function Hero({ heroId }: { heroId: number }) {
       <AbilitiesSection hero={hero} />
       <AbilityOrderSection heroId={heroId} minBadge={minBadge} />
       <ScalingSection hero={hero} />
+      <DuoSection heroId={heroId} heroName={hero.name} heroes={heroes.data} />
       <BuildPathSection byTier={byTier} />
 
       {byTier ? (
@@ -321,8 +329,62 @@ function BuildPathSection({ byTier }: { byTier: TierRow[][] | null }) {
   )
 }
 
+const MIN_DUO_MATCHES = 300
+
+function DuoSection({
+  heroId,
+  heroName,
+  heroes,
+}: {
+  heroId: number
+  heroName: string
+  heroes: Map<number, HeroAsset> | undefined
+}) {
+  const { minBadge } = useRankFilter()
+  const { mode } = useModeFilter()
+  const synergies = useHeroSynergies(minBadge, mode)
+
+  const rows = useMemo(() => {
+    if (!synergies.data || !heroes) return null
+    return synergies.data
+      .flatMap((s) => {
+        if (s.hero_id1 !== heroId && s.hero_id2 !== heroId) return []
+        const partner = heroes.get(s.hero_id1 === heroId ? s.hero_id2 : s.hero_id1)
+        if (!partner || s.matches_played < MIN_DUO_MATCHES) return []
+        return [{ partner, matches: s.matches_played, winRate: (s.wins / s.matches_played) * 100 }]
+      })
+      .sort((a, b) => b.winRate - a.winRate)
+      .slice(0, 5)
+  }, [synergies.data, heroes, heroId])
+
+  if (!rows || rows.length === 0) return null
+
+  return (
+    <section className="data-section">
+      <h3>Best Duo Partners</h3>
+      <div className="duo-list">
+        {rows.map(({ partner, matches, winRate }) => (
+          <Link key={partner.id} className="duo-card" to={`/heroes/${partner.id}`}>
+            <img src={partner.images.icon_hero_card_webp} alt="" loading="lazy" />
+            <span className="duo-body">
+              <span className="duo-name">{partner.name}</span>
+              <span className={`mono ${winRateClass(winRate)}`}>{winRate.toFixed(1)}%</span>
+              <span className="duo-n">{matches.toLocaleString()} matches</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+      <p className="grid-note left-note">
+        Win rate when {heroName} and the partner are on the same team.{' '}
+        <Link to={`/matchups/${heroId}?tab=with`}>All duos</Link>
+      </p>
+    </section>
+  )
+}
+
 function AbilityOrderSection({ heroId, minBadge }: { heroId: number; minBadge: number }) {
-  const orders = useAbilityOrders(heroId, minBadge)
+  const { mode } = useModeFilter()
+  const orders = useAbilityOrders(heroId, minBadge, mode)
   const items = useItems()
 
   const rows = useMemo(() => {

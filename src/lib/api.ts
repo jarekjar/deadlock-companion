@@ -21,6 +21,10 @@ export interface MatchHistoryEntry {
   match_duration_s: number
   /** The winning team; the player won when this equals player_team. */
   match_result: number
+  /** Valve-reported rank badge after this match; ranked matches only. */
+  ranked_display_badge?: number | null
+  /** Signed rating change from this match; ranked matches only. */
+  ranked_delta?: number | null
 }
 
 export interface PlayerHeroStats {
@@ -184,6 +188,26 @@ async function get<T>(path: string): Promise<T> {
 export const fetchMatchHistory = (accountId: number) =>
   get<MatchHistoryEntry[]>(`/v1/players/${accountId}/match-history`)
 
+export interface MateStat {
+  mate_id: number
+  /** Wins together; win rate = wins / matches_played. */
+  wins: number
+  matches_played: number
+}
+
+export interface EnemyStat {
+  enemy_id: number
+  /** The player's wins against this opponent. */
+  wins: number
+  matches_played: number
+}
+
+export const fetchMateStats = (accountId: number) =>
+  get<MateStat[]>(`/v1/players/${accountId}/mate-stats?min_matches_played=5`)
+
+export const fetchEnemyStats = (accountId: number) =>
+  get<EnemyStat[]>(`/v1/players/${accountId}/enemy-stats?min_matches_played=5`)
+
 export const fetchPlayerHeroStats = (accountId: number) =>
   get<PlayerHeroStats[]>(`/v1/players/hero-stats?account_ids=${accountId}`)
 
@@ -237,19 +261,42 @@ export interface ItemStat {
 /** `&min_average_badge=71` etc.; empty for all ranks. */
 const badgeParam = (minBadge: number) => (minBadge > 0 ? `&min_average_badge=${minBadge}` : '')
 
-export const fetchHeroCounterStats = (sinceUnix: number, minBadge = 0) =>
+/**
+ * Meta-page mode bracket. The API's default is ranked+standard matches in the
+ * normal game mode; 'ranked' narrows to the ranked queue, 'brawl' switches to
+ * the Street Brawl game mode instead.
+ */
+export type ModeFilterValue = 'all' | 'ranked' | 'brawl'
+
+const modeParam = (mode: ModeFilterValue) =>
+  mode === 'ranked' ? '&match_mode=ranked' : mode === 'brawl' ? '&game_mode=street_brawl' : ''
+
+export const fetchHeroCounterStats = (
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   get<HeroCounterStat[]>(
-    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
-export const fetchAnalyticsHeroStats = (sinceUnix: number, minBadge = 0) =>
+export const fetchAnalyticsHeroStats = (
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
-export const fetchHeroItemStats = (heroId: number, sinceUnix: number, minBadge = 0) =>
+export const fetchHeroItemStats = (
+  heroId: number,
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
 export interface AbilityOrderStat {
@@ -258,19 +305,31 @@ export interface AbilityOrderStat {
   wins: number
 }
 
-export const fetchAbilityOrderStats = (heroId: number, sinceUnix: number, minBadge = 0) =>
+export const fetchAbilityOrderStats = (
+  heroId: number,
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   get<AbilityOrderStat[]>(
-    `/v1/analytics/ability-order-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}&min_matches=100${badgeParam(minBadge)}`,
+    `/v1/analytics/ability-order-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}&min_matches=100${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
 /** Global per-item stats over a window: usage and win rate for every item. */
-export const fetchAllItemStats = (sinceUnix: number, minBadge = 0) =>
-  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`)
+export const fetchAllItemStats = (sinceUnix: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
+  get<ItemStat[]>(
+    `/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+  )
 
 /** Per-hero stats restricted to matches where the given item was bought. */
-export const fetchHeroStatsWithItem = (itemId: number, sinceUnix: number, minBadge = 0) =>
+export const fetchHeroStatsWithItem = (
+  itemId: number,
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
 /** Lifetime item usage for one player — the basis for "favorite items". */
@@ -282,13 +341,196 @@ export const fetchCounterItemStats = (
   enemyHeroId: number,
   sinceUnix: number,
   minBadge = 0,
+  mode: ModeFilterValue = 'all',
 ) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+  )
+
+export interface HeroSynergyStat {
+  hero_id1: number
+  hero_id2: number
+  wins: number
+  matches_played: number
+}
+
+/**
+ * Same-team duo win rates. Always called with min_matches and a time filter —
+ * the unfiltered query is too heavy and the API answers it with a 500.
+ */
+export const fetchHeroSynergyStats = (
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
+  get<HeroSynergyStat[]>(
+    `/v1/analytics/hero-synergy-stats?min_unix_timestamp=${sinceUnix}&min_matches=50${badgeParam(minBadge)}${modeParam(mode)}`,
   )
 
 export const fetchMatchMetadata = (matchId: number) =>
   get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)
+
+/* ---- in-game published hero builds ---- */
+
+export interface BuildMod {
+  /** Item asset id (same id space as ItemAsset.id). */
+  ability_id: number
+  annotation?: string | null
+  /** > 0 means the author marks this item to sell later. */
+  sell_priority?: number | null
+}
+
+export interface BuildCategory {
+  name?: string | null
+  description?: string | null
+  mods: BuildMod[]
+}
+
+export interface HeroBuildEntry {
+  hero_build: {
+    hero_id: number
+    hero_build_id: number
+    author_account_id?: number | null
+    last_updated_timestamp?: number | null
+    name: string
+    description?: string | null
+    language?: number | null
+    version?: number | null
+    details?: { mod_categories?: BuildCategory[] | null } | null
+  }
+  /** Populated when sorting by the matching favorites flavor, null otherwise. */
+  num_favorites?: number | null
+  num_weekly_favorites?: number | null
+}
+
+export type BuildSort = 'weekly_favorites' | 'favorites' | 'updated_at'
+
+export interface BuildSearch {
+  heroId?: number
+  sortBy?: BuildSort
+  search?: string
+  /** Steam language code; 0 = English. Omit for all languages. */
+  language?: number
+  limit?: number
+}
+
+export const fetchBuilds = ({ heroId, sortBy, search, language, limit }: BuildSearch) => {
+  const params = new URLSearchParams({
+    only_latest: 'true',
+    sort_by: sortBy ?? 'weekly_favorites',
+    sort_direction: 'desc',
+    limit: String(limit ?? 30),
+  })
+  if (heroId) params.set('hero_id', String(heroId))
+  if (search) params.set('search_name', search)
+  if (language !== undefined) params.set('language', String(language))
+  return get<HeroBuildEntry[]>(`/v1/builds?${params}`)
+}
+
+/**
+ * Build ids are not unique across languages, so the detail view takes the
+ * most-iterated entry (highest version), preferring the given hero when the
+ * link carried one.
+ */
+export const fetchBuild = (buildId: number, heroId?: number) =>
+  get<HeroBuildEntry[]>(`/v1/builds?build_id=${buildId}&only_latest=true`).then((rows) => {
+    const pool = heroId ? rows.filter((r) => r.hero_build.hero_id === heroId) : rows
+    return (
+      [...(pool.length > 0 ? pool : rows)].sort(
+        (a, b) => (b.hero_build.version ?? 0) - (a.hero_build.version ?? 0),
+      )[0] ?? null
+    )
+  })
+
+/* ---- patches ---- */
+
+export interface PatchNote {
+  title: string
+  /** RFC 2822 date string from the forum RSS feed. */
+  pub_date: string
+  link: string
+}
+
+export const fetchPatches = () => get<PatchNote[]>(`/v1/patches`)
+
+/** Hero stats within an explicit window — the patch report's before/after. */
+export const fetchHeroStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>
+  get<AnalyticsHeroStat[]>(
+    `/v1/analytics/hero-stats?min_unix_timestamp=${fromUnix}&max_unix_timestamp=${toUnix}${badgeParam(minBadge)}`,
+  )
+
+/** Item stats within an explicit window — the patch report's before/after. */
+export const fetchItemStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>
+  get<ItemStat[]>(
+    `/v1/analytics/item-stats?min_unix_timestamp=${fromUnix}&max_unix_timestamp=${toUnix}${badgeParam(minBadge)}`,
+  )
+
+/* ---- records scoreboards ---- */
+
+export interface ScoreboardPlayerRow {
+  rank: number
+  account_id: number
+  value: number
+  matches: number
+}
+
+export interface ScoreboardHeroRow {
+  rank: number
+  hero_id: number
+  value: number
+  matches: number
+}
+
+export interface ScoreboardQuery {
+  sortBy: string
+  heroId?: number
+  minBadge?: number
+  sinceUnix?: number
+  minMatches?: number
+  limit?: number
+}
+
+const scoreboardParams = ({ sortBy, heroId, minBadge, sinceUnix, minMatches, limit }: ScoreboardQuery) => {
+  const params = new URLSearchParams({
+    sort_by: sortBy,
+    sort_direction: 'desc',
+    limit: String(limit ?? 50),
+  })
+  if (heroId) params.set('hero_id', String(heroId))
+  if (minBadge) params.set('min_average_badge', String(minBadge))
+  if (sinceUnix) params.set('min_unix_timestamp', String(sinceUnix))
+  if (minMatches) params.set('min_matches', String(minMatches))
+  return params
+}
+
+export interface ItemTimingBucket {
+  item_id: number
+  /** Minute of the match in which the item was bought. */
+  bucket: number
+  wins: number
+  matches: number
+}
+
+/**
+ * Win rate by purchase minute for one item. The endpoint can only filter
+ * matches (not output rows), so the response covers every item in matches
+ * containing this one — trimmed back down to the item client-side.
+ */
+export const fetchItemTimingStats = (
+  itemId: number,
+  sinceUnix: number,
+  minBadge = 0,
+  mode: ModeFilterValue = 'all',
+) =>
+  get<ItemTimingBucket[]>(
+    `/v1/analytics/item-stats?bucket=game_time_min&include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}&min_matches=200${badgeParam(minBadge)}${modeParam(mode)}`,
+  ).then((rows) => rows.filter((r) => r.item_id === itemId))
+
+export const fetchPlayerScoreboard = (query: ScoreboardQuery) =>
+  get<ScoreboardPlayerRow[]>(`/v1/analytics/scoreboards/players?${scoreboardParams(query)}`)
+
+export const fetchHeroScoreboard = (query: ScoreboardQuery) =>
+  get<ScoreboardHeroRow[]>(`/v1/analytics/scoreboards/heroes?${scoreboardParams(query)}`)
 
 export interface ActiveMatch {
   match_id: number
@@ -375,16 +617,19 @@ export async function resolveVanity(name: string): Promise<number | null> {
 }
 
 /**
- * Average of visible rank badges. Badges are tier*10+subrank with six subranks
- * per tier, so averaging happens on a linearized index.
+ * Badges are tier*10+subrank with six subranks per tier; comparisons and
+ * averaging happen on this linearized index.
  */
+export const badgeToIndex = (badge: number) => Math.floor(badge / 10) * 6 + ((badge % 10) - 1)
+
+export const indexToBadge = (index: number) => Math.floor(index / 6) * 10 + (index % 6) + 1
+
+/** Average of visible rank badges, computed on the linearized index. */
 export function averageBadge(badges: number[]): number | null {
   const valid = badges.filter((b) => b > 0)
   if (valid.length === 0) return null
-  const mean =
-    valid.reduce((s, b) => s + Math.floor(b / 10) * 6 + ((b % 10) - 1), 0) / valid.length
-  const index = Math.round(mean)
-  return Math.floor(index / 6) * 10 + (index % 6) + 1
+  const mean = valid.reduce((s, b) => s + badgeToIndex(b), 0) / valid.length
+  return indexToBadge(Math.round(mean))
 }
 
 export function rankName(badge: number, ranks: RankAsset[] | undefined): string {

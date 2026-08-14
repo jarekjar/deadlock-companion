@@ -2,26 +2,34 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import RankBadge from '../../shared/RankBadge'
 import {
+  badgeToIndex,
+  indexToBadge,
   isWin,
   itemIcon,
   rankName,
   type HeroAsset,
   type MatchHistoryEntry,
   type PlayerHeroStats,
+  type RankAsset,
 } from '../../lib/api'
+import LineChart from '../../shared/LineChart'
 import ItemHover from '../../shared/ItemHover'
 import { usePageMeta } from '../../lib/usePageMeta'
 import {
+  useEnemyStats,
   useHeroes,
   useItems,
   useLiveMatchForPlayer,
   useMatchHistory,
+  useMateStats,
   usePlayerHeroStats,
   usePlayerItemStats,
   useRank,
   useRankAssets,
   useSteamProfile,
+  useSteamProfilesBatch,
 } from '../../lib/queries'
+import { winRateClass } from '../../lib/winrate'
 import { useFavorites } from '../../lib/favorites'
 import { formatClock } from '../timers/timerEngine'
 import './players.css'
@@ -156,7 +164,13 @@ function Profile({ accountId }: { accountId: number }) {
             />
           )}
 
+          <RankHistory matches={history.data} ranks={rankAssets.data} />
+
+          <Trends matches={history.data} heroes={heroes.data} />
+
           <MatchTable matches={history.data} heroes={heroes.data} />
+
+          <Companions accountId={accountId} />
 
           {heroStats.data && heroStats.data.length > 0 && (
             <HeroTable stats={heroStats.data} heroes={heroes.data} />
@@ -173,6 +187,82 @@ function StatTile({ label, value }: { label: string; value: string }) {
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
     </div>
+  )
+}
+
+/**
+ * Rank over time, from the Valve-reported badge on each ranked match in the
+ * history we already fetched. Non-ranked matches carry no badge and are
+ * skipped.
+ */
+function RankHistory({
+  matches,
+  ranks,
+}: {
+  matches: MatchHistoryEntry[]
+  ranks: RankAsset[] | undefined
+}) {
+  const points = useMemo(
+    () =>
+      matches
+        .filter((m) => (m.ranked_display_badge ?? 0) > 0)
+        .sort((a, b) => a.start_time - b.start_time)
+        .map((m) => ({
+          x: m.start_time,
+          y: badgeToIndex(m.ranked_display_badge!),
+          delta: m.ranked_delta ?? 0,
+        })),
+    [matches],
+  )
+
+  if (points.length < 2) return null
+
+  const indices = points.map((p) => p.y)
+  const minIdx = Math.min(...indices)
+  const maxIdx = Math.max(...indices)
+  const span = maxIdx - minIdx
+  const yTicks: number[] = []
+  let tickLabel: (index: number) => string
+  if (span <= 8) {
+    // a narrow climb: tick every subrank, with full names ("Oracle 5")
+    for (let i = minIdx; i <= maxIdx; i++) yTicks.push(i)
+    tickLabel = (index) => rankName(indexToBadge(Math.round(index)), ranks)
+  } else {
+    // one tick per tier boundary, thinned when the graph spans many tiers
+    const tierStep = span > 30 ? 12 : 6
+    for (let i = Math.ceil((minIdx - 1) / tierStep) * tierStep; i <= maxIdx + 1; i += tierStep) {
+      yTicks.push(i)
+    }
+    tickLabel = (index) =>
+      ranks?.find((r) => r.tier === Math.floor(indexToBadge(index) / 10))?.name ?? ''
+  }
+
+  return (
+    <section className="data-section">
+      <h3>Rank History</h3>
+      <LineChart
+        xs={points.map((p) => p.x)}
+        series={[
+          {
+            label: 'Rank',
+            color: '#c9a24b',
+            values: points.map((p) => p.y),
+          },
+        ]}
+        formatX={(x) => dateFmt.format(x * 1000)}
+        formatY={(y) => rankName(indexToBadge(Math.round(y)), ranks)}
+        yTicks={yTicks}
+        formatYTick={tickLabel}
+        yDomain={[minIdx - 1, maxIdx + 1]}
+        tooltipExtra={(i) =>
+          points[i].delta !== 0
+            ? [`${points[i].delta > 0 ? '▲ +' : '▼ '}${points[i].delta}`]
+            : []
+        }
+        ariaLabel="Rank over time"
+        legendNote="rank after each ranked match"
+      />
+    </section>
   )
 }
 
@@ -258,6 +348,240 @@ function Highlights({
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+/* ---- performance trends (rolling averages over the match history) ---- */
+
+const TREND_WINDOW = 20
+
+type TrendMetric = 'win' | 'kda' | 'souls'
+
+const TREND_METRICS: { value: TrendMetric; label: string }[] = [
+  { value: 'win', label: 'Win rate' },
+  { value: 'kda', label: 'KDA' },
+  { value: 'souls', label: 'Souls per min' },
+]
+
+function Trends({
+  matches,
+  heroes,
+}: {
+  matches: MatchHistoryEntry[]
+  heroes: Map<number, HeroAsset> | undefined
+}) {
+  const [metric, setMetric] = useState<TrendMetric>('win')
+  const [heroFilter, setHeroFilter] = useState(0)
+
+  const heroOptions = useMemo(() => {
+    const counts = new Map<number, number>()
+    for (const m of matches) counts.set(m.hero_id, (counts.get(m.hero_id) ?? 0) + 1)
+    return [...counts.entries()]
+      .filter(([, count]) => count >= TREND_WINDOW)
+      .map(([id]) => ({ id, name: heroes?.get(id)?.name ?? `Hero ${id}` }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [matches, heroes])
+
+  const points = useMemo(() => {
+    const ordered = matches
+      .filter((m) => heroFilter === 0 || m.hero_id === heroFilter)
+      .sort((a, b) => a.start_time - b.start_time)
+    if (ordered.length < TREND_WINDOW) return []
+    const valueOf = (m: MatchHistoryEntry) => {
+      switch (metric) {
+        case 'win':
+          return isWin(m) ? 100 : 0
+        case 'kda':
+          return m.player_deaths === 0
+            ? m.player_kills + m.player_assists
+            : (m.player_kills + m.player_assists) / m.player_deaths
+        case 'souls':
+          return m.match_duration_s > 0 ? m.net_worth / (m.match_duration_s / 60) : 0
+      }
+    }
+    const values = ordered.map(valueOf)
+    const out: { x: number; y: number }[] = []
+    let sum = 0
+    for (let i = 0; i < values.length; i++) {
+      sum += values[i]
+      if (i >= TREND_WINDOW) sum -= values[i - TREND_WINDOW]
+      if (i >= TREND_WINDOW - 1) {
+        out.push({ x: ordered[i].start_time, y: sum / TREND_WINDOW })
+      }
+    }
+    return out
+  }, [matches, heroFilter, metric])
+
+  if (matches.length < TREND_WINDOW) return null
+
+  const metricLabel = TREND_METRICS.find((m) => m.value === metric)!.label
+  const formatY = (y: number) =>
+    metric === 'win' ? `${y.toFixed(0)}%` : metric === 'kda' ? y.toFixed(2) : compact.format(y)
+  // win rate is a percentage: keep the axis inside 0-100
+  const winDomain = ((): [number, number] | undefined => {
+    if (metric !== 'win' || points.length === 0) return undefined
+    const values = points.map((p) => p.y)
+    return [Math.max(0, Math.min(...values) - 5), Math.min(100, Math.max(...values) + 5)]
+  })()
+
+  return (
+    <section className="data-section">
+      <h3>Performance Trends</h3>
+      <div className="control-bar">
+        <span className="cb-group">
+          <span className="cb-label">Metric</span>
+          <select
+            value={metric}
+            onChange={(e) => setMetric(e.target.value as TrendMetric)}
+            aria-label="Trend metric"
+          >
+            {TREND_METRICS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </span>
+        <span className="cb-group">
+          <span className="cb-label">Hero</span>
+          <select
+            value={heroFilter}
+            onChange={(e) => setHeroFilter(Number(e.target.value))}
+            aria-label="Filter trend by hero"
+          >
+            <option value={0}>All heroes</option>
+            {heroOptions.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </span>
+      </div>
+      {points.length < 2 ? (
+        <div className="page-note">Not enough matches for this filter</div>
+      ) : (
+        <LineChart
+          xs={points.map((p) => p.x)}
+          series={[{ label: metricLabel, color: '#c9a24b', values: points.map((p) => p.y) }]}
+          formatX={(x) => dateFmt.format(x * 1000)}
+          formatY={formatY}
+          yDomain={winDomain}
+          ariaLabel={`${metricLabel} trend`}
+          legendNote={`rolling ${TREND_WINDOW}-match average`}
+        />
+      )}
+    </section>
+  )
+}
+
+/* ---- mates & nemeses ---- */
+
+const MIN_NEMESIS_MATCHES = 8
+
+function Companions({ accountId }: { accountId: number }) {
+  const mates = useMateStats(accountId)
+  const enemies = useEnemyStats(accountId)
+
+  const mateRows = useMemo(
+    () =>
+      (mates.data ?? [])
+        .filter((m) => m.mate_id !== accountId && m.matches_played >= 5)
+        .sort((a, b) => b.matches_played - a.matches_played)
+        .slice(0, 12),
+    [mates.data, accountId],
+  )
+  const enemyRows = useMemo(
+    () =>
+      (enemies.data ?? [])
+        .filter((e) => e.enemy_id !== accountId && e.matches_played >= MIN_NEMESIS_MATCHES)
+        .sort(
+          (a, b) =>
+            a.wins / a.matches_played - b.wins / b.matches_played ||
+            b.matches_played - a.matches_played,
+        )
+        .slice(0, 12),
+    [enemies.data, accountId],
+  )
+
+  const ids = useMemo(
+    () => [...new Set([...mateRows.map((m) => m.mate_id), ...enemyRows.map((e) => e.enemy_id)])],
+    [mateRows, enemyRows],
+  )
+  const profiles = useSteamProfilesBatch(ids)
+
+  if (mateRows.length === 0 && enemyRows.length === 0) return null
+
+  const who = (id: number) => {
+    const p = profiles.data?.get(id)
+    return (
+      <span className="hero-cell avatar-cell">
+        {p && <img src={p.avatarmedium} alt="" loading="lazy" />}
+        <Link className="player-link" to={`/players/${id}`}>
+          {p?.personaname ?? `#${id}`}
+        </Link>
+      </span>
+    )
+  }
+
+  const table = (
+    title: string,
+    note: string,
+    columns: [string, string],
+    rows: { id: number; matches: number; winRate: number }[],
+  ) =>
+    rows.length === 0 ? null : (
+      <section className="data-section">
+        <h3>{title}</h3>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>{columns[0]}</th>
+                <th>{columns[1]}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td>{who(row.id)}</td>
+                  <td className="mono">{row.matches.toLocaleString()}</td>
+                  <td className={`mono ${winRateClass(row.winRate)}`}>
+                    {row.winRate.toFixed(0)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="grid-note left-note">{note}</p>
+      </section>
+    )
+
+  return (
+    <div className="pair-grid">
+      {table(
+        'Runs With',
+        'Teammates who keep showing up on this player’s side, and how the duo does.',
+        ['Together', 'Win rate'],
+        mateRows.map((m) => ({
+          id: m.mate_id,
+          matches: m.matches_played,
+          winRate: (m.wins / m.matches_played) * 100,
+        })),
+      )}
+      {table(
+        'Nemeses',
+        'Repeat opponents this player struggles against the most.',
+        ['Faced', 'Win rate vs'],
+        enemyRows.map((e) => ({
+          id: e.enemy_id,
+          matches: e.matches_played,
+          winRate: (e.wins / e.matches_played) * 100,
+        })),
+      )}
     </div>
   )
 }
