@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { type ModeFilterValue } from './api'
 import { loadJson, saveJson } from './storage'
 
 /**
  * Global mode bracket for the meta screens (heroes, items, match prep),
  * persisted so the choice survives restarts. Same semantics as the website.
+ * Uses useSyncExternalStore — with React Compiler enabled, reading a mutable
+ * module variable during render can get memoized into a frozen value.
  */
 const KEY = 'dc.modeFilter.v1'
 
@@ -25,31 +27,30 @@ async function hydrate() {
   if (loaded) return
   loaded = true
   const saved = await loadJson<string>(KEY)
-  if (isMode(saved)) {
+  if (isMode(saved) && saved !== cache) {
     cache = saved
     listeners.forEach((l) => l())
   }
 }
 
-export function useModeFilter() {
-  const [, force] = useState(0)
-  useEffect(() => {
-    const listener = () => force((n) => n + 1)
-    listeners.add(listener)
-    void hydrate()
-    return () => {
-      listeners.delete(listener)
-    }
-  }, [])
-
-  return {
-    mode: cache,
-    setMode(value: ModeFilterValue) {
-      cache = value
-      void saveJson(KEY, value)
-      listeners.forEach((l) => l())
-    },
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  void hydrate()
+  return () => {
+    listeners.delete(listener)
   }
+}
+
+const getSnapshot = () => cache
+
+export function useModeFilter() {
+  const mode = useSyncExternalStore(subscribe, getSnapshot)
+  const setMode = useCallback((value: ModeFilterValue) => {
+    cache = value
+    void saveJson(KEY, value)
+    listeners.forEach((l) => l())
+  }, [])
+  return { mode, setMode }
 }
 
 export function modeLabel(mode: ModeFilterValue): string {
