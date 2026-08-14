@@ -2,20 +2,28 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import {
   fetchAllItemStats,
   fetchAnalyticsHeroStats,
+  fetchBuild,
+  fetchBuilds,
   fetchCounterItemStats,
+  fetchEnemyStats,
   fetchHeroCounterStats,
   fetchHeroes,
   fetchHeroItemStats,
   fetchHeroStatsWithItem,
+  fetchHeroSynergyStats,
   fetchItems,
   fetchMatchHistory,
+  fetchMateStats,
   fetchPlayerHeroStats,
   fetchRank,
   fetchRankAssets,
   fetchSteamProfiles,
   searchPlayers,
+  type BuildSearch,
   type HeroAsset,
   type ItemAsset,
+  type ModeFilterValue,
+  type SteamProfile,
 } from './api'
 
 /** 30-day analytics window, midnight-aligned so query keys stay stable. */
@@ -64,24 +72,31 @@ export function useRankAssets() {
   })
 }
 
-export const useHeroAnalytics = () =>
+export const useHeroAnalytics = (mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroAnalytics', SINCE_30D],
-    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D),
+    queryKey: ['heroAnalytics', SINCE_30D, mode],
+    queryFn: () => fetchAnalyticsHeroStats(SINCE_30D, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroCounters = () =>
+export const useHeroCounters = (mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroCounters', SINCE_30D],
-    queryFn: () => fetchHeroCounterStats(SINCE_30D),
+    queryKey: ['heroCounters', SINCE_30D, mode],
+    queryFn: () => fetchHeroCounterStats(SINCE_30D, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroItemStats = (heroId: number) =>
+export const useHeroSynergies = (mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroItemStats', heroId, SINCE_30D],
-    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D),
+    queryKey: ['heroSynergies', SINCE_30D, mode],
+    queryFn: () => fetchHeroSynergyStats(SINCE_30D, mode),
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useHeroItemStats = (heroId: number, mode: ModeFilterValue = 'all') =>
+  useQuery({
+    queryKey: ['heroItemStats', heroId, SINCE_30D, mode],
+    queryFn: () => fetchHeroItemStats(heroId, SINCE_30D, mode),
     enabled: heroId > 0,
     staleTime: 30 * 60 * 1000,
   })
@@ -94,19 +109,62 @@ export const useCounterItems = (heroId: number, enemyHeroId: number | null) =>
     staleTime: 30 * 60 * 1000,
   })
 
-export const useAllItemStats = () =>
+export const useAllItemStats = (mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['allItemStats', SINCE_30D],
-    queryFn: () => fetchAllItemStats(SINCE_30D),
+    queryKey: ['allItemStats', SINCE_30D, mode],
+    queryFn: () => fetchAllItemStats(SINCE_30D, mode),
     staleTime: 30 * 60 * 1000,
   })
 
-export const useHeroStatsWithItem = (itemId: number) =>
+export const useHeroStatsWithItem = (itemId: number, mode: ModeFilterValue = 'all') =>
   useQuery({
-    queryKey: ['heroStatsWithItem', itemId, SINCE_30D],
-    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D),
+    queryKey: ['heroStatsWithItem', itemId, SINCE_30D, mode],
+    queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D, mode),
     enabled: itemId > 0,
     staleTime: 30 * 60 * 1000,
+  })
+
+export const useMateStats = (accountId: number) =>
+  useQuery({
+    queryKey: ['mateStats', accountId],
+    queryFn: () => fetchMateStats(accountId),
+    enabled: accountId > 0,
+    staleTime: 5 * 60 * 1000,
+  })
+
+export const useEnemyStats = (accountId: number) =>
+  useQuery({
+    queryKey: ['enemyStats', accountId],
+    queryFn: () => fetchEnemyStats(accountId),
+    enabled: accountId > 0,
+    staleTime: 5 * 60 * 1000,
+  })
+
+export const useBuilds = (search: BuildSearch) =>
+  useQuery({
+    queryKey: ['builds', search],
+    queryFn: () => fetchBuilds(search),
+    staleTime: 5 * 60 * 1000,
+    // keep the previous page on screen while "show more" or a filter refetches
+    placeholderData: (prev) => prev,
+  })
+
+export const useBuild = (buildId: number, heroId?: number) =>
+  useQuery({
+    queryKey: ['build', buildId, heroId ?? 0],
+    queryFn: () => fetchBuild(buildId, heroId),
+    enabled: buildId > 0,
+    staleTime: 30 * 60 * 1000,
+  })
+
+export const useSteamProfilesBatch = (accountIds: number[]) =>
+  useQuery({
+    queryKey: ['steamProfiles', accountIds.join(',')],
+    queryFn: () => fetchSteamProfiles(accountIds),
+    enabled: accountIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    select: (profiles): Map<number, SteamProfile> =>
+      new Map(profiles.map((p) => [p.account_id, p])),
   })
 
 export const useMatchHistory = (accountId: number) =>

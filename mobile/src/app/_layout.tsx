@@ -56,6 +56,8 @@ export default function RootLayout() {
         <Stack.Screen name="heroes/[id]" options={{ title: '' }} />
         <Stack.Screen name="items/[id]" options={{ title: '' }} />
         <Stack.Screen name="players/[id]" options={{ title: '' }} />
+        <Stack.Screen name="builds/index" options={{ title: 'Build Library' }} />
+        <Stack.Screen name="builds/[id]" options={{ title: '' }} />
       </Stack>
     </QueryClientProvider>
   )

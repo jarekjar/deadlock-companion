@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ModeSegment from '../../components/ModeSegment'
 import { Mono, Note } from '../../components/ui'
 import { itemIcon, itemMeta, type ItemAsset } from '../../lib/api'
+import { useModeFilter } from '../../lib/modeFilter'
 import { useAllItemStats, useHeroAnalytics, useItems } from '../../lib/queries'
 import { c, f, winRateColor } from '../../theme'
 
@@ -23,8 +25,9 @@ export default function ItemsScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const items = useItems()
-  const stats = useAllItemStats()
-  const analytics = useHeroAnalytics()
+  const { mode } = useModeFilter()
+  const stats = useAllItemStats(mode)
+  const analytics = useHeroAnalytics(mode)
   const [search, setSearch] = useState('')
   const [slot, setSlot] = useState<Slot>('all')
   const [sort, setSort] = useState<SortKey>('usage')
@@ -108,6 +111,7 @@ export default function ItemsScreen() {
               </Pressable>
             ))}
           </View>
+          <ModeSegment />
         </View>
       </View>
       {!rows ? (

@@ -37,6 +37,12 @@ const FEATURES: { to: Href; icon: IconName; title: string; text: string }[] = [
     text: 'What every item does, who buys it, and how often it wins.',
   },
   {
+    to: '/builds',
+    icon: 'book-open-page-variant-outline',
+    title: 'Build Library',
+    text: 'The community’s most-favorited in-game builds, with the authors’ notes.',
+  },
+  {
     to: '/players',
     icon: 'magnify',
     title: 'Players',

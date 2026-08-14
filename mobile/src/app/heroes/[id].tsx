@@ -3,7 +3,8 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Body, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
+import { Body, Btn, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
+import ModeSegment from '../../components/ModeSegment'
 import {
   itemDescription,
   itemIcon,
@@ -11,11 +12,13 @@ import {
   type HeroAsset,
   type ItemAsset,
 } from '../../lib/api'
+import { modeLabel, useModeFilter } from '../../lib/modeFilter'
 import {
   useHeroAnalytics,
   useHeroCounters,
   useHeroes,
   useHeroItemStats,
+  useHeroSynergies,
   useItems,
   useItemsByClassName,
 } from '../../lib/queries'
@@ -45,7 +48,9 @@ export default function HeroDetailScreen() {
 }
 
 function HeroDetail({ hero }: { hero: HeroAsset }) {
-  const analytics = useHeroAnalytics()
+  const router = useRouter()
+  const { mode } = useModeFilter()
+  const analytics = useHeroAnalytics(mode)
   const stat = analytics.data?.find((s) => s.hero_id === hero.id)
   const winRate = stat && stat.matches > 0 ? (stat.wins / stat.matches) * 100 : null
   const totalMatches = (analytics.data ?? []).reduce((sum, s) => sum + s.matches, 0)
@@ -95,9 +100,18 @@ function HeroDetail({ hero }: { hero: HeroAsset }) {
 
       <Abilities hero={hero} />
       <BuildPath hero={hero} heroMatches={stat?.matches ?? 0} />
+      <Btn
+        label={`Community builds for ${hero.name}`}
+        onPress={() =>
+          router.push({ pathname: '/builds', params: { hero: String(hero.id) } })
+        }
+      />
       <Matchups heroId={hero.id} />
+      <Duos heroId={hero.id} />
       <ItemsByTier hero={hero} heroMatches={stat?.matches ?? 0} />
-      <Note>Stats cover the last 30 days across all ranks.</Note>
+      <SectionTitle>Mode</SectionTitle>
+      <ModeSegment />
+      <Note>Stats cover the last 30 days across all ranks · {modeLabel(mode)}.</Note>
     </>
   )
 }
@@ -152,7 +166,8 @@ function Abilities({ hero }: { hero: HeroAsset }) {
 function BuildPath({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number }) {
   const router = useRouter()
   const items = useItems()
-  const stats = useHeroItemStats(hero.id)
+  const { mode } = useModeFilter()
+  const stats = useHeroItemStats(hero.id, mode)
 
   const steps = useMemo(() => {
     if (!items.data || !stats.data || heroMatches === 0) return null
@@ -200,7 +215,8 @@ function BuildPath({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number
 function ItemsByTier({ hero, heroMatches }: { hero: HeroAsset; heroMatches: number }) {
   const router = useRouter()
   const items = useItems()
-  const stats = useHeroItemStats(hero.id)
+  const { mode } = useModeFilter()
+  const stats = useHeroItemStats(hero.id, mode)
   const [open, setOpen] = useState(false)
 
   const byTier = useMemo(() => {
@@ -266,7 +282,8 @@ function ItemsByTier({ hero, heroMatches }: { hero: HeroAsset; heroMatches: numb
 function Matchups({ heroId }: { heroId: number }) {
   const router = useRouter()
   const heroes = useHeroes()
-  const counters = useHeroCounters()
+  const { mode } = useModeFilter()
+  const counters = useHeroCounters(mode)
 
   const rows = useMemo(() => {
     if (!counters.data || !heroes.data) return null
@@ -297,6 +314,41 @@ function Matchups({ heroId }: { heroId: number }) {
           <MatchupRow key={row.enemy.id} row={row} router={router} />
         ))}
       </Card>
+    </>
+  )
+}
+
+const MIN_DUO_MATCHES = 300
+
+function Duos({ heroId }: { heroId: number }) {
+  const router = useRouter()
+  const heroes = useHeroes()
+  const { mode } = useModeFilter()
+  const synergies = useHeroSynergies(mode)
+
+  const rows = useMemo(() => {
+    if (!synergies.data || !heroes.data) return null
+    return synergies.data
+      .flatMap((s) => {
+        if (s.hero_id1 !== heroId && s.hero_id2 !== heroId) return []
+        const partner = heroes.data.get(s.hero_id1 === heroId ? s.hero_id2 : s.hero_id1)
+        if (!partner || s.matches_played < MIN_DUO_MATCHES) return []
+        return [{ enemy: partner, wr: (s.wins / s.matches_played) * 100 }]
+      })
+      .sort((a, b) => b.wr - a.wr)
+      .slice(0, 5)
+  }, [synergies.data, heroes.data, heroId])
+
+  if (!rows || rows.length === 0) return null
+  return (
+    <>
+      <SectionTitle>Best Duo Partners</SectionTitle>
+      <Card style={{ gap: 8 }}>
+        {rows.map((row) => (
+          <MatchupRow key={row.enemy.id} row={row} router={router} />
+        ))}
+      </Card>
+      <Note>Win rate when both heroes are on the same team, last 30 days.</Note>
     </>
   )
 }

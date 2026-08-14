@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Body, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import { itemDescription, itemIcon, itemMeta, type ItemAsset } from '../../lib/api'
+import { useModeFilter } from '../../lib/modeFilter'
 import {
   useAllItemStats,
   useHeroAnalytics,
@@ -35,8 +36,9 @@ export default function ItemDetailScreen() {
 }
 
 function ItemDetail({ item }: { item: ItemAsset }) {
-  const stats = useAllItemStats()
-  const analytics = useHeroAnalytics()
+  const { mode } = useModeFilter()
+  const stats = useAllItemStats(mode)
+  const analytics = useHeroAnalytics(mode)
 
   const stat = stats.data?.find((s) => s.item_id === item.id)
   const totalSlots = (analytics.data ?? []).reduce((sum, s) => sum + s.matches, 0)
@@ -84,8 +86,9 @@ function ItemDetail({ item }: { item: ItemAsset }) {
 function TopHeroes({ itemId }: { itemId: number }) {
   const router = useRouter()
   const heroes = useHeroes()
-  const withItem = useHeroStatsWithItem(itemId)
-  const analytics = useHeroAnalytics()
+  const { mode } = useModeFilter()
+  const withItem = useHeroStatsWithItem(itemId, mode)
+  const analytics = useHeroAnalytics(mode)
 
   const rows = useMemo(() => {
     if (!withItem.data || !heroes.data || !analytics.data) return null

@@ -1,18 +1,30 @@
 import { Image } from 'expo-image'
-import { Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import LineChart from '../../components/LineChart'
 import RankBadge from '../../components/RankBadge'
 import { Btn, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
-import { isWin, type MatchHistoryEntry } from '../../lib/api'
+import {
+  badgeToIndex,
+  indexToBadge,
+  isWin,
+  rankName,
+  type MatchHistoryEntry,
+  type RankAsset,
+} from '../../lib/api'
 import { useFavorites } from '../../lib/favorites'
 import {
+  useEnemyStats,
   useHeroes,
   useMatchHistory,
+  useMateStats,
   usePlayerHeroStats,
   useRank,
+  useRankAssets,
   useSteamProfile,
+  useSteamProfilesBatch,
 } from '../../lib/queries'
 import { formatClock } from '../../lib/timerEngine'
 import { c, compact, f, winRateColor } from '../../theme'
@@ -135,6 +147,9 @@ export default function PlayerProfileScreen() {
           </>
         )}
 
+        {history.data && <RankHistory matches={history.data} />}
+        {history.data && <Trends matches={history.data} />}
+
         <SectionTitle>Match History</SectionTitle>
         {history.isPending && <Note>Loading matches…</Note>}
         {history.isError && <Note>Could not load match history.</Note>}
@@ -147,9 +162,251 @@ export default function PlayerProfileScreen() {
             onPress={() => setVisible((v) => v + PAGE)}
           />
         )}
+
+        <Companions accountId={accountId} />
       </ScrollView>
     </>
   )
+}
+
+/**
+ * Rank over time, from the Valve-reported badge on each ranked match in the
+ * history already fetched. Non-ranked matches carry no badge and are skipped.
+ */
+function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
+  const rankAssets = useRankAssets()
+  const ranks = rankAssets.data
+
+  const points = useMemo(
+    () =>
+      matches
+        .filter((m) => (m.ranked_display_badge ?? 0) > 0)
+        .sort((a, b) => a.start_time - b.start_time)
+        .map((m) => ({ x: m.start_time, y: badgeToIndex(m.ranked_display_badge!) })),
+    [matches],
+  )
+
+  if (points.length < 2) return null
+
+  const indices = points.map((p) => p.y)
+  const minIdx = Math.min(...indices)
+  const maxIdx = Math.max(...indices)
+  const span = maxIdx - minIdx
+  const yTicks: number[] = []
+  let tickLabel: (index: number) => string
+  if (span <= 8) {
+    // a narrow climb: tick every subrank, with full names ("Oracle 5")
+    for (let i = minIdx; i <= maxIdx; i++) yTicks.push(i)
+    tickLabel = (index) => rankName(indexToBadge(Math.round(index)), ranks)
+  } else {
+    const tierStep = span > 30 ? 12 : 6
+    for (let i = Math.ceil((minIdx - 1) / tierStep) * tierStep; i <= maxIdx + 1; i += tierStep) {
+      yTicks.push(i)
+    }
+    tickLabel = (index) =>
+      ranks?.find((r: RankAsset) => r.tier === Math.floor(indexToBadge(index) / 10))?.name ?? ''
+  }
+
+  return (
+    <>
+      <SectionTitle>Rank History</SectionTitle>
+      <Card>
+        <LineChart
+          xs={points.map((p) => p.x)}
+          values={points.map((p) => p.y)}
+          formatX={(x) => dateLabel(x)}
+          formatYTick={tickLabel}
+          yTicks={yTicks}
+          yDomain={[minIdx - 1, maxIdx + 1]}
+        />
+        <Note>Rank after each ranked match.</Note>
+      </Card>
+    </>
+  )
+}
+
+const TREND_WINDOW = 20
+
+type TrendMetric = 'win' | 'kda' | 'souls'
+
+const TREND_METRICS: { value: TrendMetric; label: string }[] = [
+  { value: 'win', label: 'Win rate' },
+  { value: 'kda', label: 'KDA' },
+  { value: 'souls', label: 'Souls/min' },
+]
+
+function Trends({ matches }: { matches: MatchHistoryEntry[] }) {
+  const [metric, setMetric] = useState<TrendMetric>('win')
+
+  const points = useMemo(() => {
+    const ordered = [...matches].sort((a, b) => a.start_time - b.start_time)
+    if (ordered.length < TREND_WINDOW) return []
+    const valueOf = (m: MatchHistoryEntry) => {
+      switch (metric) {
+        case 'win':
+          return isWin(m) ? 100 : 0
+        case 'kda':
+          return m.player_deaths === 0
+            ? m.player_kills + m.player_assists
+            : (m.player_kills + m.player_assists) / m.player_deaths
+        case 'souls':
+          return m.match_duration_s > 0 ? m.net_worth / (m.match_duration_s / 60) : 0
+      }
+    }
+    const values = ordered.map(valueOf)
+    const out: { x: number; y: number }[] = []
+    let sum = 0
+    for (let i = 0; i < values.length; i++) {
+      sum += values[i]
+      if (i >= TREND_WINDOW) sum -= values[i - TREND_WINDOW]
+      if (i >= TREND_WINDOW - 1) out.push({ x: ordered[i].start_time, y: sum / TREND_WINDOW })
+    }
+    return out
+  }, [matches, metric])
+
+  if (points.length < 2) return null
+
+  const formatY = (y: number) =>
+    metric === 'win' ? `${y.toFixed(0)}%` : metric === 'kda' ? y.toFixed(1) : compact(y)
+  // win rate is a percentage: keep the axis inside 0-100
+  const winDomain: [number, number] | undefined =
+    metric === 'win'
+      ? [
+          Math.max(0, Math.min(...points.map((p) => p.y)) - 5),
+          Math.min(100, Math.max(...points.map((p) => p.y)) + 5),
+        ]
+      : undefined
+
+  return (
+    <>
+      <SectionTitle>Performance Trends</SectionTitle>
+      <Card style={{ gap: 10 }}>
+        <View style={styles.trendSeg}>
+          {TREND_METRICS.map((m) => {
+            const on = metric === m.value
+            return (
+              <Pressable
+                key={m.value}
+                onPress={() => setMetric(m.value)}
+                style={[styles.trendBtn, on && styles.trendBtnOn]}
+              >
+                <Text style={[styles.trendLabel, on && styles.trendLabelOn]}>{m.label}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
+        <LineChart
+          xs={points.map((p) => p.x)}
+          values={points.map((p) => p.y)}
+          formatX={(x) => dateLabel(x)}
+          formatYTick={formatY}
+          yDomain={winDomain}
+        />
+        <Note>Rolling {TREND_WINDOW}-match average across the full history.</Note>
+      </Card>
+    </>
+  )
+}
+
+const MIN_NEMESIS_MATCHES = 8
+
+function Companions({ accountId }: { accountId: number }) {
+  const router = useRouter()
+  const mates = useMateStats(accountId)
+  const enemies = useEnemyStats(accountId)
+
+  const mateRows = useMemo(
+    () =>
+      (mates.data ?? [])
+        .filter((m) => m.mate_id !== accountId && m.matches_played >= 5)
+        .sort((a, b) => b.matches_played - a.matches_played)
+        .slice(0, 8)
+        .map((m) => ({
+          id: m.mate_id,
+          matches: m.matches_played,
+          wr: (m.wins / m.matches_played) * 100,
+        })),
+    [mates.data, accountId],
+  )
+  const enemyRows = useMemo(
+    () =>
+      (enemies.data ?? [])
+        .filter((e) => e.enemy_id !== accountId && e.matches_played >= MIN_NEMESIS_MATCHES)
+        .sort(
+          (a, b) =>
+            a.wins / a.matches_played - b.wins / b.matches_played ||
+            b.matches_played - a.matches_played,
+        )
+        .slice(0, 8)
+        .map((e) => ({
+          id: e.enemy_id,
+          matches: e.matches_played,
+          wr: (e.wins / e.matches_played) * 100,
+        })),
+    [enemies.data, accountId],
+  )
+
+  const ids = useMemo(
+    () => [...new Set([...mateRows.map((m) => m.id), ...enemyRows.map((e) => e.id)])],
+    [mateRows, enemyRows],
+  )
+  const profiles = useSteamProfilesBatch(ids)
+
+  if (mateRows.length === 0 && enemyRows.length === 0) return null
+
+  const row = (r: { id: number; matches: number; wr: number }, unit: string) => {
+    const p = profiles.data?.get(r.id)
+    return (
+      <Pressable
+        key={r.id}
+        style={styles.companionRow}
+        onPress={() => router.push({ pathname: '/players/[id]', params: { id: String(r.id) } })}
+      >
+        {p ? (
+          <Image source={p.avatarmedium} style={styles.companionAvatar} contentFit="cover" />
+        ) : (
+          <View style={styles.companionAvatar} />
+        )}
+        <Text style={styles.companionName} numberOfLines={1}>
+          {p?.personaname ?? `#${r.id}`}
+        </Text>
+        <Text style={styles.companionMeta}>
+          {r.matches} {unit}
+        </Text>
+        <Mono size={13} color={winRateColor(r.wr)}>
+          {r.wr.toFixed(0)}%
+        </Mono>
+      </Pressable>
+    )
+  }
+
+  return (
+    <>
+      {mateRows.length > 0 && (
+        <>
+          <SectionTitle>Runs With</SectionTitle>
+          <Card style={{ gap: 10 }}>
+            {mateRows.map((r) => row(r, 'together'))}
+            <Note>Teammates who keep showing up on this player’s side.</Note>
+          </Card>
+        </>
+      )}
+      {enemyRows.length > 0 && (
+        <>
+          <SectionTitle>Nemeses</SectionTitle>
+          <Card style={{ gap: 10 }}>
+            {enemyRows.map((r) => row(r, 'faced'))}
+            <Note>Repeat opponents this player struggles against the most.</Note>
+          </Card>
+        </>
+      )}
+    </>
+  )
+}
+
+function dateLabel(unixSec: number): string {
+  const d = new Date(unixSec * 1000)
+  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)}`
 }
 
 function HeroHighlight({
@@ -262,4 +519,32 @@ const styles = StyleSheet.create({
   matchHero: { fontFamily: f.bodySemi, fontSize: 14, color: c.ink },
   matchMeta: { fontFamily: f.body, fontSize: 11, color: c.inkFaint },
   matchResult: { fontFamily: f.bodyBold, fontSize: 16, marginLeft: 4 },
+  trendSeg: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: c.rule,
+    borderRadius: 2,
+    alignSelf: 'flex-start',
+  },
+  trendBtn: { paddingVertical: 6, paddingHorizontal: 12 },
+  trendBtnOn: { backgroundColor: c.brass },
+  trendLabel: {
+    fontFamily: f.bodyBold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: c.inkFaint,
+  },
+  trendLabelOn: { color: c.bg },
+  companionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  companionAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: c.rule,
+    backgroundColor: c.bgInset,
+  },
+  companionName: { flex: 1, fontFamily: f.bodySemi, fontSize: 14, color: c.ink },
+  companionMeta: { fontFamily: f.body, fontSize: 11, color: c.inkFaint },
 })

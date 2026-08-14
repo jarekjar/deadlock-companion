@@ -22,6 +22,10 @@ export interface MatchHistoryEntry {
   match_duration_s: number
   /** The winning team; the player won when this equals player_team. */
   match_result: number
+  /** Valve-reported rank badge after this match; ranked matches only. */
+  ranked_display_badge?: number | null
+  /** Signed rating change from this match; ranked matches only. */
+  ranked_delta?: number | null
 }
 
 export interface PlayerHeroStats {
@@ -176,29 +180,166 @@ export interface ItemStat {
   avg_buy_time_s: number
 }
 
-export const fetchHeroCounterStats = (sinceUnix: number) =>
-  get<HeroCounterStat[]>(`/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}`)
+/**
+ * Meta mode bracket, shared with the website. The API's default is
+ * ranked+standard matches in the normal game mode; 'ranked' narrows to the
+ * ranked queue, 'brawl' switches to the Street Brawl game mode instead.
+ */
+export type ModeFilterValue = 'all' | 'ranked' | 'brawl'
 
-export const fetchAnalyticsHeroStats = (sinceUnix: number) =>
-  get<AnalyticsHeroStat[]>(`/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`)
+const modeParam = (mode: ModeFilterValue) =>
+  mode === 'ranked' ? '&match_mode=ranked' : mode === 'brawl' ? '&game_mode=street_brawl' : ''
 
-export const fetchHeroItemStats = (heroId: number, sinceUnix: number) =>
-  get<ItemStat[]>(`/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}`)
+export const fetchHeroCounterStats = (sinceUnix: number, mode: ModeFilterValue = 'all') =>
+  get<HeroCounterStat[]>(
+    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${modeParam(mode)}`,
+  )
+
+export const fetchAnalyticsHeroStats = (sinceUnix: number, mode: ModeFilterValue = 'all') =>
+  get<AnalyticsHeroStat[]>(
+    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${modeParam(mode)}`,
+  )
+
+export const fetchHeroItemStats = (
+  heroId: number,
+  sinceUnix: number,
+  mode: ModeFilterValue = 'all',
+) =>
+  get<ItemStat[]>(
+    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${modeParam(mode)}`,
+  )
 
 /** Global per-item stats over a window: usage and win rate for every item. */
-export const fetchAllItemStats = (sinceUnix: number) =>
-  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}`)
+export const fetchAllItemStats = (sinceUnix: number, mode: ModeFilterValue = 'all') =>
+  get<ItemStat[]>(`/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${modeParam(mode)}`)
 
 /** Per-hero stats restricted to matches where the given item was bought. */
-export const fetchHeroStatsWithItem = (itemId: number, sinceUnix: number) =>
+export const fetchHeroStatsWithItem = (
+  itemId: number,
+  sinceUnix: number,
+  mode: ModeFilterValue = 'all',
+) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}`,
+    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${modeParam(mode)}`,
   )
 
-export const fetchCounterItemStats = (heroId: number, enemyHeroId: number, sinceUnix: number) =>
+export const fetchCounterItemStats = (
+  heroId: number,
+  enemyHeroId: number,
+  sinceUnix: number,
+  mode: ModeFilterValue = 'all',
+) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${modeParam(mode)}`,
   )
+
+export interface HeroSynergyStat {
+  hero_id1: number
+  hero_id2: number
+  wins: number
+  matches_played: number
+}
+
+/**
+ * Same-team duo win rates. Always called with min_matches and a time filter —
+ * the unfiltered query is too heavy and the API answers it with a 500.
+ */
+export const fetchHeroSynergyStats = (sinceUnix: number, mode: ModeFilterValue = 'all') =>
+  get<HeroSynergyStat[]>(
+    `/v1/analytics/hero-synergy-stats?min_unix_timestamp=${sinceUnix}&min_matches=50${modeParam(mode)}`,
+  )
+
+export interface MateStat {
+  mate_id: number
+  /** Wins together; win rate = wins / matches_played. */
+  wins: number
+  matches_played: number
+}
+
+export interface EnemyStat {
+  enemy_id: number
+  /** The player's wins against this opponent. */
+  wins: number
+  matches_played: number
+}
+
+export const fetchMateStats = (accountId: number) =>
+  get<MateStat[]>(`/v1/players/${accountId}/mate-stats?min_matches_played=5`)
+
+export const fetchEnemyStats = (accountId: number) =>
+  get<EnemyStat[]>(`/v1/players/${accountId}/enemy-stats?min_matches_played=5`)
+
+/* ---- in-game published hero builds ---- */
+
+export interface BuildMod {
+  /** Item asset id (same id space as ItemAsset.id). */
+  ability_id: number
+  annotation?: string | null
+  /** > 0 means the author marks this item to sell later. */
+  sell_priority?: number | null
+}
+
+export interface BuildCategory {
+  name?: string | null
+  description?: string | null
+  mods: BuildMod[]
+}
+
+export interface HeroBuildEntry {
+  hero_build: {
+    hero_id: number
+    hero_build_id: number
+    author_account_id?: number | null
+    last_updated_timestamp?: number | null
+    name: string
+    description?: string | null
+    language?: number | null
+    version?: number | null
+    details?: { mod_categories?: BuildCategory[] | null } | null
+  }
+  /** Populated when sorting by the matching favorites flavor, null otherwise. */
+  num_favorites?: number | null
+  num_weekly_favorites?: number | null
+}
+
+export type BuildSort = 'weekly_favorites' | 'favorites' | 'updated_at'
+
+export interface BuildSearch {
+  heroId?: number
+  sortBy?: BuildSort
+  search?: string
+  /** Steam language code; 0 = English. Omit for all languages. */
+  language?: number
+  limit?: number
+}
+
+export const fetchBuilds = ({ heroId, sortBy, search, language, limit }: BuildSearch) => {
+  const params = new URLSearchParams({
+    only_latest: 'true',
+    sort_by: sortBy ?? 'weekly_favorites',
+    sort_direction: 'desc',
+    limit: String(limit ?? 30),
+  })
+  if (heroId) params.set('hero_id', String(heroId))
+  if (search) params.set('search_name', search)
+  if (language !== undefined) params.set('language', String(language))
+  return get<HeroBuildEntry[]>(`/v1/builds?${params}`)
+}
+
+/**
+ * Build ids are not unique across languages, so the detail view takes the
+ * most-iterated entry (highest version), preferring the given hero when the
+ * link carried one.
+ */
+export const fetchBuild = (buildId: number, heroId?: number) =>
+  get<HeroBuildEntry[]>(`/v1/builds?build_id=${buildId}&only_latest=true`).then((rows) => {
+    const pool = heroId ? rows.filter((r) => r.hero_build.hero_id === heroId) : rows
+    return (
+      [...(pool.length > 0 ? pool : rows)].sort(
+        (a, b) => (b.hero_build.version ?? 0) - (a.hero_build.version ?? 0),
+      )[0] ?? null
+    )
+  })
 
 export const isWin = (m: MatchHistoryEntry) => m.match_result === m.player_team
 
@@ -225,3 +366,11 @@ export function rankName(badge: number, ranks: RankAsset[] | undefined): string 
   if (!rank) return 'Unranked'
   return subrank > 0 ? `${rank.name} ${subrank}` : rank.name
 }
+
+/**
+ * Badges are tier*10+subrank with six subranks per tier; comparisons and
+ * charting happen on this linearized index.
+ */
+export const badgeToIndex = (badge: number) => Math.floor(badge / 10) * 6 + ((badge % 10) - 1)
+
+export const indexToBadge = (index: number) => Math.floor(index / 6) * 10 + (index % 6) + 1

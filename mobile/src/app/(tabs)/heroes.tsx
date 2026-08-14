@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ModeSegment from '../../components/ModeSegment'
 import { Mono, Note } from '../../components/ui'
+import { useModeFilter } from '../../lib/modeFilter'
 import { useHeroAnalytics, useHeroes } from '../../lib/queries'
 import { c, f, winRateColor } from '../../theme'
 
@@ -13,7 +15,8 @@ export default function HeroesScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const heroes = useHeroes()
-  const analytics = useHeroAnalytics()
+  const { mode } = useModeFilter()
+  const analytics = useHeroAnalytics(mode)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortKey>('winrate')
 
@@ -52,22 +55,25 @@ export default function HeroesScreen() {
           placeholder="Search heroes"
           placeholderTextColor={c.inkFaint}
         />
-        <View style={styles.sortSeg}>
-          {(
-            [
-              ['winrate', 'WR'],
-              ['matches', 'Picks'],
-              ['name', 'A–Z'],
-            ] as const
-          ).map(([key, label]) => (
-            <Pressable
-              key={key}
-              onPress={() => setSort(key)}
-              style={[styles.sortBtn, sort === key && styles.sortBtnOn]}
-            >
-              <Text style={[styles.sortLabel, sort === key && styles.sortLabelOn]}>{label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.segRow}>
+          <View style={styles.sortSeg}>
+            {(
+              [
+                ['winrate', 'WR'],
+                ['matches', 'Picks'],
+                ['name', 'A–Z'],
+              ] as const
+            ).map(([key, label]) => (
+              <Pressable
+                key={key}
+                onPress={() => setSort(key)}
+                style={[styles.sortBtn, sort === key && styles.sortBtnOn]}
+              >
+                <Text style={[styles.sortLabel, sort === key && styles.sortLabelOn]}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <ModeSegment />
         </View>
       </View>
       {!rows ? (
@@ -121,6 +127,7 @@ const styles = StyleSheet.create({
   },
   h1Rule: { height: 1, backgroundColor: c.rule, marginTop: 8, marginBottom: 12 },
   controls: { gap: 10, marginBottom: 12 },
+  segRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   search: {
     borderWidth: 1,
     borderColor: c.rule,
