@@ -49,12 +49,20 @@ ITEMS
 Every shop item with what it does, who buys it most, and how often it wins.
 Filter by slot, sort by usage, win rate, price, or name.
 
+BUILD LIBRARY
+The community's most-favorited in-game builds for every hero, with the
+authors' own notes on every item — find one you like, then favorite it in
+the in-game shop by name.
+
 PLAYERS
 Look up any player by Steam link, ID, or name — rank, stats, favorite
-heroes, and full match history. Favorite the people you play with.
+heroes, and full match history, plus a rank history graph, performance
+trends over time, and the teammates and nemeses they keep running into.
+Favorite the people you play with.
 
-Stats come from the community-run Deadlock API and cover the last 30 days
-across all ranks. No account needed, no ads, no tracking.
+Stats come from the community-run Deadlock API and cover the last 30 days —
+filter them to ranked-only or Street Brawl anywhere. No account needed, no
+ads, no tracking.
 
 The Cursed Apple is a fan project. It is not affiliated with or endorsed by
 Valve Corporation. Deadlock and Steam are trademarks of Valve Corporation.
