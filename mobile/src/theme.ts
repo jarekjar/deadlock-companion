@@ -1,19 +1,20 @@
 /**
- * The Cursed Apple design tokens, mobile flavor. Same 1930s occult-noir
- * palette as the website, tuned for handheld density and touch targets.
+ * The Cursed Apple design tokens — the website's exact 1930s occult-noir
+ * palette. Keep these in lockstep with src/styles/global.css on the web side;
+ * a warmer mobile-only variant read yellow on desktop-class screens.
  */
 export const c = {
   bg: '#17110b',
-  bgRaised: '#201812',
-  bgInset: '#120d08',
+  bgRaised: '#1e1710',
+  bgInset: '#110c07',
   ink: '#e8dcc0',
-  inkDim: '#c9bda0',
-  inkFaint: '#8f8368',
+  inkDim: '#b0a186',
+  inkFaint: '#7c6f58',
   brass: '#c9a24b',
   brassBright: '#ddb85f',
   brassDim: '#8f7434',
   rule: '#3b2f1e',
-  ruleFaint: '#2a2013',
+  ruleFaint: '#29200f',
   up: '#8aa163',
   danger: '#b0492f',
 } as const
