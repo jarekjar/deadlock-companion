@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import LineChart from '../../shared/LineChart'
 import {
   isWin,
+  metricHasData,
   type HeroAsset,
   type MatchHistoryEntry,
   type MetricStats,
@@ -81,7 +82,7 @@ export default function PerformanceTab({
     return METRICS.flatMap((def) => {
       const mine: MetricStats | undefined = player.data[def.key]
       const pop: MetricStats | undefined = global.data[def.key]
-      if (!mine || !pop) return []
+      if (!metricHasData(mine) || !metricHasData(pop)) return []
       const percentile = percentileOf(mine.avg, pop)
       const displayed = def.lowerIsBetter ? 100 - percentile : percentile
       return [
@@ -170,6 +171,8 @@ export default function PerformanceTab({
           <div className="page-note error">Could not load performance metrics</div>
         ) : !rows ? (
           <div className="page-note">Loading performance metrics</div>
+        ) : rows.length === 0 ? (
+          <div className="page-note">No matches in this window and mode</div>
         ) : (
           <>
             <div className="metric-list">

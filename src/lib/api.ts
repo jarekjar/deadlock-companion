@@ -554,19 +554,29 @@ export const fetchItemTimingStats = (
 
 /* ---- player performance analytics ---- */
 
-/** Distribution stats for one metric (kda, accuracy, net_worth_per_min, ...). */
+/**
+ * Distribution stats for one metric (kda, accuracy, net_worth_per_min, ...).
+ * Every field is null when the queried slice contains no matches.
+ */
 export interface MetricStats {
-  avg: number
-  std: number
-  percentile1: number
-  percentile5: number
-  percentile10: number
-  percentile25: number
-  percentile50: number
-  percentile75: number
-  percentile90: number
-  percentile95: number
-  percentile99: number
+  avg: number | null
+  std: number | null
+  percentile1: number | null
+  percentile5: number | null
+  percentile10: number | null
+  percentile25: number | null
+  percentile50: number | null
+  percentile75: number | null
+  percentile90: number | null
+  percentile95: number | null
+  percentile99: number | null
+}
+
+/** Narrow a metric to one that actually has data behind it. */
+export function metricHasData(
+  stats: MetricStats | undefined,
+): stats is MetricStats & { avg: number; percentile50: number } {
+  return stats != null && stats.avg != null && stats.percentile50 != null
 }
 
 export type PlayerMetrics = Record<string, MetricStats>

@@ -35,7 +35,13 @@ export default function EconomyTab({
     if (!player.data || !global.data) return null
     const globalByTime = new Map(global.data.map((p) => [p.game_time, p]))
     const points = player.data
-      .filter((p) => p.game_time > 0 && p.game_time <= MAX_MINUTES && globalByTime.has(p.game_time))
+      .filter(
+        (p) =>
+          p.game_time > 0 &&
+          p.game_time <= MAX_MINUTES &&
+          p.net_worth_avg != null &&
+          globalByTime.get(p.game_time)?.net_worth_avg != null,
+      )
       .map((p) => ({
         minute: p.game_time,
         mine: p.net_worth_avg,

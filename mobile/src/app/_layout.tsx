@@ -21,6 +21,12 @@ import { c, f } from '../theme'
 
 SplashScreen.preventAutoHideAsync()
 
+// deep-linked screens (players/…, builds/…) always sit on top of the tabs, so
+// a back control exists even when the app cold-starts straight into a profile
+export const unstable_settings = {
+  anchor: '(tabs)',
+}
+
 export default function RootLayout() {
   const [queryClient] = useState(
     () =>

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { type MetricStats, type ModeFilterValue } from '../lib/api'
+import { metricHasData, type MetricStats, type ModeFilterValue } from '../lib/api'
 import { METRIC_ADVICE, percentileOf, performanceScore, scoreGrade } from '../lib/metrics'
 import { usePlayerMetrics } from '../lib/queries'
 import { c, compact, f } from '../theme'
@@ -65,7 +65,7 @@ export default function ProfilePerformance({
     return METRICS.flatMap((def) => {
       const mine: MetricStats | undefined = player.data[def.key]
       const pop: MetricStats | undefined = global.data[def.key]
-      if (!mine || !pop) return []
+      if (!metricHasData(mine) || !metricHasData(pop)) return []
       const percentile = percentileOf(mine.avg, pop)
       const displayed = def.lowerIsBetter ? 100 - percentile : percentile
       return [{ def, value: mine.avg, percentile: displayed, topShare: 100 - displayed }]
@@ -73,7 +73,8 @@ export default function ProfilePerformance({
   }, [player.data, global.data])
 
   if (player.isError || global.isError) return <Note>Could not load performance metrics.</Note>
-  if (!rows || !score) return <Note>Loading performance metrics…</Note>
+  if (!rows) return <Note>Loading performance metrics…</Note>
+  if (rows.length === 0 || !score) return <Note>No matches in this window and mode.</Note>
 
   const strengths = score.metrics.filter((m) => m.beats >= 55).slice(0, 3)
   const focus = [...score.metrics]

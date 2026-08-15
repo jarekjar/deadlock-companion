@@ -1,4 +1,4 @@
-import { type MetricStats, type PlayerMetrics } from './api'
+import { metricHasData, type MetricStats, type PlayerMetrics } from './api'
 
 /**
  * Where a value sits on a population's percentile curve, interpolated between
@@ -6,15 +6,15 @@ import { type MetricStats, type PlayerMetrics } from './api'
  */
 export function percentileOf(value: number, population: MetricStats): number {
   const points: [number, number][] = [
-    [1, population.percentile1],
-    [5, population.percentile5],
-    [10, population.percentile10],
-    [25, population.percentile25],
-    [50, population.percentile50],
-    [75, population.percentile75],
-    [90, population.percentile90],
-    [95, population.percentile95],
-    [99, population.percentile99],
+    [1, population.percentile1 ?? 0],
+    [5, population.percentile5 ?? 0],
+    [10, population.percentile10 ?? 0],
+    [25, population.percentile25 ?? 0],
+    [50, population.percentile50 ?? 0],
+    [75, population.percentile75 ?? 0],
+    [90, population.percentile90 ?? 0],
+    [95, population.percentile95 ?? 0],
+    [99, population.percentile99 ?? 0],
   ]
   if (value <= points[0][1]) return 1
   for (let i = 1; i < points.length; i++) {
@@ -78,7 +78,7 @@ export function performanceScore(
   for (const component of SCORE_COMPONENTS) {
     const mine = player[component.key]
     const pop = population[component.key]
-    if (!mine || !pop) continue
+    if (!metricHasData(mine) || !metricHasData(pop)) continue
     const pct = percentileOf(mine.avg, pop)
     const beats = component.lowerIsBetter ? 100 - pct : pct
     weighted += beats * component.weight
