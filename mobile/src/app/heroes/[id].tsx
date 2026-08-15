@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ScreenBackground from '../../components/ScreenBackground'
 import { Body, Btn, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import ModeSegment from '../../components/ModeSegment'
 import {
@@ -37,12 +38,14 @@ export default function HeroDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: hero?.name ?? '' }} />
+      <ScreenBackground>
       <ScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
       >
         {!hero ? <Note>Loading hero…</Note> : <HeroDetail hero={hero} />}
       </ScrollView>
+      </ScreenBackground>
     </>
   )
 }

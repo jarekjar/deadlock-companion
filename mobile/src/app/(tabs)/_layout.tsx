@@ -38,7 +38,8 @@ export default function TabLayout() {
           letterSpacing: 0.8,
           textTransform: 'uppercase',
         },
-        sceneStyle: { backgroundColor: 'transparent' },
+        // opaque: transparent scene surfaces break native screen animations
+        sceneStyle: { backgroundColor: c.bg },
       }}
     >
       <Tabs.Screen

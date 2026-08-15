@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ModeSegment from '../../components/ModeSegment'
+import ScreenBackground from '../../components/ScreenBackground'
 import { Mono, Note } from '../../components/ui'
 import { itemIcon, itemMeta, type ItemAsset } from '../../lib/api'
 import { useModeFilter } from '../../lib/modeFilter'
@@ -70,6 +71,7 @@ export default function ItemsScreen() {
   }, [items.data, stats.data, analytics.data, search, slot, sort])
 
   return (
+    <ScreenBackground>
     <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
       <Text style={styles.h1}>Items</Text>
       <View style={styles.h1Rule} />
@@ -148,6 +150,7 @@ export default function ItemsScreen() {
         />
       )}
     </View>
+    </ScreenBackground>
   )
 }
 

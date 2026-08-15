@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ScreenBackground from '../../components/ScreenBackground'
 import { Body, Card, Note, SectionTitle } from '../../components/ui'
 import { itemIcon, type HeroBuildEntry, type ItemAsset } from '../../lib/api'
 import { useBuild, useHeroes, useItems, useSteamProfilesBatch } from '../../lib/queries'
@@ -18,6 +19,7 @@ export default function BuildDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: build.data?.hero_build.name ?? 'Build' }} />
+      <ScreenBackground>
       <ScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
@@ -30,6 +32,7 @@ export default function BuildDetailScreen() {
           <BuildDetail entry={build.data} />
         )}
       </ScrollView>
+      </ScreenBackground>
     </>
   )
 }

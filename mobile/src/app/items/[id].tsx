@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ScreenBackground from '../../components/ScreenBackground'
 import { Body, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import { itemDescription, itemIcon, itemMeta, type ItemAsset } from '../../lib/api'
 import { useModeFilter } from '../../lib/modeFilter'
@@ -25,12 +26,14 @@ export default function ItemDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: item?.name ?? '' }} />
+      <ScreenBackground>
       <ScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
       >
         {!item ? <Note>Loading item…</Note> : <ItemDetail item={item} />}
       </ScrollView>
+      </ScreenBackground>
     </>
   )
 }

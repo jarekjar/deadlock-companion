@@ -11,19 +11,22 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { c, f } from '../theme'
+import ScreenBackground from './ScreenBackground'
 
 /** Scrollable page container with the standing header treatment. */
 export function Screen({ title, children }: { title?: string; children: ReactNode }) {
   const insets = useSafeAreaInsets()
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.screenContent, { paddingTop: insets.top + 10 }]}
-      keyboardShouldPersistTaps="handled"
-    >
-      {title ? <H1>{title}</H1> : null}
-      {children}
-    </ScrollView>
+    <ScreenBackground>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.screenContent, { paddingTop: insets.top + 10 }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {title ? <H1>{title}</H1> : null}
+        {children}
+      </ScrollView>
+    </ScreenBackground>
   )
 }
 

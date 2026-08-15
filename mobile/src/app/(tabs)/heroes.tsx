@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ModeSegment from '../../components/ModeSegment'
+import ScreenBackground from '../../components/ScreenBackground'
 import { Mono, Note } from '../../components/ui'
 import { useModeFilter } from '../../lib/modeFilter'
 import { useHeroAnalytics, useHeroes } from '../../lib/queries'
@@ -44,6 +45,7 @@ export default function HeroesScreen() {
   }, [heroes.data, analytics.data, search, sort])
 
   return (
+    <ScreenBackground>
     <View style={[styles.screen, { paddingTop: insets.top + 10 }]}>
       <Text style={styles.h1}>Heroes</Text>
       <View style={styles.h1Rule} />
@@ -113,6 +115,7 @@ export default function HeroesScreen() {
         />
       )}
     </View>
+    </ScreenBackground>
   )
 }
 

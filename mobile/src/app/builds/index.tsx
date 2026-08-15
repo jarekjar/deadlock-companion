@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Btn, Note } from '../../components/ui'
+import ScreenBackground from '../../components/ScreenBackground'
 import { type BuildSort } from '../../lib/api'
 import { useBuilds, useHeroes } from '../../lib/queries'
 import { c, compact, f } from '../../theme'
@@ -112,6 +113,7 @@ export default function BuildsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Build Library' }} />
+      <ScreenBackground>
       <View style={styles.screen}>
         {builds.isError ? (
           <Note>Could not load builds.</Note>
@@ -167,6 +169,7 @@ export default function BuildsScreen() {
           />
         )}
       </View>
+      </ScreenBackground>
     </>
   )
 }

@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Body } from '../../components/ui'
+import ScreenBackground from '../../components/ScreenBackground'
 import timersData from '../../data/timers.json'
 import { useHeroAnalytics, useHeroes } from '../../lib/queries'
 import { c, f } from '../../theme'
@@ -67,6 +68,7 @@ export default function HomeScreen() {
   }, [heroes.data, analytics.data])
 
   return (
+    <ScreenBackground>
     <ScrollView
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 26 }]}
@@ -127,6 +129,7 @@ export default function HomeScreen() {
         thecursedapple.app
       </Text>
     </ScrollView>
+    </ScreenBackground>
   )
 }
 

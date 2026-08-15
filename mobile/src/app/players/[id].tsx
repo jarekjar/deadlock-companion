@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import ScreenBackground from '../../components/ScreenBackground'
 import LineChart from '../../components/LineChart'
 import ProfileEconomy from '../../components/ProfileEconomy'
 import ProfilePerformance from '../../components/ProfilePerformance'
@@ -123,6 +124,7 @@ export default function PlayerProfileScreen() {
   return (
     <>
       <Stack.Screen options={{ title: profile.data?.personaname ?? 'Player' }} />
+      <ScreenBackground>
       <ScrollView
         style={styles.screen}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
@@ -288,6 +290,7 @@ export default function PlayerProfileScreen() {
 
         {tab === 'heroes' && <HeroStatsList accountId={accountId} />}
       </ScrollView>
+      </ScreenBackground>
     </>
   )
 }
