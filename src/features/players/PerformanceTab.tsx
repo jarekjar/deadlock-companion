@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import LineChart from '../../shared/LineChart'
-import { isWin, type HeroAsset, type MatchHistoryEntry, type MetricStats } from '../../lib/api'
+import {
+  isWin,
+  type HeroAsset,
+  type MatchHistoryEntry,
+  type MetricStats,
+  type ModeFilterValue,
+} from '../../lib/api'
 import { METRIC_ADVICE, percentileOf, performanceScore, scoreGrade } from '../../lib/metrics'
 import { usePlayerMetrics } from '../../lib/queries'
 
@@ -51,13 +57,19 @@ export default function PerformanceTab({
   accountId,
   matches,
   heroes,
+  sinceUnix,
+  windowText,
+  mode,
 }: {
   accountId: number
   matches: MatchHistoryEntry[]
   heroes: Map<number, HeroAsset> | undefined
+  sinceUnix: number
+  windowText: string
+  mode: ModeFilterValue
 }) {
-  const player = usePlayerMetrics(accountId)
-  const global = usePlayerMetrics(0)
+  const player = usePlayerMetrics(accountId, sinceUnix, mode)
+  const global = usePlayerMetrics(0, sinceUnix, mode)
 
   const score = useMemo(
     () => (player.data && global.data ? performanceScore(player.data, global.data) : null),
@@ -113,8 +125,8 @@ export default function PerformanceTab({
             <div className="score-copy">
               <h3>Performance Score</h3>
               <p className="grid-note left-note">
-                An impact-weighted average of where this player's last 30 days land on every
-                tracked player's curve — 50 is dead average, 99 is the very top.
+                An impact-weighted average of where this player lands on every tracked
+                player's curve over {windowText} — 50 is dead average, 99 is the very top.
               </p>
             </div>
           </div>
@@ -176,14 +188,14 @@ export default function PerformanceTab({
               ))}
             </div>
             <p className="grid-note left-note">
-              This player's per-match averages over the last 30 days, placed on the curve of every
+              This player's per-match averages over {windowText}, placed on the curve of every
               tracked player. For deaths and damage taken, "top" means lower than the field.
             </p>
           </>
         )}
       </section>
 
-      <Trends matches={matches} heroes={heroes} />
+      <Trends matches={matches} heroes={heroes} sinceUnix={sinceUnix} />
     </>
   )
 }
@@ -203,9 +215,11 @@ const TREND_METRICS: { value: TrendMetric; label: string }[] = [
 export function Trends({
   matches,
   heroes,
+  sinceUnix = 0,
 }: {
   matches: MatchHistoryEntry[]
   heroes: Map<number, HeroAsset> | undefined
+  sinceUnix?: number
 }) {
   const [metric, setMetric] = useState<TrendMetric>('win')
   const [heroFilter, setHeroFilter] = useState(0)
@@ -221,7 +235,7 @@ export function Trends({
 
   const points = useMemo(() => {
     const ordered = matches
-      .filter((m) => heroFilter === 0 || m.hero_id === heroFilter)
+      .filter((m) => m.start_time >= sinceUnix && (heroFilter === 0 || m.hero_id === heroFilter))
       .sort((a, b) => a.start_time - b.start_time)
     if (ordered.length < TREND_WINDOW) return []
     const valueOf = (m: MatchHistoryEntry) => {
@@ -247,7 +261,7 @@ export function Trends({
       }
     }
     return out
-  }, [matches, metric, heroFilter])
+  }, [matches, metric, heroFilter, sinceUnix])
 
   if (matches.length < TREND_WINDOW) return null
 

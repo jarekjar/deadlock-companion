@@ -381,7 +381,7 @@ function MatchupRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, paddingBottom: 32, gap: 12 },
   headWrap: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   headArt: { width: 92, height: 122, borderWidth: 1, borderColor: c.rule },

@@ -131,7 +131,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   content: { paddingHorizontal: 16, paddingBottom: 32, gap: 18 },
   mast: { alignItems: 'center', gap: 6 },
   wordmark: {

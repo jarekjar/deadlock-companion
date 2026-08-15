@@ -12,12 +12,18 @@ import {
   badgeToIndex,
   indexToBadge,
   isWin,
+  matchModeOf,
+  MATCH_MODE_LABELS,
   rankName,
   type MatchHistoryEntry,
+  type ModeFilterValue,
   type RankAsset,
 } from '../../lib/api'
 import { useFavorites } from '../../lib/favorites'
 import {
+  ALL_TIME,
+  SINCE_30D,
+  SINCE_90D,
   useEnemyStats,
   useHeroes,
   useMatchHistory,
@@ -44,6 +50,21 @@ const PROFILE_TABS: { key: ProfileTab; label: string }[] = [
   { key: 'heroes', label: 'Heroes' },
 ]
 
+const WINDOWS = [
+  { key: '30d', label: '30 days', text: 'the last 30 days', since: SINCE_30D },
+  { key: '90d', label: '90 days', text: 'the last 90 days', since: SINCE_90D },
+  { key: 'all', label: 'All time', text: 'all recorded matches', since: ALL_TIME },
+] as const
+
+type WindowKey = (typeof WINDOWS)[number]['key']
+
+const MODES: { key: ModeFilterValue; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'ranked', label: 'Ranked' },
+  { key: 'standard', label: 'Standard' },
+  { key: 'brawl', label: 'Brawl' },
+]
+
 export default function PlayerProfileScreen() {
   const params = useLocalSearchParams<{ id: string }>()
   const accountId = Number(params.id)
@@ -55,11 +76,21 @@ export default function PlayerProfileScreen() {
   const { isFavorite, toggle } = useFavorites()
   const [visible, setVisible] = useState(INITIAL)
   const [tab, setTab] = useState<ProfileTab>('overview')
+  const [winKey, setWinKey] = useState<WindowKey>('30d')
+  const statsWindow = WINDOWS.find((w) => w.key === winKey) ?? WINDOWS[0]
+  const [modeKey, setModeKey] = useState<ModeFilterValue>('all')
+  // the economy endpoints only make sense for the normal game mode
+  const mode: ModeFilterValue = tab === 'economy' && modeKey === 'brawl' ? 'all' : modeKey
   const insets = useSafeAreaInsets()
 
+  const modeFiltered = useMemo(() => {
+    const matches = history.data ?? []
+    return mode === 'all' ? matches : matches.filter((m) => matchModeOf(m) === mode)
+  }, [history.data, mode])
+
   const summary = useMemo(() => {
-    if (!history.data || history.data.length === 0) return null
-    const games = history.data
+    if (modeFiltered.length === 0) return null
+    const games = modeFiltered
     const wins = games.filter(isWin).length
     const kills = games.reduce((s, g) => s + g.player_kills, 0)
     const deaths = games.reduce((s, g) => s + g.player_deaths, 0)
@@ -73,7 +104,7 @@ export default function PlayerProfileScreen() {
       kda: (kills + assists) / Math.max(1, deaths),
       soulsPerMin,
     }
-  }, [history.data])
+  }, [modeFiltered])
 
   const highlights = useMemo(() => {
     if (!heroStats.data || !heroes.data) return null
@@ -136,6 +167,70 @@ export default function PlayerProfileScreen() {
           })}
         </View>
 
+        {tab === 'overview' && highlights && (
+          <>
+            <SectionTitle>Highlights</SectionTitle>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {highlights.most.hero && (
+                <HeroHighlight
+                  label="Most played"
+                  heroName={highlights.most.hero.name}
+                  art={highlights.most.hero.images.icon_hero_card_webp}
+                  line={`${highlights.most.stat.matches_played} matches`}
+                />
+              )}
+              {highlights.best.hero && (
+                <HeroHighlight
+                  label="Best win rate"
+                  heroName={highlights.best.hero.name}
+                  art={highlights.best.hero.images.icon_hero_card_webp}
+                  line={`${(
+                    (highlights.best.stat.wins / highlights.best.stat.matches_played) *
+                    100
+                  ).toFixed(0)}% over ${highlights.best.stat.matches_played}`}
+                />
+              )}
+            </View>
+          </>
+        )}
+
+        {tab !== 'heroes' && (
+          <View style={styles.filterRow}>
+            {(tab === 'performance' || tab === 'economy') && (
+              <View style={styles.windowSeg}>
+                {WINDOWS.map((w) => {
+                  const on = winKey === w.key
+                  return (
+                    <Pressable
+                      key={w.key}
+                      onPress={() => setWinKey(w.key)}
+                      style={[styles.windowBtn, on && styles.windowBtnOn]}
+                    >
+                      <Text style={[styles.windowLabel, on && styles.windowLabelOn]}>
+                        {w.label}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            )}
+            <View style={styles.windowSeg}>
+              {MODES.filter((m) => !(tab === 'economy' && m.key === 'brawl')).map((m) => {
+                const on = mode === m.key
+                return (
+                  <Pressable
+                    key={m.key}
+                    onPress={() => setModeKey(m.key)}
+                    style={[styles.windowBtn, on && styles.windowBtnOn]}
+                  >
+                    <Text style={[styles.windowLabel, on && styles.windowLabelOn]}>{m.label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+        )}
+
         {tab === 'overview' && (
           <>
             {summary && (
@@ -151,44 +246,17 @@ export default function PlayerProfileScreen() {
               </View>
             )}
 
-            {highlights && (
-              <>
-                <SectionTitle>Highlights</SectionTitle>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  {highlights.most.hero && (
-                    <HeroHighlight
-                      label="Most played"
-                      heroName={highlights.most.hero.name}
-                      art={highlights.most.hero.images.icon_hero_card_webp}
-                      line={`${highlights.most.stat.matches_played} matches`}
-                    />
-                  )}
-                  {highlights.best.hero && (
-                    <HeroHighlight
-                      label="Best win rate"
-                      heroName={highlights.best.hero.name}
-                      art={highlights.best.hero.images.icon_hero_card_webp}
-                      line={`${(
-                        (highlights.best.stat.wins / highlights.best.stat.matches_played) *
-                        100
-                      ).toFixed(0)}% over ${highlights.best.stat.matches_played}`}
-                    />
-                  )}
-                </View>
-              </>
-            )}
-
             {history.data && <RankHistory matches={history.data} />}
 
             <SectionTitle>Match History</SectionTitle>
             {history.isPending && <Note>Loading matches…</Note>}
             {history.isError && <Note>Could not load match history.</Note>}
-            {history.data?.slice(0, visible).map((match) => (
+            {modeFiltered.slice(0, visible).map((match) => (
               <MatchRow key={match.match_id} match={match} />
             ))}
-            {history.data && visible < history.data.length && (
+            {visible < modeFiltered.length && (
               <Btn
-                label={`Show more (${history.data.length - visible} left)`}
+                label={`Show more (${modeFiltered.length - visible} left)`}
                 onPress={() => setVisible((v) => v + PAGE)}
               />
             )}
@@ -199,12 +267,24 @@ export default function PlayerProfileScreen() {
 
         {tab === 'performance' && (
           <>
-            <ProfilePerformance accountId={accountId} />
-            {history.data && <Trends matches={history.data} />}
+            <ProfilePerformance
+              accountId={accountId}
+              sinceUnix={statsWindow.since}
+              windowText={statsWindow.text}
+              mode={mode}
+            />
+            {history.data && <Trends matches={modeFiltered} sinceUnix={statsWindow.since} />}
           </>
         )}
 
-        {tab === 'economy' && <ProfileEconomy accountId={accountId} />}
+        {tab === 'economy' && (
+          <ProfileEconomy
+            accountId={accountId}
+            sinceUnix={statsWindow.since}
+            windowText={statsWindow.text}
+            mode={mode}
+          />
+        )}
 
         {tab === 'heroes' && <HeroStatsList accountId={accountId} />}
       </ScrollView>
@@ -341,11 +421,19 @@ const TREND_METRICS: { value: TrendMetric; label: string }[] = [
   { value: 'souls', label: 'Souls/min' },
 ]
 
-function Trends({ matches }: { matches: MatchHistoryEntry[] }) {
+function Trends({
+  matches,
+  sinceUnix = 0,
+}: {
+  matches: MatchHistoryEntry[]
+  sinceUnix?: number
+}) {
   const [metric, setMetric] = useState<TrendMetric>('win')
 
   const points = useMemo(() => {
-    const ordered = [...matches].sort((a, b) => a.start_time - b.start_time)
+    const ordered = matches
+      .filter((m) => m.start_time >= sinceUnix)
+      .sort((a, b) => a.start_time - b.start_time)
     if (ordered.length < TREND_WINDOW) return []
     const valueOf = (m: MatchHistoryEntry) => {
       switch (metric) {
@@ -368,7 +456,7 @@ function Trends({ matches }: { matches: MatchHistoryEntry[] }) {
       if (i >= TREND_WINDOW - 1) out.push({ x: ordered[i].start_time, y: sum / TREND_WINDOW })
     }
     return out
-  }, [matches, metric])
+  }, [matches, metric, sinceUnix])
 
   if (points.length < 2) return null
 
@@ -553,7 +641,7 @@ function MatchRow({ match }: { match: MatchHistoryEntry }) {
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.matchHero}>{hero?.name ?? `Hero ${match.hero_id}`}</Text>
         <Text style={styles.matchMeta}>
-          {formatClock(match.match_duration_s)} · {ago}
+          {MATCH_MODE_LABELS[matchModeOf(match)]} · {formatClock(match.match_duration_s)} · {ago}
         </Text>
       </View>
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
@@ -579,7 +667,7 @@ function agoLabel(unixSec: number): string {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, paddingBottom: 32, gap: 12 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatar: {
@@ -641,6 +729,24 @@ const styles = StyleSheet.create({
     color: c.inkFaint,
   },
   tabLabelOn: { color: c.bg },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  windowSeg: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: c.rule,
+    borderRadius: 2,
+    alignSelf: 'flex-start',
+  },
+  windowBtn: { paddingVertical: 6, paddingHorizontal: 14 },
+  windowBtnOn: { backgroundColor: c.brass },
+  windowLabel: {
+    fontFamily: f.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: c.inkFaint,
+  },
+  windowLabelOn: { color: c.bg },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   heroRowIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.bgInset },
   heroRowName: { fontFamily: f.bodySemi, fontSize: 14, color: c.ink },

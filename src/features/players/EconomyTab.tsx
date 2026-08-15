@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import LineChart from '../../shared/LineChart'
-import { type PerformanceCurvePoint } from '../../lib/api'
+import { type ModeFilterValue, type PerformanceCurvePoint } from '../../lib/api'
 import { usePerformanceCurve } from '../../lib/queries'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
@@ -17,9 +17,19 @@ const SOURCES: { label: string; color: string; of: (p: PerformanceCurvePoint) =>
   { label: 'Denies', color: '#8f7434', of: (p) => p.gold_denied_avg },
 ]
 
-export default function EconomyTab({ accountId }: { accountId: number }) {
-  const player = usePerformanceCurve(accountId)
-  const global = usePerformanceCurve(0)
+export default function EconomyTab({
+  accountId,
+  sinceUnix,
+  windowText,
+  mode,
+}: {
+  accountId: number
+  sinceUnix: number
+  windowText: string
+  mode: ModeFilterValue
+}) {
+  const player = usePerformanceCurve(accountId, sinceUnix, mode)
+  const global = usePerformanceCurve(0, sinceUnix, mode)
 
   const curve = useMemo(() => {
     if (!player.data || !global.data) return null
@@ -125,7 +135,7 @@ export default function EconomyTab({ accountId }: { accountId: number }) {
           formatX={(x) => `${Math.round(x)}m`}
           formatY={(y) => compact.format(y)}
           ariaLabel="Average net worth over game time"
-          legendNote="average net worth by game time, last 30 days"
+          legendNote={`average net worth by game time, ${windowText}`}
         />
       </section>
 
@@ -184,7 +194,7 @@ export default function EconomyTab({ accountId }: { accountId: number }) {
           </div>
           <p className="grid-note left-note">
             Souls earned by source through {breakdown.minute} minutes, averaged over this player's
-            tracked matches versus everyone's.
+            tracked matches versus everyone's ({windowText}).
           </p>
         </section>
       )}

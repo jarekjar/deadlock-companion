@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { type MetricStats } from '../lib/api'
+import { type MetricStats, type ModeFilterValue } from '../lib/api'
 import { METRIC_ADVICE, percentileOf, performanceScore, scoreGrade } from '../lib/metrics'
 import { usePlayerMetrics } from '../lib/queries'
 import { c, compact, f } from '../theme'
@@ -41,9 +41,19 @@ function topColor(topShare: number): string {
   return c.ink
 }
 
-export default function ProfilePerformance({ accountId }: { accountId: number }) {
-  const player = usePlayerMetrics(accountId)
-  const global = usePlayerMetrics(0)
+export default function ProfilePerformance({
+  accountId,
+  sinceUnix,
+  windowText,
+  mode,
+}: {
+  accountId: number
+  sinceUnix: number
+  windowText: string
+  mode: ModeFilterValue
+}) {
+  const player = usePlayerMetrics(accountId, sinceUnix, mode)
+  const global = usePlayerMetrics(0, sinceUnix, mode)
 
   const score = useMemo(
     () => (player.data && global.data ? performanceScore(player.data, global.data) : null),
@@ -82,7 +92,7 @@ export default function ProfilePerformance({ accountId }: { accountId: number })
           </View>
         </View>
         <Text style={styles.scoreBlurb}>
-          Where the last 30 days land on every tracked player's curve — 50 is dead average, 99 is
+          Where {windowText} lands on every tracked player's curve — 50 is dead average, 99 is
           the very top.
         </Text>
       </Card>
@@ -134,7 +144,7 @@ export default function ProfilePerformance({ accountId }: { accountId: number })
         ))}
       </Card>
       <Note>
-        Per-match averages over the last 30 days. For deaths and damage taken, "top" means lower
+        Per-match averages over {windowText}. For deaths and damage taken, "top" means lower
         than the field.
       </Note>
     </>

@@ -160,7 +160,7 @@ function BuildDetail({ entry }: { entry: HeroBuildEntry }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, gap: 12 },
   head: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   headArt: { width: 72, height: 96, borderWidth: 1, borderColor: c.rule },

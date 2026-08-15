@@ -117,7 +117,7 @@ export default function HeroesScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
+  screen: { flex: 1, backgroundColor: 'transparent', paddingHorizontal: 16 },
   h1: {
     fontFamily: f.display,
     fontSize: 21,

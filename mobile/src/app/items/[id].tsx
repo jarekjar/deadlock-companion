@@ -143,7 +143,7 @@ function TopHeroes({ itemId }: { itemId: number }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: 16, paddingBottom: 32, gap: 12 },
   head: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   icon: { width: 72, height: 72, borderRadius: 2, backgroundColor: c.bgInset },

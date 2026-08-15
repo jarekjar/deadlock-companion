@@ -172,7 +172,7 @@ export default function BuildsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   controls: { gap: 10, marginBottom: 12 },
   heroChipRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   heroChip: {

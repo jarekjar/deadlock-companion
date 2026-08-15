@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import { type PerformanceCurvePoint } from '../lib/api'
+import { type ModeFilterValue, type PerformanceCurvePoint } from '../lib/api'
 import { usePerformanceCurve } from '../lib/queries'
 import { c, compact, f } from '../theme'
 import LineChart from './LineChart'
@@ -18,9 +18,19 @@ const SOURCES: { label: string; color: string; of: (p: PerformanceCurvePoint) =>
   { label: 'Denies', color: '#8f7434', of: (p) => p.gold_denied_avg },
 ]
 
-export default function ProfileEconomy({ accountId }: { accountId: number }) {
-  const player = usePerformanceCurve(accountId)
-  const global = usePerformanceCurve(0)
+export default function ProfileEconomy({
+  accountId,
+  sinceUnix,
+  windowText,
+  mode,
+}: {
+  accountId: number
+  sinceUnix: number
+  windowText: string
+  mode: ModeFilterValue
+}) {
+  const player = usePerformanceCurve(accountId, sinceUnix, mode)
+  const global = usePerformanceCurve(0, sinceUnix, mode)
 
   const curve = useMemo(() => {
     if (!player.data || !global.data) return null
@@ -121,7 +131,7 @@ export default function ProfileEconomy({ accountId }: { accountId: number }) {
           formatX={(x) => `${Math.round(x)}m`}
           formatYTick={(y) => compact(y)}
         />
-        <Note>Gold line: this player · grey line: all players. Last 30 days.</Note>
+        <Note>Gold line: this player · grey line: all players — {windowText}.</Note>
       </Card>
 
       {milestones.length > 0 && (

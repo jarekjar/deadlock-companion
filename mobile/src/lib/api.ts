@@ -20,6 +20,8 @@ export interface MatchHistoryEntry {
   last_hits: number
   net_worth: number
   match_duration_s: number
+  /** 1 = normal, 4 = Street Brawl. (match_mode: 1 = standard, 4 = ranked.) */
+  game_mode: number
   /** The winning team; the player won when this equals player_team. */
   match_result: number
   /** Valve-reported rank badge after this match; ranked matches only. */
@@ -185,10 +187,34 @@ export interface ItemStat {
  * ranked+standard matches in the normal game mode; 'ranked' narrows to the
  * ranked queue, 'brawl' switches to the Street Brawl game mode instead.
  */
-export type ModeFilterValue = 'all' | 'ranked' | 'brawl'
+export type ModeFilterValue = 'all' | 'ranked' | 'standard' | 'brawl'
 
 const modeParam = (mode: ModeFilterValue) =>
-  mode === 'ranked' ? '&match_mode=ranked' : mode === 'brawl' ? '&game_mode=street_brawl' : ''
+  mode === 'ranked'
+    ? '&match_mode=ranked'
+    : mode === 'standard'
+      ? '&match_mode=unranked'
+      : mode === 'brawl'
+        ? '&game_mode=street_brawl'
+        : ''
+
+/**
+ * Which queue a history entry came from, derived from the numeric enums
+ * (game_mode 4 = Street Brawl, match_mode 4 = ranked, 1 = standard).
+ */
+export function matchModeOf(m: MatchHistoryEntry): 'ranked' | 'standard' | 'brawl' | 'other' {
+  if (m.game_mode === 4) return 'brawl'
+  if (m.match_mode === 4) return 'ranked'
+  if (m.match_mode === 1) return 'standard'
+  return 'other'
+}
+
+export const MATCH_MODE_LABELS: Record<string, string> = {
+  ranked: 'Ranked',
+  standard: 'Standard',
+  brawl: 'Brawl',
+  other: 'Other',
+}
 
 export const fetchHeroCounterStats = (sinceUnix: number, mode: ModeFilterValue = 'all') =>
   get<HeroCounterStat[]>(
@@ -285,10 +311,24 @@ export type PlayerMetrics = Record<string, MetricStats>
  * that player's matches; without one they describe the whole population —
  * comparing the two is what places a player on the global curve.
  */
-export const fetchPlayerMetrics = (sinceUnix: number, accountId?: number) =>
-  get<PlayerMetrics>(
-    `/v1/analytics/player-stats/metrics?min_unix_timestamp=${sinceUnix}${accountId ? `&account_ids=${accountId}` : ''}`,
-  )
+const modeSearchParams = (params: URLSearchParams, mode: ModeFilterValue) => {
+  if (mode === 'ranked') params.set('match_mode', 'ranked')
+  if (mode === 'standard') params.set('match_mode', 'unranked')
+  if (mode === 'brawl') params.set('game_mode', 'street_brawl')
+}
+
+export const fetchPlayerMetrics = (
+  sinceUnix: number,
+  accountId?: number,
+  mode: ModeFilterValue = 'all',
+) => {
+  const params = new URLSearchParams()
+  // always sent explicitly: an omitted timestamp silently defaults to 30 days
+  params.set('min_unix_timestamp', String(Math.max(0, sinceUnix)))
+  if (accountId) params.set('account_ids', String(accountId))
+  modeSearchParams(params, mode)
+  return get<PlayerMetrics>(`/v1/analytics/player-stats/metrics?${params}`)
+}
 
 /** One time-bucket of the souls/KDA curve; gold_* fields are souls by source. */
 export interface PerformanceCurvePoint {
@@ -311,10 +351,18 @@ export interface PerformanceCurvePoint {
   gold_death_loss_avg: number
 }
 
-export const fetchPerformanceCurve = (sinceUnix: number, accountId?: number) =>
-  get<PerformanceCurvePoint[]>(
-    `/v1/analytics/player-performance-curve?min_unix_timestamp=${sinceUnix}&resolution=2${accountId ? `&account_ids=${accountId}` : ''}`,
-  )
+export const fetchPerformanceCurve = (
+  sinceUnix: number,
+  accountId?: number,
+  mode: ModeFilterValue = 'all',
+) => {
+  const params = new URLSearchParams({ resolution: '2' })
+  // always sent explicitly: an omitted timestamp silently defaults to 30 days
+  params.set('min_unix_timestamp', String(Math.max(0, sinceUnix)))
+  if (accountId) params.set('account_ids', String(accountId))
+  modeSearchParams(params, mode)
+  return get<PerformanceCurvePoint[]>(`/v1/analytics/player-performance-curve?${params}`)
+}
 
 export const fetchMateStats = (accountId: number) =>
   get<MateStat[]>(`/v1/players/${accountId}/mate-stats?min_matches_played=5`)

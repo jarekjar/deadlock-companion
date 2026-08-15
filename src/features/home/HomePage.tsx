@@ -5,6 +5,7 @@ import { METRIC_ADVICE, performanceScore, scoreGrade } from '../../lib/metrics'
 import { useSession } from '../../lib/session'
 import { TEAMS } from '../../lib/teams'
 import {
+  SINCE_30D,
   useActiveMatches,
   useHeroAnalytics,
   useHeroes,
@@ -146,8 +147,8 @@ function ScorePromo() {
   const session = useSession()
   const accountId = session.data ?? 0
   // both fetches only run for signed-in visitors
-  const mine = usePlayerMetrics(accountId, accountId > 0)
-  const global = usePlayerMetrics(0, accountId > 0)
+  const mine = usePlayerMetrics(accountId, SINCE_30D, 'all', accountId > 0)
+  const global = usePlayerMetrics(0, SINCE_30D, 'all', accountId > 0)
   const score = useMemo(
     () =>
       accountId && mine.data && global.data ? performanceScore(mine.data, global.data) : null,

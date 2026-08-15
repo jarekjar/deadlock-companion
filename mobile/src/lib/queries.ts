@@ -29,7 +29,12 @@ import {
 } from './api'
 
 /** 30-day analytics window, midnight-aligned so query keys stay stable. */
-const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
+export const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
+
+export const SINCE_90D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 90 * 86400
+
+/** 0 disables the time filter — endpoints then cover every recorded match. */
+export const ALL_TIME = 0
 
 const FOREVER = Number.POSITIVE_INFINITY
 
@@ -126,20 +131,29 @@ export const useHeroStatsWithItem = (itemId: number, mode: ModeFilterValue = 'al
     staleTime: 30 * 60 * 1000,
   })
 
-/** Pass 0 for the population-wide distribution (cached long, shared). */
-export const usePlayerMetrics = (accountId: number, enabled = true) =>
+/** Pass accountId 0 for the population-wide distribution (cached long, shared). */
+export const usePlayerMetrics = (
+  accountId: number,
+  sinceUnix = SINCE_30D,
+  mode: ModeFilterValue = 'all',
+  enabled = true,
+) =>
   useQuery({
-    queryKey: ['playerMetrics', accountId, SINCE_30D],
-    queryFn: () => fetchPlayerMetrics(SINCE_30D, accountId || undefined),
+    queryKey: ['playerMetrics', accountId, sinceUnix, mode],
+    queryFn: () => fetchPlayerMetrics(sinceUnix, accountId || undefined, mode),
     enabled,
     staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
   })
 
-/** Pass 0 for the population-wide curve (cached long, shared). */
-export const usePerformanceCurve = (accountId: number) =>
+/** Pass accountId 0 for the population-wide curve (cached long, shared). */
+export const usePerformanceCurve = (
+  accountId: number,
+  sinceUnix = SINCE_30D,
+  mode: ModeFilterValue = 'all',
+) =>
   useQuery({
-    queryKey: ['performanceCurve', accountId, SINCE_30D],
-    queryFn: () => fetchPerformanceCurve(SINCE_30D, accountId || undefined),
+    queryKey: ['performanceCurve', accountId, sinceUnix, mode],
+    queryFn: () => fetchPerformanceCurve(sinceUnix, accountId || undefined, mode),
     staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
   })
 

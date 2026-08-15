@@ -38,7 +38,7 @@ export default function TabLayout() {
           letterSpacing: 0.8,
           textTransform: 'uppercase',
         },
-        sceneStyle: { backgroundColor: c.bg },
+        sceneStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Tabs.Screen

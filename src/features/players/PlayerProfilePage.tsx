@@ -8,9 +8,12 @@ import {
   indexToBadge,
   isWin,
   itemIcon,
+  matchModeOf,
+  MATCH_MODE_LABELS,
   rankName,
   type HeroAsset,
   type MatchHistoryEntry,
+  type ModeFilterValue,
   type PlayerHeroStats,
   type RankAsset,
 } from '../../lib/api'
@@ -18,6 +21,9 @@ import LineChart from '../../shared/LineChart'
 import ItemHover from '../../shared/ItemHover'
 import { usePageMeta } from '../../lib/usePageMeta'
 import {
+  ALL_TIME,
+  SINCE_30D,
+  SINCE_90D,
   useEnemyStats,
   useHeroes,
   useItems,
@@ -52,6 +58,19 @@ const PROFILE_TABS = [
   { key: 'heroes', label: 'Heroes' },
 ] as const
 
+const WINDOWS = [
+  { key: '30d', label: '30 days', text: 'the last 30 days', since: SINCE_30D },
+  { key: '90d', label: '90 days', text: 'the last 90 days', since: SINCE_90D },
+  { key: 'all', label: 'All time', text: 'all recorded matches', since: ALL_TIME },
+] as const
+
+const MODES: { key: ModeFilterValue; label: string }[] = [
+  { key: 'all', label: 'All modes' },
+  { key: 'ranked', label: 'Ranked' },
+  { key: 'standard', label: 'Standard' },
+  { key: 'brawl', label: 'Brawl' },
+]
+
 export default function PlayerProfilePage() {
   const params = useParams()
   const accountId = Number(params.accountId)
@@ -73,6 +92,19 @@ function Profile({ accountId }: { accountId: number }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('tab') ?? 'overview'
   const tab = PROFILE_TABS.some((t) => t.key === requested) ? requested : 'overview'
+  const statsWindow = WINDOWS.find((w) => w.key === searchParams.get('window')) ?? WINDOWS[0]
+  const requestedMode = MODES.find((m) => m.key === searchParams.get('mode'))?.key ?? 'all'
+  // the economy endpoints only make sense for the normal game mode
+  const mode: ModeFilterValue =
+    tab === 'economy' && requestedMode === 'brawl' ? 'all' : requestedMode
+
+  const setParams = (nextTab: string, nextWindow: string, nextMode: string) => {
+    const params: Record<string, string> = {}
+    if (nextTab !== 'overview') params.tab = nextTab
+    if (nextWindow !== '30d') params.window = nextWindow
+    if (nextMode !== 'all') params.mode = nextMode
+    setSearchParams(params, { replace: true })
+  }
 
   const persona = profile.data?.personaname ?? `Player #${accountId}`
   const isFavorite = favorites.some((f) => f.accountId === accountId)
@@ -81,8 +113,13 @@ function Profile({ accountId }: { accountId: number }) {
     `Deadlock stats for ${persona}: win rate, KDA, souls per minute, hero breakdowns, and match history.`,
   )
 
-  const summary = useMemo(() => {
+  const modeFiltered = useMemo(() => {
     const matches = history.data ?? []
+    return mode === 'all' ? matches : matches.filter((m) => matchModeOf(m) === mode)
+  }, [history.data, mode])
+
+  const summary = useMemo(() => {
+    const matches = modeFiltered
     if (matches.length === 0) return null
     const wins = matches.filter(isWin).length
     const kills = matches.reduce((s, m) => s + m.player_kills, 0)
@@ -96,7 +133,7 @@ function Profile({ accountId }: { accountId: number }) {
       kda: deaths === 0 ? kills + assists : (kills + assists) / deaths,
       soulsPerMin: souls / minutes,
     }
-  }, [history.data])
+  }, [modeFiltered])
 
   if (history.isError || profile.isError) {
     return <div className="page-note error">Could not load this player</div>
@@ -169,14 +206,51 @@ function Profile({ accountId }: { accountId: number }) {
                 role="tab"
                 aria-selected={tab === key}
                 className={`tab${tab === key ? ' selected' : ''}`}
-                onClick={() =>
-                  setSearchParams(key === 'overview' ? {} : { tab: key }, { replace: true })
-                }
+                onClick={() => setParams(key, statsWindow.key, mode)}
               >
                 {label}
               </button>
             ))}
           </div>
+
+          {tab === 'overview' && heroStats.data && heroStats.data.length > 0 && (
+            <Highlights accountId={accountId} heroStats={heroStats.data} heroes={heroes.data} />
+          )}
+
+          {tab !== 'heroes' && (
+            <div className="control-bar window-bar">
+              {(tab === 'performance' || tab === 'economy') && (
+                <span className="cb-group">
+                  <span className="cb-label">Window</span>
+                  <select
+                    value={statsWindow.key}
+                    onChange={(e) => setParams(tab, e.target.value, mode)}
+                    aria-label="Stats time window"
+                  >
+                    {WINDOWS.map((w) => (
+                      <option key={w.key} value={w.key}>
+                        {w.label}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              )}
+              <span className="cb-group">
+                <span className="cb-label">Mode</span>
+                <select
+                  value={mode}
+                  onChange={(e) => setParams(tab, statsWindow.key, e.target.value)}
+                  aria-label="Match mode filter"
+                >
+                  {MODES.filter((m) => !(tab === 'economy' && m.key === 'brawl')).map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </div>
+          )}
 
           {tab === 'overview' && (
             <>
@@ -189,17 +263,9 @@ function Profile({ accountId }: { accountId: number }) {
                 </div>
               )}
 
-              {heroStats.data && heroStats.data.length > 0 && (
-                <Highlights
-                  accountId={accountId}
-                  heroStats={heroStats.data}
-                  heroes={heroes.data}
-                />
-              )}
-
               <RankHistory matches={history.data} ranks={rankAssets.data} />
 
-              <MatchTable matches={history.data} heroes={heroes.data} />
+              <MatchTable matches={modeFiltered} heroes={heroes.data} />
 
               <p className="grid-note left-note">
                 Matches missing? The community API only knows matches that got synced —{' '}
@@ -213,12 +279,22 @@ function Profile({ accountId }: { accountId: number }) {
           {tab === 'performance' && (
             <PerformanceTab
               accountId={accountId}
-              matches={history.data}
+              matches={modeFiltered}
               heroes={heroes.data}
+              sinceUnix={statsWindow.since}
+              windowText={statsWindow.text}
+              mode={mode}
             />
           )}
 
-          {tab === 'economy' && <EconomyTab accountId={accountId} />}
+          {tab === 'economy' && (
+            <EconomyTab
+              accountId={accountId}
+              sinceUnix={statsWindow.since}
+              windowText={statsWindow.text}
+              mode={mode}
+            />
+          )}
 
           {tab === 'heroes' &&
             (heroStats.data && heroStats.data.length > 0 ? (
@@ -650,6 +726,7 @@ function MatchTable({
             <tr>
               {header('hero', 'Hero')}
               {header('result', 'Result')}
+              <th>Mode</th>
               {header('player_kills', 'K')}
               {header('player_deaths', 'D')}
               {header('player_assists', 'A')}
@@ -679,6 +756,7 @@ function MatchTable({
                     </Link>
                   </td>
                   <td className={isWin(m) ? 'result-w' : 'result-l'}>{isWin(m) ? 'W' : 'L'}</td>
+                  <td className="dim">{MATCH_MODE_LABELS[matchModeOf(m)]}</td>
                   <td className="mono">{m.player_kills}</td>
                   <td className="mono">{m.player_deaths}</td>
                   <td className="mono">{m.player_assists}</td>

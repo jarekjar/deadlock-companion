@@ -133,7 +133,7 @@ export function Body({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.bg },
+  screen: { flex: 1, backgroundColor: 'transparent' },
   screenContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 14 },
   h1Wrap: { marginBottom: 6 },
   h1: {
