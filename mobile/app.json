@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "app.thecursedapple",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#17110b",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
