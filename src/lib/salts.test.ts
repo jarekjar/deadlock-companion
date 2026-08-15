@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { extractSalts, mergeSalts } from './salts'
-import { percentileOf } from './metrics'
-import { type MetricStats } from './api'
+import { percentileOf, performanceScore, scoreGrade } from './metrics'
+import { type MetricStats, type PlayerMetrics } from './api'
 
 describe('extractSalts', () => {
   it('parses meta and dem urls out of arbitrary bytes', () => {
@@ -71,5 +71,58 @@ describe('percentileOf', () => {
   it('clamps at the tails', () => {
     expect(percentileOf(0, pop)).toBe(1)
     expect(percentileOf(500, pop)).toBe(99)
+  })
+})
+
+describe('performanceScore', () => {
+  const stats = (values: Partial<MetricStats>): MetricStats => ({
+    avg: 0,
+    std: 1,
+    percentile1: 1,
+    percentile5: 5,
+    percentile10: 10,
+    percentile25: 25,
+    percentile50: 50,
+    percentile75: 75,
+    percentile90: 90,
+    percentile95: 95,
+    percentile99: 99,
+    ...values,
+  })
+
+  it('scores a perfectly median player at 50', () => {
+    // player avg 50 on a 1..99 linear population curve = the 50th percentile;
+    // deaths lower-is-better flips around the same midpoint
+    const population: PlayerMetrics = Object.fromEntries(
+      ['kda', 'net_worth_per_min', 'player_damage_per_min', 'deaths', 'last_hits'].map((k) => [
+        k,
+        stats({}),
+      ]),
+    )
+    const player: PlayerMetrics = Object.fromEntries(
+      Object.keys(population).map((k) => [k, stats({ avg: 50 })]),
+    )
+    const result = performanceScore(player, population)!
+    expect(result.score).toBe(50)
+  })
+
+  it('flips lower-is-better metrics', () => {
+    const population: PlayerMetrics = { deaths: stats({}) }
+    const player: PlayerMetrics = { deaths: stats({ avg: 10 }) } // 10th pct of deaths = few deaths
+    const result = performanceScore(player, population)!
+    expect(result.metrics[0].beats).toBe(90)
+    expect(result.score).toBe(90)
+  })
+
+  it('returns null with no overlapping metrics', () => {
+    expect(performanceScore({}, {})).toBeNull()
+  })
+
+  it('grades on the expected boundaries', () => {
+    expect(scoreGrade(90)).toBe('S')
+    expect(scoreGrade(70)).toBe('A')
+    expect(scoreGrade(55)).toBe('B')
+    expect(scoreGrade(40)).toBe('C')
+    expect(scoreGrade(20)).toBe('D')
   })
 })

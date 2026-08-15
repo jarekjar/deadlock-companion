@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { averageBadge, rankName } from '../../lib/api'
+import { METRIC_ADVICE, performanceScore, scoreGrade } from '../../lib/metrics'
+import { useSession } from '../../lib/session'
 import { TEAMS } from '../../lib/teams'
 import {
   useActiveMatches,
   useHeroAnalytics,
   useHeroes,
+  usePlayerMetrics,
   useRankAssets,
   useRanks,
 } from '../../lib/queries'
@@ -114,19 +117,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="home-promo">
-        <div className="promo-text">
-          <h3>Prep your next match</h3>
-          <p>
-            Pick your hero and the enemy team on the My Match board and get matchup win rates,
-            counter items, spawn timers, and lane tracking — ready before the horn. Sign in
-            through Steam and it can even fill itself from your live game.
-          </p>
-        </div>
-        <Link className="btn btn-solid" to="/my-match">
-          Try My Match
-        </Link>
-      </div>
+      <ScorePromo />
 
       <LiveNow />
 
@@ -144,6 +135,75 @@ export default function HomePage() {
         Sign in through Steam to pin your profile and auto-fill your live match.
       </p>
     </>
+  )
+}
+
+/**
+ * The signed-in hook: your performance score, one strength, one thing to fix.
+ * Signed out it sells the same thing and points at Steam sign-in.
+ */
+function ScorePromo() {
+  const session = useSession()
+  const accountId = session.data ?? 0
+  // both fetches only run for signed-in visitors
+  const mine = usePlayerMetrics(accountId, accountId > 0)
+  const global = usePlayerMetrics(0, accountId > 0)
+  const score = useMemo(
+    () =>
+      accountId && mine.data && global.data ? performanceScore(mine.data, global.data) : null,
+    [accountId, mine.data, global.data],
+  )
+
+  if (accountId && score) {
+    const best = score.metrics[0]
+    const worst = [...score.metrics].reverse().find((m) => m.beats <= 50)
+    return (
+      <div className="home-promo home-score">
+        <div className="score-dial">
+          <span className="score-number mono">{score.score}</span>
+          <span className={`score-grade grade-${scoreGrade(score.score)}`}>
+            {scoreGrade(score.score)}
+          </span>
+        </div>
+        <div className="promo-text">
+          <h3>Your performance score</h3>
+          <p>
+            {best && (
+              <>
+                Better than <strong>{Math.round(best.beats)}%</strong> of players at{' '}
+                {best.label.toLowerCase()}.{' '}
+              </>
+            )}
+            {worst ? METRIC_ADVICE[worst.key] : 'Keep it up — the field is chasing you.'}
+          </p>
+        </div>
+        <Link className="btn btn-solid" to={`/players/${accountId}?tab=performance`}>
+          See the full breakdown
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="home-promo">
+      <div className="promo-text">
+        <h3>Get your performance score</h3>
+        <p>
+          One number for how your last 30 days stack up against every tracked player — with
+          what you're great at, what's holding you back, and how your economy compares to the
+          field, minute by minute.
+        </p>
+      </div>
+      {accountId ? (
+        <Link className="btn btn-solid" to={`/players/${accountId}?tab=performance`}>
+          See your stats
+        </Link>
+      ) : (
+        <a className="btn btn-solid" href="/api/auth/login" rel="nofollow">
+          Sign in to see yours
+        </a>
+      )}
+    </div>
   )
 }
 

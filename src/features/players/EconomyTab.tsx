@@ -67,6 +67,51 @@ export default function EconomyTab({ accountId }: { accountId: number }) {
     return mine && everyone ? [{ minute, mine, everyone }] : []
   })
 
+  // coaching notes derived from where this economy differs from the field's
+  const notes: { good: boolean; text: string }[] = []
+  const early = milestones.find((m) => m.minute === 10)
+  if (early) {
+    const diff = early.mine.net_worth_avg - early.everyone.net_worth_avg
+    if (diff <= -300) {
+      notes.push({
+        good: false,
+        text: `The lane phase leaks souls — down ${compact.format(-diff)} on the field by 10:00. Prioritize last hits and the boxes between waves.`,
+      })
+    } else if (diff >= 300) {
+      notes.push({
+        good: true,
+        text: `Strong lanes — up ${compact.format(diff)} on the field by 10:00.`,
+      })
+    }
+  }
+  if (breakdown) {
+    const share = (rows: typeof breakdown.mine, label: string) =>
+      rows.find((r) => r.label === label)?.share ?? 0
+    const neutralGap = share(breakdown.mine, 'Neutrals') - share(breakdown.everyone, 'Neutrals')
+    if (neutralGap <= -3) {
+      notes.push({
+        good: false,
+        text: 'A smaller share of these souls comes from camps than the field — sweep neutrals on the way between fights.',
+      })
+    } else if (neutralGap >= 3) {
+      notes.push({ good: true, text: 'Camps are pulling their weight in this economy.' })
+    }
+    const denyGap = share(breakdown.mine, 'Denies') - share(breakdown.everyone, 'Denies')
+    if (denyGap <= -1) {
+      notes.push({
+        good: false,
+        text: 'Denies barely feature here — confirming your orbs and denying theirs swings lanes twice as hard as a last hit.',
+      })
+    }
+    const killShare = share(breakdown.mine, 'Player kills')
+    if (killShare - share(breakdown.everyone, 'Player kills') >= 4) {
+      notes.push({
+        good: true,
+        text: 'This economy runs on kills — snowballing works, just keep farming when no fight is on.',
+      })
+    }
+  }
+
   return (
     <>
       <section className="data-section">
@@ -141,6 +186,19 @@ export default function EconomyTab({ accountId }: { accountId: number }) {
             Souls earned by source through {breakdown.minute} minutes, averaged over this player's
             tracked matches versus everyone's.
           </p>
+        </section>
+      )}
+
+      {notes.length > 0 && (
+        <section className="data-section">
+          <h3>Coaching Notes</h3>
+          <ul className="coach-notes">
+            {notes.map((note) => (
+              <li key={note.text} className={note.good ? 'coach-good' : 'coach-fix'}>
+                {note.text}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </>

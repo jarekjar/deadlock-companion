@@ -249,3 +249,18 @@
   font-size: 13px;
   color: var(--ink-faint);
 }
+
+/* ---- performance score promo ---- */
+
+.home-score {
+  align-items: center;
+}
+
+.home-score .score-dial {
+  width: 84px;
+  height: 84px;
+}
+
+.home-score .score-number {
+  font-size: 30px;
+}

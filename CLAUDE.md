@@ -57,6 +57,8 @@ Two global persisted filters gate the meta pages: the rank bracket (`src/lib/ran
 
 API quirks learned the hard way: `hero-synergy-stats` 500s without `min_matches` + a time filter; bucketed `item-stats` (`bucket=game_time_min`) 500s unfiltered — pass `include_item_ids` and trim client-side; `item-flow-stats` is flaky, avoid it; `/v1/builds` ids are not unique across languages; patch dates come from the `MM-DD-YYYY` in `/v1/patches` titles, not `pub_date`.
 
+Match coverage: the API only knows matches whose metadata was ingested (auto for the ~top-200 spectateable games; everything else needs someone to submit that match's salts). `/upload` scans `Steam/appcache/httpcache` in the browser for `replay{cluster}.valve.net/1422450/{match}_{salt}.(meta|dem).bz2` URLs and POSTs them to `/v1/matches/salts` (pure logic in `src/lib/salts.ts`). The performance score/percentiles come from `analytics/player-stats/metrics` and `analytics/player-performance-curve` (resolution=2 → 2-minute buckets), player-vs-no-account_ids = player-vs-population (`src/lib/metrics.ts`).
+
 ### Timers domain
 
 `src/features/timers/timerEngine.ts` is pure spawn-prediction logic: an `ObjectiveDef` has a `mode` — `info`, `interval` (fixed waves), `event` (respawn after player-recorded kill), or `ladder` (escalating respawn delays, e.g. Mid-Boss). Objective definitions live in `src/data/timers.json`, **stamped with the patch they were verified against** — when Valve moves a timer, that JSON is the only thing to change. The match clock (`clock.ts` + `useMatchClock.ts`) persists to localStorage and can be seeded from a live match via `syncClockFromLive`.

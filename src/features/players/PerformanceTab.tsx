@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import LineChart from '../../shared/LineChart'
 import { isWin, type HeroAsset, type MatchHistoryEntry, type MetricStats } from '../../lib/api'
-import { percentileOf } from '../../lib/metrics'
+import { METRIC_ADVICE, percentileOf, performanceScore, scoreGrade } from '../../lib/metrics'
 import { usePlayerMetrics } from '../../lib/queries'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
@@ -59,6 +59,11 @@ export default function PerformanceTab({
   const player = usePlayerMetrics(accountId)
   const global = usePlayerMetrics(0)
 
+  const score = useMemo(
+    () => (player.data && global.data ? performanceScore(player.data, global.data) : null),
+    [player.data, global.data],
+  )
+
   const rows = useMemo(() => {
     if (!player.data || !global.data) return null
     return METRICS.flatMap((def) => {
@@ -79,8 +84,74 @@ export default function PerformanceTab({
     })
   }, [player.data, global.data])
 
+  const strengths = useMemo(
+    () => (score ? score.metrics.filter((m) => m.beats >= 55).slice(0, 3) : []),
+    [score],
+  )
+  const focus = useMemo(
+    () =>
+      score
+        ? [...score.metrics]
+            .reverse()
+            .filter((m) => m.beats <= 50)
+            .slice(0, 3)
+        : [],
+    [score],
+  )
+
   return (
     <>
+      {score && (
+        <section className="data-section">
+          <div className="score-head">
+            <div className="score-dial">
+              <span className="score-number mono">{score.score}</span>
+              <span className={`score-grade grade-${scoreGrade(score.score)}`}>
+                {scoreGrade(score.score)}
+              </span>
+            </div>
+            <div className="score-copy">
+              <h3>Performance Score</h3>
+              <p className="grid-note left-note">
+                An impact-weighted average of where this player's last 30 days land on every
+                tracked player's curve — 50 is dead average, 99 is the very top.
+              </p>
+            </div>
+          </div>
+          {(strengths.length > 0 || focus.length > 0) && (
+            <div className="coach-grid">
+              {strengths.length > 0 && (
+                <div className="coach-col">
+                  <h4>Great at</h4>
+                  <ul>
+                    {strengths.map((m) => (
+                      <li key={m.key}>
+                        <strong>{m.label}</strong> — better than{' '}
+                        <span className="mono wr-good">{Math.round(m.beats)}%</span> of players
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {focus.length > 0 && (
+                <div className="coach-col">
+                  <h4>Sharpen this</h4>
+                  <ul>
+                    {focus.map((m) => (
+                      <li key={m.key}>
+                        <strong>{m.label}</strong>
+                        {' — '}
+                        {METRIC_ADVICE[m.key] ?? 'below the field here.'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="data-section">
         <h3>Versus Everyone</h3>
         {player.isError || global.isError ? (

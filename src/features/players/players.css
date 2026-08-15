@@ -533,3 +533,98 @@ a.hl-hero:hover .hl-name {
   margin-right: 6px;
   vertical-align: -1px;
 }
+
+/* ---- performance score & coaching ---- */
+
+.score-head {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 14px;
+}
+
+.score-dial {
+  position: relative;
+  flex: 0 0 auto;
+  width: 92px;
+  height: 92px;
+  border: 2px solid var(--brass-dim);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+}
+
+.score-number {
+  font-family: var(--font-mono);
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.score-grade {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 15px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+}
+
+.grade-S { color: #ddb85f; border-color: #ddb85f; }
+.grade-A { color: var(--up); border-color: var(--up); }
+.grade-B { color: var(--ink); }
+.grade-C { color: var(--ink-faint); }
+.grade-D { color: var(--danger); border-color: var(--danger); }
+
+.score-copy h3 {
+  margin-bottom: 4px;
+}
+
+.coach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px 28px;
+}
+
+.coach-col h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 8px;
+}
+
+.coach-col ul,
+.coach-notes {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--ink-dim);
+}
+
+.coach-col li,
+.coach-notes li {
+  border-left: 2px solid var(--rule);
+  padding-left: 12px;
+}
+
+.coach-notes li.coach-good {
+  border-left-color: var(--up);
+}
+
+.coach-notes li.coach-fix {
+  border-left-color: var(--danger);
+}

@@ -76,10 +76,11 @@ export const useMatchHistory = (accountId: number) =>
   })
 
 /** Pass 0 for the population-wide distribution (cached long, shared). */
-export const usePlayerMetrics = (accountId: number) =>
+export const usePlayerMetrics = (accountId: number, enabled = true) =>
   useQuery({
     queryKey: ['playerMetrics', accountId, SINCE_30D],
     queryFn: () => fetchPlayerMetrics(SINCE_30D, accountId || undefined),
+    enabled,
     staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
   })
 
