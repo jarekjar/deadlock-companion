@@ -19,6 +19,7 @@ const PAGES = [
   { label: 'Records', to: '/records' },
   { label: 'Ranks', to: '/leaderboard' },
   { label: 'Live Matches', to: '/live' },
+  { label: 'Sync Matches', to: '/upload' },
 ]
 
 interface Result {

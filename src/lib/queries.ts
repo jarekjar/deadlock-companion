@@ -25,6 +25,8 @@ import {
   fetchMatchMetadata,
   fetchMateStats,
   fetchPatches,
+  fetchPerformanceCurve,
+  fetchPlayerMetrics,
   fetchPlayerScoreboard,
   fetchPlayerHeroStats,
   fetchPlayerItemStats,
@@ -71,6 +73,22 @@ export const useMatchHistory = (accountId: number) =>
     queryKey: ['matchHistory', accountId],
     queryFn: () => fetchMatchHistory(accountId),
     staleTime: 60 * 1000,
+  })
+
+/** Pass 0 for the population-wide distribution (cached long, shared). */
+export const usePlayerMetrics = (accountId: number) =>
+  useQuery({
+    queryKey: ['playerMetrics', accountId, SINCE_30D],
+    queryFn: () => fetchPlayerMetrics(SINCE_30D, accountId || undefined),
+    staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
+  })
+
+/** Pass 0 for the population-wide curve (cached long, shared). */
+export const usePerformanceCurve = (accountId: number) =>
+  useQuery({
+    queryKey: ['performanceCurve', accountId, SINCE_30D],
+    queryFn: () => fetchPerformanceCurve(SINCE_30D, accountId || undefined),
+    staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
   })
 
 export const useMateStats = (accountId: number) =>

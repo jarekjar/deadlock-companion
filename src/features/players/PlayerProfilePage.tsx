@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import PerformanceTab from './PerformanceTab'
+import EconomyTab from './EconomyTab'
 import RankBadge from '../../shared/RankBadge'
 import {
   badgeToIndex,
@@ -43,6 +45,13 @@ const dateFmt = new Intl.DateTimeFormat(undefined, {
   year: '2-digit',
 })
 
+const PROFILE_TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'performance', label: 'Performance' },
+  { key: 'economy', label: 'Economy' },
+  { key: 'heroes', label: 'Heroes' },
+] as const
+
 export default function PlayerProfilePage() {
   const params = useParams()
   const accountId = Number(params.accountId)
@@ -61,6 +70,9 @@ function Profile({ accountId }: { accountId: number }) {
   const heroStats = usePlayerHeroStats(accountId)
   const live = useLiveMatchForPlayer(accountId)
   const { favorites, toggle } = useFavorites()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requested = searchParams.get('tab') ?? 'overview'
+  const tab = PROFILE_TABS.some((t) => t.key === requested) ? requested : 'overview'
 
   const persona = profile.data?.personaname ?? `Player #${accountId}`
   const isFavorite = favorites.some((f) => f.accountId === accountId)
@@ -144,37 +156,76 @@ function Profile({ accountId }: { accountId: number }) {
       {history.isPending ? (
         <div className="page-note">Loading match data</div>
       ) : history.data.length === 0 ? (
-        <div className="page-note">No Deadlock matches on record for this account</div>
+        <div className="page-note">
+          No Deadlock matches on record for this account.{' '}
+          <Link to="/upload">Sync them from your Steam cache.</Link>
+        </div>
       ) : (
         <>
-          {summary && (
-            <div className="stat-row">
-              <StatTile label="Matches" value={String(summary.matches)} />
-              <StatTile label="Win rate" value={`${summary.winRate.toFixed(1)}%`} />
-              <StatTile label="KDA" value={summary.kda.toFixed(2)} />
-              <StatTile label="Souls per min" value={compact.format(summary.soulsPerMin)} />
-            </div>
+          <div className="tab-row" role="tablist">
+            {PROFILE_TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={tab === key}
+                className={`tab${tab === key ? ' selected' : ''}`}
+                onClick={() =>
+                  setSearchParams(key === 'overview' ? {} : { tab: key }, { replace: true })
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'overview' && (
+            <>
+              {summary && (
+                <div className="stat-row">
+                  <StatTile label="Matches" value={String(summary.matches)} />
+                  <StatTile label="Win rate" value={`${summary.winRate.toFixed(1)}%`} />
+                  <StatTile label="KDA" value={summary.kda.toFixed(2)} />
+                  <StatTile label="Souls per min" value={compact.format(summary.soulsPerMin)} />
+                </div>
+              )}
+
+              {heroStats.data && heroStats.data.length > 0 && (
+                <Highlights
+                  accountId={accountId}
+                  heroStats={heroStats.data}
+                  heroes={heroes.data}
+                />
+              )}
+
+              <RankHistory matches={history.data} ranks={rankAssets.data} />
+
+              <MatchTable matches={history.data} heroes={heroes.data} />
+
+              <p className="grid-note left-note">
+                Matches missing? The community API only knows matches that got synced —{' '}
+                <Link to="/upload">sync yours from your Steam cache</Link>.
+              </p>
+
+              <Companions accountId={accountId} />
+            </>
           )}
 
-          {heroStats.data && heroStats.data.length > 0 && (
-            <Highlights
+          {tab === 'performance' && (
+            <PerformanceTab
               accountId={accountId}
-              heroStats={heroStats.data}
+              matches={history.data}
               heroes={heroes.data}
             />
           )}
 
-          <RankHistory matches={history.data} ranks={rankAssets.data} />
+          {tab === 'economy' && <EconomyTab accountId={accountId} />}
 
-          <Trends matches={history.data} heroes={heroes.data} />
-
-          <MatchTable matches={history.data} heroes={heroes.data} />
-
-          <Companions accountId={accountId} />
-
-          {heroStats.data && heroStats.data.length > 0 && (
-            <HeroTable stats={heroStats.data} heroes={heroes.data} />
-          )}
+          {tab === 'heroes' &&
+            (heroStats.data && heroStats.data.length > 0 ? (
+              <HeroTable stats={heroStats.data} heroes={heroes.data} />
+            ) : (
+              <div className="page-note">No hero data for this account</div>
+            ))}
         </>
       )}
     </>
@@ -352,130 +403,6 @@ function Highlights({
   )
 }
 
-/* ---- performance trends (rolling averages over the match history) ---- */
-
-const TREND_WINDOW = 20
-
-type TrendMetric = 'win' | 'kda' | 'souls'
-
-const TREND_METRICS: { value: TrendMetric; label: string }[] = [
-  { value: 'win', label: 'Win rate' },
-  { value: 'kda', label: 'KDA' },
-  { value: 'souls', label: 'Souls per min' },
-]
-
-function Trends({
-  matches,
-  heroes,
-}: {
-  matches: MatchHistoryEntry[]
-  heroes: Map<number, HeroAsset> | undefined
-}) {
-  const [metric, setMetric] = useState<TrendMetric>('win')
-  const [heroFilter, setHeroFilter] = useState(0)
-
-  const heroOptions = useMemo(() => {
-    const counts = new Map<number, number>()
-    for (const m of matches) counts.set(m.hero_id, (counts.get(m.hero_id) ?? 0) + 1)
-    return [...counts.entries()]
-      .filter(([, count]) => count >= TREND_WINDOW)
-      .map(([id]) => ({ id, name: heroes?.get(id)?.name ?? `Hero ${id}` }))
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }, [matches, heroes])
-
-  const points = useMemo(() => {
-    const ordered = matches
-      .filter((m) => heroFilter === 0 || m.hero_id === heroFilter)
-      .sort((a, b) => a.start_time - b.start_time)
-    if (ordered.length < TREND_WINDOW) return []
-    const valueOf = (m: MatchHistoryEntry) => {
-      switch (metric) {
-        case 'win':
-          return isWin(m) ? 100 : 0
-        case 'kda':
-          return m.player_deaths === 0
-            ? m.player_kills + m.player_assists
-            : (m.player_kills + m.player_assists) / m.player_deaths
-        case 'souls':
-          return m.match_duration_s > 0 ? m.net_worth / (m.match_duration_s / 60) : 0
-      }
-    }
-    const values = ordered.map(valueOf)
-    const out: { x: number; y: number }[] = []
-    let sum = 0
-    for (let i = 0; i < values.length; i++) {
-      sum += values[i]
-      if (i >= TREND_WINDOW) sum -= values[i - TREND_WINDOW]
-      if (i >= TREND_WINDOW - 1) {
-        out.push({ x: ordered[i].start_time, y: sum / TREND_WINDOW })
-      }
-    }
-    return out
-  }, [matches, heroFilter, metric])
-
-  if (matches.length < TREND_WINDOW) return null
-
-  const metricLabel = TREND_METRICS.find((m) => m.value === metric)!.label
-  const formatY = (y: number) =>
-    metric === 'win' ? `${y.toFixed(0)}%` : metric === 'kda' ? y.toFixed(2) : compact.format(y)
-  // win rate is a percentage: keep the axis inside 0-100
-  const winDomain = ((): [number, number] | undefined => {
-    if (metric !== 'win' || points.length === 0) return undefined
-    const values = points.map((p) => p.y)
-    return [Math.max(0, Math.min(...values) - 5), Math.min(100, Math.max(...values) + 5)]
-  })()
-
-  return (
-    <section className="data-section">
-      <h3>Performance Trends</h3>
-      <div className="control-bar">
-        <span className="cb-group">
-          <span className="cb-label">Metric</span>
-          <select
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as TrendMetric)}
-            aria-label="Trend metric"
-          >
-            {TREND_METRICS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </span>
-        <span className="cb-group">
-          <span className="cb-label">Hero</span>
-          <select
-            value={heroFilter}
-            onChange={(e) => setHeroFilter(Number(e.target.value))}
-            aria-label="Filter trend by hero"
-          >
-            <option value={0}>All heroes</option>
-            {heroOptions.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}
-              </option>
-            ))}
-          </select>
-        </span>
-      </div>
-      {points.length < 2 ? (
-        <div className="page-note">Not enough matches for this filter</div>
-      ) : (
-        <LineChart
-          xs={points.map((p) => p.x)}
-          series={[{ label: metricLabel, color: '#c9a24b', values: points.map((p) => p.y) }]}
-          formatX={(x) => dateFmt.format(x * 1000)}
-          formatY={formatY}
-          yDomain={winDomain}
-          ariaLabel={`${metricLabel} trend`}
-          legendNote={`rolling ${TREND_WINDOW}-match average`}
-        />
-      )}
-    </section>
-  )
-}
-
 /* ---- mates & nemeses ---- */
 
 const MIN_NEMESIS_MATCHES = 8
@@ -608,7 +535,8 @@ function MatchTable({
     key: 'start_time',
     desc: true,
   })
-  const [visible, setVisible] = useState(25)
+  // recent matches are what people came for; the rest is one click away
+  const [visible, setVisible] = useState(6)
   const [heroFilter, setHeroFilter] = useState(0)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')

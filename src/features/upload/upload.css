@@ -1,0 +1,57 @@
+.upload-page h2 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.upload-lede {
+  color: var(--ink-dim);
+  max-width: 78ch;
+  margin-bottom: 24px;
+}
+
+.upload-steps {
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  color: var(--ink-dim);
+  max-width: 80ch;
+}
+
+.upload-path {
+  color: var(--ink-dim);
+  font-size: 14px;
+  max-width: 80ch;
+}
+
+.upload-code {
+  display: inline-block;
+  margin: 10px 0 14px;
+  padding: 8px 12px;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.upload-actions {
+  margin-top: 4px;
+}
+
+.upload-status {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.upload-status.upload-ok {
+  color: var(--up);
+}
+
+.upload-status.error {
+  color: var(--danger);
+}

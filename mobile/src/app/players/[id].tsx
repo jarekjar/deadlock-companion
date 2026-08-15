@@ -30,6 +30,8 @@ import { formatClock } from '../../lib/timerEngine'
 import { c, compact, f, winRateColor } from '../../theme'
 
 const PAGE = 25
+// recent matches are what people came for; the rest is one tap away
+const INITIAL = 6
 
 export default function PlayerProfileScreen() {
   const params = useLocalSearchParams<{ id: string }>()
@@ -40,7 +42,7 @@ export default function PlayerProfileScreen() {
   const heroStats = usePlayerHeroStats(accountId)
   const heroes = useHeroes()
   const { isFavorite, toggle } = useFavorites()
-  const [visible, setVisible] = useState(PAGE)
+  const [visible, setVisible] = useState(INITIAL)
   const insets = useSafeAreaInsets()
 
   const summary = useMemo(() => {

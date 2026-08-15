@@ -25,6 +25,7 @@ const BuildPage = lazy(() => import('./features/builds/BuildPage'))
 const PatchReportPage = lazy(() => import('./features/patch/PatchReportPage'))
 const RecordsPage = lazy(() => import('./features/records/RecordsPage'))
 const DraftPage = lazy(() => import('./features/draft/DraftPage'))
+const UploadPage = lazy(() => import('./features/upload/UploadPage'))
 const LiveMatchesPage = lazy(() => import('./features/live/LiveMatchesPage'))
 const LiveMatchPage = lazy(() => import('./features/live/LiveMatchPage'))
 const MyMatchPage = lazy(() => import('./features/live/MyMatchPage'))
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/patch-report" element={<PatchReportPage />} />
             <Route path="/records" element={<RecordsPage />} />
             <Route path="/draft" element={<DraftPage />} />
+            <Route path="/upload" element={<UploadPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/live" element={<LiveMatchesPage />} />
             <Route path="/live/:matchId" element={<LiveMatchPage />} />

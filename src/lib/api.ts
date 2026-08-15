@@ -526,6 +526,84 @@ export const fetchItemTimingStats = (
     `/v1/analytics/item-stats?bucket=game_time_min&include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}&min_matches=200${badgeParam(minBadge)}${modeParam(mode)}`,
   ).then((rows) => rows.filter((r) => r.item_id === itemId))
 
+/* ---- player performance analytics ---- */
+
+/** Distribution stats for one metric (kda, accuracy, net_worth_per_min, ...). */
+export interface MetricStats {
+  avg: number
+  std: number
+  percentile1: number
+  percentile5: number
+  percentile10: number
+  percentile25: number
+  percentile50: number
+  percentile75: number
+  percentile90: number
+  percentile95: number
+  percentile99: number
+}
+
+export type PlayerMetrics = Record<string, MetricStats>
+
+/**
+ * Per-metric averages and percentiles. With an accountId the stats cover only
+ * that player's matches; without one they describe the whole population —
+ * comparing the two is what places a player on the global curve.
+ */
+export const fetchPlayerMetrics = (sinceUnix: number, accountId?: number) =>
+  get<PlayerMetrics>(
+    `/v1/analytics/player-stats/metrics?min_unix_timestamp=${sinceUnix}${accountId ? `&account_ids=${accountId}` : ''}`,
+  )
+
+/** One time-bucket of the souls/KDA curve; gold_* fields are souls by source. */
+export interface PerformanceCurvePoint {
+  /** Game time in minutes (bucketed). */
+  game_time: number
+  net_worth_avg: number
+  kills_avg: number
+  deaths_avg: number
+  assists_avg: number
+  gold_player_avg: number
+  gold_player_orbs_avg: number
+  gold_lane_creep_avg: number
+  gold_lane_creep_orbs_avg: number
+  gold_neutral_creep_avg: number
+  gold_neutral_creep_orbs_avg: number
+  gold_boss_avg: number
+  gold_boss_orb_avg: number
+  gold_treasure_avg: number
+  gold_denied_avg: number
+  gold_death_loss_avg: number
+}
+
+export const fetchPerformanceCurve = (sinceUnix: number, accountId?: number) =>
+  get<PerformanceCurvePoint[]>(
+    `/v1/analytics/player-performance-curve?min_unix_timestamp=${sinceUnix}&resolution=2${accountId ? `&account_ids=${accountId}` : ''}`,
+  )
+
+/* ---- match salts ingest (the "sync from Steam cache" flow) ---- */
+
+export interface MatchSalt {
+  match_id: number
+  cluster_id?: number | null
+  metadata_salt?: number | null
+  replay_salt?: number | null
+  username?: string | null
+}
+
+/**
+ * Submits match salts so the API can fetch those matches' metadata — this is
+ * how matches that were never spectated become tracked.
+ */
+export async function postMatchSalts(salts: MatchSalt[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/v1/matches/salts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(salts),
+  })
+  if (!res.ok) throw new Error(`Salts ingest failed with ${res.status}`)
+}
+
 export const fetchPlayerScoreboard = (query: ScoreboardQuery) =>
   get<ScoreboardPlayerRow[]>(`/v1/analytics/scoreboards/players?${scoreboardParams(query)}`)
 

@@ -16,6 +16,7 @@ const STATIC_ROUTES = [
   '/patch-report',
   '/records',
   '/draft',
+  '/upload',
   '/leaderboard',
   '/live',
   '/my-match',

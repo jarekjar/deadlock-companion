@@ -89,13 +89,14 @@ export default function Header() {
           <NavLink to="/patch-report">Patch Report</NavLink>
         </NavGroup>
         <NavLink to="/items">Items</NavLink>
-        <NavGroup label="Players" paths={['/players', '/live', '/leaderboard', '/records']}>
+        <NavGroup label="Players" paths={['/players', '/live', '/leaderboard', '/records', '/upload']}>
           <NavLink to="/players" end>
             Find Players
           </NavLink>
           <NavLink to="/live">Live Matches</NavLink>
           <NavLink to="/leaderboard">Ranks</NavLink>
           <NavLink to="/records">Records</NavLink>
+          <NavLink to="/upload">Sync Matches</NavLink>
         </NavGroup>
         {session.data ? (
           <>
