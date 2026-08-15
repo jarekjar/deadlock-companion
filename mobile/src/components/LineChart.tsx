@@ -16,6 +16,9 @@ interface LineChartProps {
   yDomain?: [number, number]
   height?: number
   color?: string
+  /** A second line (e.g. "all players") drawn behind the primary one. */
+  compareValues?: number[]
+  compareColor?: string
 }
 
 const PAD = { l: 62, r: 10, t: 10, b: 24 }
@@ -30,14 +33,17 @@ export default function LineChart({
   yDomain,
   height = 180,
   color = c.brass,
+  compareValues,
+  compareColor = c.inkFaint,
 }: LineChartProps) {
   const [width, setWidth] = useState(0)
 
   if (xs.length < 2) return null
 
+  const allValues = compareValues ? [...values, ...compareValues] : values
   const xMin = xs[0]
   const xMax = xs[xs.length - 1]
-  let [vMin, vMax] = yDomain ?? [Math.min(...values), Math.max(...values)]
+  let [vMin, vMax] = yDomain ?? [Math.min(...allValues), Math.max(...allValues)]
   if (!yDomain) {
     const pad = (vMax - vMin || Math.abs(vMax) || 1) * 0.08
     vMin -= pad
@@ -59,9 +65,12 @@ export default function LineChart({
     (_, i) => xMin + ((xMax - xMin) * i) / (xTickCount - 1),
   )
 
-  const path = values
-    .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(xs[i]).toFixed(1)},${y(v).toFixed(1)}`)
-    .join(' ')
+  const toPath = (vals: number[]) =>
+    vals
+      .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(xs[i]).toFixed(1)},${y(v).toFixed(1)}`)
+      .join(' ')
+  const path = toPath(values)
+  const comparePath = compareValues ? toPath(compareValues) : null
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -112,6 +121,9 @@ export default function LineChart({
             stroke={c.rule}
             strokeWidth={1}
           />
+          {comparePath && (
+            <Path d={comparePath} fill="none" stroke={compareColor} strokeWidth={1.5} />
+          )}
           <Path d={path} fill="none" stroke={color} strokeWidth={2} />
         </Svg>
       )}

@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import LineChart from '../../components/LineChart'
+import ProfileEconomy from '../../components/ProfileEconomy'
+import ProfilePerformance from '../../components/ProfilePerformance'
 import RankBadge from '../../components/RankBadge'
 import { Btn, Card, Mono, Note, SectionTitle, StatTile } from '../../components/ui'
 import {
@@ -33,6 +35,15 @@ const PAGE = 25
 // recent matches are what people came for; the rest is one tap away
 const INITIAL = 6
 
+type ProfileTab = 'overview' | 'performance' | 'economy' | 'heroes'
+
+const PROFILE_TABS: { key: ProfileTab; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'performance', label: 'Perform.' },
+  { key: 'economy', label: 'Economy' },
+  { key: 'heroes', label: 'Heroes' },
+]
+
 export default function PlayerProfileScreen() {
   const params = useLocalSearchParams<{ id: string }>()
   const accountId = Number(params.id)
@@ -43,6 +54,7 @@ export default function PlayerProfileScreen() {
   const heroes = useHeroes()
   const { isFavorite, toggle } = useFavorites()
   const [visible, setVisible] = useState(INITIAL)
+  const [tab, setTab] = useState<ProfileTab>('overview')
   const insets = useSafeAreaInsets()
 
   const summary = useMemo(() => {
@@ -109,64 +121,156 @@ export default function PlayerProfileScreen() {
           )}
         </View>
 
-        {summary && (
-          <View style={styles.tiles}>
-            <StatTile label="Matches" value={String(summary.matches)} />
-            <StatTile
-              label="Win rate"
-              value={`${summary.winRate.toFixed(1)}%`}
-              color={winRateColor(summary.winRate)}
-            />
-            <StatTile label="KDA" value={summary.kda.toFixed(2)} />
-            <StatTile label="Souls/min" value={compact(summary.soulsPerMin)} />
-          </View>
-        )}
+        <View style={styles.tabSeg}>
+          {PROFILE_TABS.map(({ key, label }) => {
+            const on = tab === key
+            return (
+              <Pressable
+                key={key}
+                onPress={() => setTab(key)}
+                style={[styles.tabBtn, on && styles.tabBtnOn]}
+              >
+                <Text style={[styles.tabLabel, on && styles.tabLabelOn]}>{label}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
 
-        {highlights && (
+        {tab === 'overview' && (
           <>
-            <SectionTitle>Heroes</SectionTitle>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              {highlights.most.hero && (
-                <HeroHighlight
-                  label="Most played"
-                  heroName={highlights.most.hero.name}
-                  art={highlights.most.hero.images.icon_hero_card_webp}
-                  line={`${highlights.most.stat.matches_played} matches`}
+            {summary && (
+              <View style={styles.tiles}>
+                <StatTile label="Matches" value={String(summary.matches)} />
+                <StatTile
+                  label="Win rate"
+                  value={`${summary.winRate.toFixed(1)}%`}
+                  color={winRateColor(summary.winRate)}
                 />
-              )}
-              {highlights.best.hero && (
-                <HeroHighlight
-                  label="Best win rate"
-                  heroName={highlights.best.hero.name}
-                  art={highlights.best.hero.images.icon_hero_card_webp}
-                  line={`${(
-                    (highlights.best.stat.wins / highlights.best.stat.matches_played) *
-                    100
-                  ).toFixed(0)}% over ${highlights.best.stat.matches_played}`}
-                />
-              )}
-            </View>
+                <StatTile label="KDA" value={summary.kda.toFixed(2)} />
+                <StatTile label="Souls/min" value={compact(summary.soulsPerMin)} />
+              </View>
+            )}
+
+            {highlights && (
+              <>
+                <SectionTitle>Highlights</SectionTitle>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {highlights.most.hero && (
+                    <HeroHighlight
+                      label="Most played"
+                      heroName={highlights.most.hero.name}
+                      art={highlights.most.hero.images.icon_hero_card_webp}
+                      line={`${highlights.most.stat.matches_played} matches`}
+                    />
+                  )}
+                  {highlights.best.hero && (
+                    <HeroHighlight
+                      label="Best win rate"
+                      heroName={highlights.best.hero.name}
+                      art={highlights.best.hero.images.icon_hero_card_webp}
+                      line={`${(
+                        (highlights.best.stat.wins / highlights.best.stat.matches_played) *
+                        100
+                      ).toFixed(0)}% over ${highlights.best.stat.matches_played}`}
+                    />
+                  )}
+                </View>
+              </>
+            )}
+
+            {history.data && <RankHistory matches={history.data} />}
+
+            <SectionTitle>Match History</SectionTitle>
+            {history.isPending && <Note>Loading matches…</Note>}
+            {history.isError && <Note>Could not load match history.</Note>}
+            {history.data?.slice(0, visible).map((match) => (
+              <MatchRow key={match.match_id} match={match} />
+            ))}
+            {history.data && visible < history.data.length && (
+              <Btn
+                label={`Show more (${history.data.length - visible} left)`}
+                onPress={() => setVisible((v) => v + PAGE)}
+              />
+            )}
+
+            <Companions accountId={accountId} />
           </>
         )}
 
-        {history.data && <RankHistory matches={history.data} />}
-        {history.data && <Trends matches={history.data} />}
-
-        <SectionTitle>Match History</SectionTitle>
-        {history.isPending && <Note>Loading matches…</Note>}
-        {history.isError && <Note>Could not load match history.</Note>}
-        {history.data?.slice(0, visible).map((match) => (
-          <MatchRow key={match.match_id} match={match} />
-        ))}
-        {history.data && visible < history.data.length && (
-          <Btn
-            label={`Show more (${history.data.length - visible} left)`}
-            onPress={() => setVisible((v) => v + PAGE)}
-          />
+        {tab === 'performance' && (
+          <>
+            <ProfilePerformance accountId={accountId} />
+            {history.data && <Trends matches={history.data} />}
+          </>
         )}
 
-        <Companions accountId={accountId} />
+        {tab === 'economy' && <ProfileEconomy accountId={accountId} />}
+
+        {tab === 'heroes' && <HeroStatsList accountId={accountId} />}
       </ScrollView>
+    </>
+  )
+}
+
+function HeroStatsList({ accountId }: { accountId: number }) {
+  const router = useRouter()
+  const heroStats = usePlayerHeroStats(accountId)
+  const heroes = useHeroes()
+
+  const rows = useMemo(() => {
+    if (!heroStats.data || !heroes.data) return null
+    return heroStats.data
+      .flatMap((stat) => {
+        const hero = heroes.data.get(stat.hero_id)
+        if (!hero || stat.matches_played === 0) return []
+        return [
+          {
+            hero,
+            stat,
+            wr: (stat.wins / stat.matches_played) * 100,
+            kda:
+              (stat.kills + stat.assists) /
+              Math.max(1, stat.deaths),
+          },
+        ]
+      })
+      .sort((a, b) => b.stat.matches_played - a.stat.matches_played)
+  }, [heroStats.data, heroes.data])
+
+  if (heroStats.isError) return <Note>Could not load hero stats.</Note>
+  if (!rows) return <Note>Loading hero stats…</Note>
+  if (rows.length === 0) return <Note>No hero data for this account.</Note>
+
+  return (
+    <>
+      <SectionTitle>Heroes Played</SectionTitle>
+      <Card style={{ gap: 12 }}>
+        {rows.map(({ hero, stat, wr, kda }) => (
+          <Pressable
+            key={hero.id}
+            style={styles.heroRow}
+            onPress={() =>
+              router.push({ pathname: '/heroes/[id]', params: { id: String(hero.id) } })
+            }
+          >
+            <Image
+              source={hero.images.icon_image_small_webp}
+              style={styles.heroRowIcon}
+              contentFit="cover"
+            />
+            <View style={{ flex: 1, gap: 1 }}>
+              <Text style={styles.heroRowName}>{hero.name}</Text>
+              <Text style={styles.heroRowMeta}>
+                {stat.matches_played} matches · {kda.toFixed(1)} KDA ·{' '}
+                {compact(stat.networth_per_min)} souls/min
+              </Text>
+            </View>
+            <Mono size={14} color={winRateColor(wr)}>
+              {wr.toFixed(0)}%
+            </Mono>
+          </Pressable>
+        ))}
+      </Card>
     </>
   )
 }
@@ -521,6 +625,26 @@ const styles = StyleSheet.create({
   matchHero: { fontFamily: f.bodySemi, fontSize: 14, color: c.ink },
   matchMeta: { fontFamily: f.body, fontSize: 11, color: c.inkFaint },
   matchResult: { fontFamily: f.bodyBold, fontSize: 16, marginLeft: 4 },
+  tabSeg: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: c.rule,
+    borderRadius: 2,
+  },
+  tabBtn: { flex: 1, paddingVertical: 9, alignItems: 'center' },
+  tabBtnOn: { backgroundColor: c.brass },
+  tabLabel: {
+    fontFamily: f.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: c.inkFaint,
+  },
+  tabLabelOn: { color: c.bg },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  heroRowIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.bgInset },
+  heroRowName: { fontFamily: f.bodySemi, fontSize: 14, color: c.ink },
+  heroRowMeta: { fontFamily: f.body, fontSize: 11, color: c.inkFaint },
   trendSeg: {
     flexDirection: 'row',
     borderWidth: 1,

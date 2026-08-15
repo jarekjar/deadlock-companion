@@ -14,7 +14,9 @@ import {
   fetchItems,
   fetchMatchHistory,
   fetchMateStats,
+  fetchPerformanceCurve,
   fetchPlayerHeroStats,
+  fetchPlayerMetrics,
   fetchRank,
   fetchRankAssets,
   fetchSteamProfiles,
@@ -122,6 +124,23 @@ export const useHeroStatsWithItem = (itemId: number, mode: ModeFilterValue = 'al
     queryFn: () => fetchHeroStatsWithItem(itemId, SINCE_30D, mode),
     enabled: itemId > 0,
     staleTime: 30 * 60 * 1000,
+  })
+
+/** Pass 0 for the population-wide distribution (cached long, shared). */
+export const usePlayerMetrics = (accountId: number, enabled = true) =>
+  useQuery({
+    queryKey: ['playerMetrics', accountId, SINCE_30D],
+    queryFn: () => fetchPlayerMetrics(SINCE_30D, accountId || undefined),
+    enabled,
+    staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
+  })
+
+/** Pass 0 for the population-wide curve (cached long, shared). */
+export const usePerformanceCurve = (accountId: number) =>
+  useQuery({
+    queryKey: ['performanceCurve', accountId, SINCE_30D],
+    queryFn: () => fetchPerformanceCurve(SINCE_30D, accountId || undefined),
+    staleTime: accountId ? 5 * 60 * 1000 : 60 * 60 * 1000,
   })
 
 export const useMateStats = (accountId: number) =>

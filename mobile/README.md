@@ -15,8 +15,10 @@ notifications that fire even with the screen off.
 - **Heroes** — 30-day win/pick rates, lore, abilities, typical build path, popular items
   by tier, and best/worst matchups.
 - **Items** — every shop item with usage, win rate, and who buys it most.
-- **Players** — look up anyone by Steam link, ID, or name: rank, stats, match history, a rank
-  history graph, performance trends, and the teammates and nemeses they keep running into.
+- **Players** — look up anyone by Steam link, ID, or name, with profile tabs: a performance
+  score with percentile placement against every tracked player, an economy view (souls curves
+  and farm sources versus the field, with coaching notes), per-hero stats, rank history,
+  performance trends, and the teammates and nemeses they keep running into.
 
 A **Build Library** (the community's most-favorited in-game builds, with the authors' notes)
 is reachable from the home screen and from every hero page, and an all/ranked/brawl mode
