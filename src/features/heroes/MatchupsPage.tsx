@@ -139,13 +139,16 @@ function MatchupTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
 
   const hero = heroes.get(heroId)
 
+  // the heroes map is fully loaded before this renders, so a missing id is a
+  // removed hero or bad link, not data still on the way
+  if (!hero) return <div className="page-note error">Unknown hero</div>
   if (counters.isError) return <div className="page-note error">Could not load matchups</div>
-  if (!rows || !hero) return <div className="page-note">Loading matchups</div>
+  if (!rows) return <div className="page-note">Loading matchups</div>
 
   return (
     <section className="data-section">
       <h3>
-        {hero.name} — matchups, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
+        {hero.name} — matchups, last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}
       </h3>
       <div className="control-bar">
         <span className="cb-group cb-search">
@@ -275,13 +278,14 @@ function SynergyTable({ heroId, heroes }: { heroId: number; heroes: Map<number, 
 
   const hero = heroes.get(heroId)
 
+  if (!hero) return <div className="page-note error">Unknown hero</div>
   if (synergies.isError) return <div className="page-note error">Could not load duos</div>
-  if (!rows || !hero) return <div className="page-note">Loading duos</div>
+  if (!rows) return <div className="page-note">Loading duos</div>
 
   return (
     <section className="data-section">
       <h3>
-        {hero.name} — duos, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
+        {hero.name} — duos, last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}
       </h3>
       <div className="control-bar">
         <span className="cb-group cb-search">

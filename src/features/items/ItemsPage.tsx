@@ -131,7 +131,7 @@ export default function ItemsPage() {
         <ModeFilterControl />
       </div>
       <p className="grid-note">
-        Usage and win rates, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}.
+        Usage and win rates, last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}.
       </p>
       {!rows ? (
         <div className="page-note">Loading items</div>

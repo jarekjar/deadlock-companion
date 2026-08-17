@@ -263,7 +263,7 @@ function Item({ itemId }: { itemId: number }) {
           </div>
         )}
         <p className="grid-note" style={{ marginTop: 14 }}>
-          Last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}. Pick rate is the share of
+          Last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}. Pick rate is the share of
           that hero's matches where the item was bought.
         </p>
       </section>

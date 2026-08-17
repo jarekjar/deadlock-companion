@@ -106,7 +106,7 @@ export default function HeroBrowser({ linkTo }: { linkTo: (heroId: number) => st
         <ModeFilterControl />
       </div>
       <p className="grid-note">
-        Win and pick rates, last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}.
+        Win and pick rates, last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}.
       </p>
       {!rows ? (
         <div className="page-note">Loading hero stats</div>

@@ -297,13 +297,21 @@ const modeParam = (mode: ModeFilterValue) =>
         ? '&game_mode=street_brawl'
         : ''
 
+/**
+ * Rank + mode brackets together. The API rejects min_average_badge combined
+ * with game_mode=street_brawl (400 "Cannot filter by average badge for street
+ * brawl game mode"), so the rank bracket is dropped in brawl mode.
+ */
+const filterParams = (minBadge: number, mode: ModeFilterValue) =>
+  `${badgeParam(mode === 'brawl' ? 0 : minBadge)}${modeParam(mode)}`
+
 export const fetchHeroCounterStats = (
   sinceUnix: number,
   minBadge = 0,
   mode: ModeFilterValue = 'all',
 ) =>
   get<HeroCounterStat[]>(
-    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/hero-counter-stats?min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 export const fetchAnalyticsHeroStats = (
@@ -312,7 +320,7 @@ export const fetchAnalyticsHeroStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 export const fetchHeroItemStats = (
@@ -322,7 +330,7 @@ export const fetchHeroItemStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 export interface AbilityOrderStat {
@@ -338,13 +346,13 @@ export const fetchAbilityOrderStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<AbilityOrderStat[]>(
-    `/v1/analytics/ability-order-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}&min_matches=100${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/ability-order-stats?hero_id=${heroId}&min_unix_timestamp=${sinceUnix}&min_matches=100${filterParams(minBadge, mode)}`,
   )
 
 /** Global per-item stats over a window: usage and win rate for every item. */
 export const fetchAllItemStats = (sinceUnix: number, minBadge = 0, mode: ModeFilterValue = 'all') =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/item-stats?min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 /** Per-hero stats restricted to matches where the given item was bought. */
@@ -355,7 +363,7 @@ export const fetchHeroStatsWithItem = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<AnalyticsHeroStat[]>(
-    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/hero-stats?include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 /** Lifetime item usage for one player — the basis for "favorite items". */
@@ -370,7 +378,7 @@ export const fetchCounterItemStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<ItemStat[]>(
-    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/item-stats?hero_id=${heroId}&enemy_hero_ids=${enemyHeroId}&enemy_hero_ids_all_match=true&min_unix_timestamp=${sinceUnix}${filterParams(minBadge, mode)}`,
   )
 
 export interface HeroSynergyStat {
@@ -390,7 +398,7 @@ export const fetchHeroSynergyStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<HeroSynergyStat[]>(
-    `/v1/analytics/hero-synergy-stats?min_unix_timestamp=${sinceUnix}&min_matches=50${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/hero-synergy-stats?min_unix_timestamp=${sinceUnix}&min_matches=50${filterParams(minBadge, mode)}`,
   )
 
 export const fetchMatchMetadata = (matchId: number) =>
@@ -549,7 +557,7 @@ export const fetchItemTimingStats = (
   mode: ModeFilterValue = 'all',
 ) =>
   get<ItemTimingBucket[]>(
-    `/v1/analytics/item-stats?bucket=game_time_min&include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}&min_matches=200${badgeParam(minBadge)}${modeParam(mode)}`,
+    `/v1/analytics/item-stats?bucket=game_time_min&include_item_ids=${itemId}&min_unix_timestamp=${sinceUnix}&min_matches=200${filterParams(minBadge, mode)}`,
   ).then((rows) => rows.filter((r) => r.item_id === itemId))
 
 /* ---- player performance analytics ---- */

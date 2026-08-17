@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react'
+import { type ModeFilterValue } from './api'
 
 /**
  * Global rank bracket for the meta pages (heroes, items, matchups). Persisted
@@ -45,6 +46,9 @@ export function useRankFilter() {
   return { minBadge, setMinBadge }
 }
 
-export function bracketLabel(minBadge: number): string {
+export function bracketLabel(minBadge: number, mode?: ModeFilterValue): string {
+  // brawl queries can't filter by rank, so the bracket is dropped there
+  // (see filterParams in api.ts) — label the data for what it actually is
+  if (mode === 'brawl') return 'All ranks'
   return RANK_BRACKETS.find((b) => b.minBadge === minBadge)?.label ?? 'All ranks'
 }

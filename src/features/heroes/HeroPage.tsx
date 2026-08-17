@@ -89,6 +89,23 @@ function Hero({ heroId }: { heroId: number }) {
   if (heroes.isError || analytics.isError) {
     return <div className="page-note error">Could not load this hero</div>
   }
+  // the assets endpoint only returns active heroes, so a settled query without
+  // this id means a removed hero (or a bad link), not data still on the way
+  if (heroes.data && !hero) return <div className="page-note error">Unknown hero</div>
+  if (hero && analytics.data && !stat) {
+    return (
+      <div className="hero-page">
+        <div className="control-bar hero-rank-bar">
+          <RankFilterControl />
+          <ModeFilterControl />
+        </div>
+        <div className="page-note">
+          No {hero.name} matches in the last 30 days for {bracketLabel(minBadge, mode)} ·{' '}
+          {modeLabel(mode)}.
+        </div>
+      </div>
+    )
+  }
   if (!hero || !stat || !totalMatches) return <div className="page-note">Loading hero</div>
 
   const winRate = (stat.wins / stat.matches) * 100
@@ -113,7 +130,7 @@ function Hero({ heroId }: { heroId: number }) {
         <RankFilterControl />
         <ModeFilterControl />
         <span className="cb-group cb-count">
-          stats: last 30 days · {bracketLabel(minBadge)} · {modeLabel(mode)}
+          stats: last 30 days · {bracketLabel(minBadge, mode)} · {modeLabel(mode)}
         </span>
       </div>
 
@@ -192,7 +209,7 @@ function Hero({ heroId }: { heroId: number }) {
         <div className="page-note">Loading item stats</div>
       )}
       <p className="grid-note" style={{ marginTop: 18 }}>
-        Last 30 days · {bracketLabel(minBadge)}. Item win rate is for matches where the item was
+        Last 30 days · {bracketLabel(minBadge, mode)}. Item win rate is for matches where the item was
         bought — popular late-game items skew high because buying them means the game already
         went well.
       </p>

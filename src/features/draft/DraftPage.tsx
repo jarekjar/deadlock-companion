@@ -183,7 +183,7 @@ export default function DraftPage() {
       {suggestions && suggestions.length > 0 && (
         <section className="data-section">
           <h3>
-            Suggested picks — {TEAMS[active.team].name} · {bracketLabel(minBadge)} ·{' '}
+            Suggested picks — {TEAMS[active.team].name} · {bracketLabel(minBadge, mode)} ·{' '}
             {modeLabel(mode)}
           </h3>
           <div className="draft-suggestions">
