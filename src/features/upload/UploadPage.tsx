@@ -106,7 +106,9 @@ export default function UploadPage() {
         <ol className="upload-steps">
           <li>
             When you play (or watch a replay), the Deadlock client downloads match files, and
-            Steam keeps those downloads in a local cache folder.
+            Steam keeps those downloads in a local cache folder. Steam caps that cache at
+            10,000 files shared with everything else it downloads, so match files age out
+            quickly — sync soon after playing.
           </li>
           <li>
             Point this page at that folder. Your browser scans it <strong>locally</strong> for
@@ -173,8 +175,8 @@ export default function UploadPage() {
           <p className="upload-status">
             No Deadlock match references found
             {phase.scanned > 0 ? ` in ${phase.scanned.toLocaleString()} files` : ''}. Make sure
-            you picked <code>appcache\httpcache</code> on the machine you play on — and note the
-            cache only holds fairly recent downloads.
+            you picked <code>appcache\httpcache</code> on the machine you play on — and note
+            Steam caps the cache at 10,000 files, so only recent matches survive in it.
           </p>
         )}
         {phase.kind === 'error' && <p className="upload-status error">{phase.message}</p>}
