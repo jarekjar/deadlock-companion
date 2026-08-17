@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Header from './shared/Header'
 import CommandPalette from './shared/CommandPalette'
+import ErrorBoundary from './shared/ErrorBoundary'
 import HomePage from './features/home/HomePage'
 import timersData from './data/timers.json'
 import { useHeroes } from './lib/queries'
@@ -54,34 +55,38 @@ export default function App() {
       <Header />
       <CommandPalette />
       <main key={location.pathname} className="shell-main">
-        <Suspense fallback={<div className="page-note">Loading</div>}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/timers" element={<TimersPage />} />
-            <Route path="/cheat-sheet" element={<CheatSheetPage />} />
-            <Route path="/players" element={<PlayersPage />} />
-            <Route path="/players/:accountId" element={<PlayerProfilePage />} />
-            <Route path="/matches/:matchId" element={<MatchPage />} />
-            <Route path="/heroes" element={<HeroesPage />} />
-            <Route path="/heroes/:heroId" element={<HeroPage />} />
-            <Route path="/matchups" element={<MatchupsPage />} />
-            <Route path="/matchups/:heroId" element={<MatchupsPage />} />
-            <Route path="/items" element={<ItemsPage />} />
-            <Route path="/items/:itemId" element={<ItemPage />} />
-            <Route path="/builds" element={<BuildsPage />} />
-            <Route path="/builds/:buildId" element={<BuildPage />} />
-            <Route path="/patch-report" element={<PatchReportPage />} />
-            <Route path="/records" element={<RecordsPage />} />
-            <Route path="/draft" element={<DraftPage />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
-            <Route path="/live" element={<LiveMatchesPage />} />
-            <Route path="/live/:matchId" element={<LiveMatchPage />} />
-            <Route path="/my-match" element={<MyMatchPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        {/* keyed main remounts the boundary on navigation, so one crashed page
+            doesn't wedge the rest of the site */}
+        <ErrorBoundary>
+          <Suspense fallback={<div className="page-note">Loading</div>}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/timers" element={<TimersPage />} />
+              <Route path="/cheat-sheet" element={<CheatSheetPage />} />
+              <Route path="/players" element={<PlayersPage />} />
+              <Route path="/players/:accountId" element={<PlayerProfilePage />} />
+              <Route path="/matches/:matchId" element={<MatchPage />} />
+              <Route path="/heroes" element={<HeroesPage />} />
+              <Route path="/heroes/:heroId" element={<HeroPage />} />
+              <Route path="/matchups" element={<MatchupsPage />} />
+              <Route path="/matchups/:heroId" element={<MatchupsPage />} />
+              <Route path="/items" element={<ItemsPage />} />
+              <Route path="/items/:itemId" element={<ItemPage />} />
+              <Route path="/builds" element={<BuildsPage />} />
+              <Route path="/builds/:buildId" element={<BuildPage />} />
+              <Route path="/patch-report" element={<PatchReportPage />} />
+              <Route path="/records" element={<RecordsPage />} />
+              <Route path="/draft" element={<DraftPage />} />
+              <Route path="/upload" element={<UploadPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/live" element={<LiveMatchesPage />} />
+              <Route path="/live/:matchId" element={<LiveMatchPage />} />
+              <Route path="/my-match" element={<MyMatchPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <footer className="site-footer">
         Built by <a href="https://github.com/jarekjar">Jared Kjar</a> · timings as of patch{' '}
