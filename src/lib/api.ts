@@ -197,6 +197,15 @@ export interface MatchInfo {
   average_badge_team1: number | null
   players: MatchPlayer[]
   mid_boss: { team_killed: number; team_claimed: number; destroyed_time_s: number }[] | null
+  /** Lane objectives; `destroyed_time_s` is 0 for ones that only took damage. */
+  objectives:
+    | {
+        team_objective_id: number
+        team: number
+        destroyed_time_s: number
+        first_damage_time_s: number
+      }[]
+    | null
 }
 
 async function get<T>(path: string): Promise<T> {
@@ -487,6 +496,56 @@ export interface PatchNote {
 
 export const fetchPatches = () => get<PatchNote[]>(`/v1/patches`)
 
+export interface PatchSummary {
+  /** Unix seconds at UTC midnight of the patch day — stable join key. */
+  day: number
+  title: string
+  link: string
+  /** Steam news id; only these patches have notes we can render. */
+  gid: string | null
+}
+
+/** "06-30-2026 Update" / "Minor Update - 08-12-2026" -> UTC midnight of that day. */
+export function patchDayFromTitle(title: string): number | null {
+  const m = /(\d{2})-(\d{2})-(\d{4})/.exec(title)
+  if (!m) return null
+  const t = Date.UTC(Number(m[3]), Number(m[1]) - 1, Number(m[2])) / 1000
+  return Number.isFinite(t) ? t : null
+}
+
+/**
+ * Patch list from our own Pages Function, which merges Valve's Steam
+ * announcements with the community forum feed. Falls back to the community
+ * feed alone when the function isn't reachable (plain `vite dev`); that costs
+ * the newest few patches and the notes, but keeps the page working.
+ */
+export async function fetchPatchList(): Promise<PatchSummary[]> {
+  try {
+    const res = await fetch('/api/patches')
+    if (res.ok) {
+      const body = (await res.json()) as { patches?: PatchSummary[] }
+      if (body.patches?.length) return body.patches
+    }
+  } catch {
+    // fall through to the community feed
+  }
+  const community = await fetchPatches()
+  return community
+    .flatMap((p) => {
+      const day = patchDayFromTitle(p.title)
+      return day === null ? [] : [{ day, title: p.title, link: p.link, gid: null }]
+    })
+    .sort((a, b) => b.day - a.day)
+}
+
+/** Plain-text patch notes for one Steam announcement. */
+export async function fetchPatchNotes(gid: string): Promise<string[]> {
+  const res = await fetch(`/api/patches?gid=${encodeURIComponent(gid)}`)
+  if (!res.ok) throw new Error(`patch notes ${res.status}`)
+  const body = (await res.json()) as { notes: string[] }
+  return body.notes
+}
+
 /** Hero stats within an explicit window — the patch report's before/after. */
 export const fetchHeroStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>
   get<AnalyticsHeroStat[]>(
@@ -689,13 +748,6 @@ export interface ActiveMatch {
   objectives_mask_team0: number
   objectives_mask_team1: number
   players: { account_id: number; team: number; hero_id: number }[]
-}
-
-/** Count of objectives still standing in an objectives mask. */
-export function objectivesStanding(mask: number): number {
-  let count = 0
-  for (let m = mask >>> 0; m; m >>>= 1) count += m & 1
-  return count
 }
 
 export interface MapAsset {

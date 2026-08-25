@@ -111,8 +111,56 @@
   text-align: right;
 }
 
+/* Team colour for the side that lost the objective. */
+.timeline-list .obj-swatch {
+  flex: 0 0 6px;
+  align-self: stretch;
+  min-height: 13px;
+  border-radius: 1px;
+  opacity: 0.85;
+}
+
+.timeline-list strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
 @media (max-width: 620px) {
   .build-row .who {
     flex-basis: 120px;
   }
+}
+
+/* Opt-in demo scan: the Urn/Rift rows only exist in the replay file. */
+.neutral-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.neutral-hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.neutral-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 22px 0 10px;
+}
+
+.timeline-list .neutral-kind {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  flex: 0 0 70px;
+  white-space: nowrap;
 }

@@ -3,9 +3,12 @@ import { Link, useParams } from 'react-router-dom'
 import { itemIcon, rankName, type ItemAsset, type MatchInfo, type MatchPlayer } from '../../lib/api'
 import ItemHover from '../../shared/ItemHover'
 import { usePageMeta } from '../../lib/usePageMeta'
+import { objectiveTimeline } from '../../lib/objectives'
+import type { DemoObjectiveEvent } from '../../lib/demoTimeline'
 import {
   useHeroes,
   useItems,
+  useDemoObjectives,
   useMatchMetadata,
   useRankAssets,
   useRanks,
@@ -46,7 +49,7 @@ function Match({ matchId }: { matchId: number }) {
 function MatchDetail({ info }: { info: MatchInfo }) {
   usePageMeta(
     `Deadlock Match #${info.match_id} — Breakdown — The Cursed Apple`,
-    `Full breakdown of Deadlock match #${info.match_id}: scoreboards, the souls race, item builds, and the Mid-Boss log.`,
+    `Full breakdown of Deadlock match #${info.match_id}: scoreboards, the souls race, item builds, and the objective timeline.`,
   )
   const heroes = useHeroes()
   const items = useItems()
@@ -170,23 +173,116 @@ function MatchDetail({ info }: { info: MatchInfo }) {
         </section>
       ))}
 
-      {info.mid_boss && info.mid_boss.length > 0 && (
-        <section className="data-section">
-          <h3>Mid-Boss</h3>
-          <ul className="timeline-list">
-            {info.mid_boss.map((e, i) => (
+      <ObjectiveTimeline info={info} />
+    </>
+  )
+}
+
+/* ---- objective timeline ---- */
+
+/**
+ * Everything that fell, in order. Lane objectives are attributed to the team
+ * that lost them (so the colour reads as "this team's Walker went down"),
+ * while a Mid-Boss row is attributed to the team that killed it.
+ */
+function ObjectiveTimeline({ info }: { info: MatchInfo }) {
+  const events = useMemo(() => objectiveTimeline(info), [info])
+  if (events.length === 0) return null
+
+  return (
+    <section className="data-section">
+      <h3>Objective Timeline</h3>
+      <ul className="timeline-list">
+        {events.map((e, i) => {
+          const team = TEAMS[e.team]
+          if (e.kind === 'midboss') {
+            return (
               <li key={i}>
-                <span className="when">{formatClock(e.destroyed_time_s)}</span>
+                <span className="when">{formatClock(e.at)}</span>
+                <span className="obj-swatch" style={{ background: team?.color }} />
                 <span>
-                  {e.team_claimed === e.team_killed
-                    ? `${TEAMS[e.team_claimed]?.name ?? 'A team'} killed the Mid-Boss and claimed the Rejuvenator`
-                    : `${TEAMS[e.team_killed]?.name ?? 'A team'} killed the Mid-Boss — ${TEAMS[e.team_claimed]?.name ?? 'the other team'} stole the Rejuvenator`}
+                  {e.stolenBy === undefined
+                    ? `${team?.name ?? 'A team'} killed the Mid-Boss and claimed the Rejuvenator`
+                    : `${team?.name ?? 'A team'} killed the Mid-Boss — ${TEAMS[e.stolenBy]?.name ?? 'the other team'} stole the Rejuvenator`}
                 </span>
               </li>
-            ))}
-          </ul>
-        </section>
-      )}
+            )
+          }
+          return (
+            <li key={i}>
+              <span className="when">{formatClock(e.at)}</span>
+              <span className="obj-swatch" style={{ background: team?.color }} />
+              <span>
+                {team?.name ?? 'A team'} lost their <strong>{e.label}</strong>
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="grid-note">
+        Lane objectives and Mid-Boss kills, from the match metadata.
+      </p>
+      <NeutralObjectives matchId={info.match_id} />
+    </section>
+  )
+}
+
+const NEUTRAL_KIND_LABEL: Record<DemoObjectiveEvent['kind'], string> = {
+  rift: 'Rift',
+  urn: 'Urn',
+  midboss: 'Mid-Boss',
+  sinners: 'Sinners',
+}
+
+/**
+ * The Urn and the Unstable Rift never reach match metadata — they only exist
+ * in the demo file, which has to be downloaded and parsed on demand. That
+ * costs about a minute upstream and only works for the minority of matches
+ * whose replay salt was submitted, so it stays behind an explicit button.
+ */
+function NeutralObjectives({ matchId }: { matchId: number }) {
+  const [asked, setAsked] = useState(false)
+  const demo = useDemoObjectives(matchId, asked)
+
+  if (!asked) {
+    return (
+      <div className="neutral-cta">
+        <button className="btn btn-small" onClick={() => setAsked(true)}>
+          Scan demo for Urn &amp; Rift
+        </button>
+        <span className="neutral-hint">
+          Reads the replay file — about a minute, and only some matches have one.
+        </span>
+      </div>
+    )
+  }
+  if (demo.isPending) {
+    return <p className="grid-note">Parsing the demo — this usually takes about a minute.</p>
+  }
+  if (demo.isError) {
+    return <p className="grid-note">Could not reach the demo service.</p>
+  }
+  if (!demo.data?.available) {
+    return <p className="grid-note">{demo.data?.reason}</p>
+  }
+
+  return (
+    <>
+      <h3 className="neutral-heading">Neutral Objectives</h3>
+      <ul className="timeline-list">
+        {demo.data.events.map((e, i) => (
+          <li key={i}>
+            <span className="when">{formatClock(e.at)}</span>
+            <span className="neutral-kind">{NEUTRAL_KIND_LABEL[e.kind]}</span>
+            <span>{e.label}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="grid-note">
+        Read from the demo file. Times are relative to the Mid-Boss spawning at 0:00; a match that
+        was paused can drift late on. A Rift row is the moment it was called — it goes live 20
+        seconds later.
+      </p>
     </>
   )
 }

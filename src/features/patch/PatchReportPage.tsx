@@ -7,7 +7,8 @@ import {
   useHeroStatsBetween,
   useItems,
   useItemStatsBetween,
-  usePatches,
+  usePatchList,
+  usePatchNotes,
 } from '../../lib/queries'
 import { bracketLabel, useRankFilter } from '../../lib/rankFilter'
 import RankFilterControl from '../../shared/RankFilterControl'
@@ -15,6 +16,7 @@ import { winRateClass } from '../../lib/winrate'
 import { usePageMeta } from '../../lib/usePageMeta'
 import '../players/players.css'
 import '../heroes/heroes.css'
+import './patch.css'
 
 const HOUR = 3600
 const DAY = 24 * HOUR
@@ -28,31 +30,13 @@ const dateFmt = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
 })
 
-/** "06-30-2026 Update" -> unix seconds at UTC midnight of the patch day. */
-function patchDayFromTitle(title: string): number | null {
-  const m = /^(\d{2})-(\d{2})-(\d{4})/.exec(title)
-  if (!m) return null
-  const t = Date.UTC(Number(m[3]), Number(m[1]) - 1, Number(m[2])) / 1000
-  return Number.isFinite(t) ? t : null
-}
-
 export default function PatchReportPage() {
   usePageMeta(
     'Deadlock Patch Winners & Losers — The Cursed Apple',
     'Which Deadlock heroes and items gained or lost win rate after each balance patch, from live match data.',
   )
-  const patches = usePatches()
-
-  const balancePatches = useMemo(
-    () =>
-      (patches.data ?? [])
-        .flatMap((p) => {
-          const day = patchDayFromTitle(p.title)
-          return day ? [{ title: p.title, link: p.link, day }] : []
-        })
-        .sort((a, b) => b.day - a.day),
-    [patches.data],
-  )
+  const patches = usePatchList()
+  const balancePatches = patches.data ?? []
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
@@ -94,6 +78,7 @@ export default function PatchReportPage() {
         key={patch.day}
         patchDay={patch.day}
         patchTitle={patch.title}
+        patchGid={patch.gid}
         nextPatchDay={nextPatch?.day ?? null}
       />
     </>
@@ -103,10 +88,12 @@ export default function PatchReportPage() {
 function PatchReport({
   patchDay,
   patchTitle,
+  patchGid,
   nextPatchDay,
 }: {
   patchDay: number
   patchTitle: string
+  patchGid: string | null
   nextPatchDay: number | null
 }) {
   const { minBadge } = useRankFilter()
@@ -180,9 +167,12 @@ function PatchReport({
 
   if (length < DAY) {
     return (
-      <div className="page-note">
-        The {patchTitle} is less than a day old — check back once a full day of matches is in.
-      </div>
+      <>
+        <div className="page-note">
+          The {patchTitle} is less than a day old — check back once a full day of matches is in.
+        </div>
+        {patchGid && <PatchNotes gid={patchGid} />}
+      </>
     )
   }
   if (anyError) return <div className="page-note error">Could not load patch stats</div>
@@ -228,7 +218,42 @@ function PatchReport({
           />
         </div>
       )}
+
+      {patchGid && <PatchNotes gid={patchGid} />}
     </>
+  )
+}
+
+const isSection = (line: string) => line.startsWith('[') && line.endsWith(']')
+const stripBullet = (line: string) => (line.startsWith('- ') ? line.slice(2) : line)
+
+/**
+ * Valve's own notes for the patch, straight from the Steam announcement.
+ * Only patches we matched to a Steam post have a gid, so older ones that only
+ * exist in the community forum feed simply render without this section.
+ */
+function PatchNotes({ gid }: { gid: string }) {
+  const notes = usePatchNotes(gid)
+  if (notes.isError) return null
+  if (!notes.data) return <div className="page-note">Loading notes</div>
+
+  return (
+    <section className="data-section">
+      <h3>Official Notes</h3>
+      <div className="patch-notes">
+        {notes.data.map((line, i) =>
+          isSection(line) ? (
+            <h4 key={i} className="patch-notes-section">
+              {line.slice(1, -1).trim()}
+            </h4>
+          ) : (
+            <p key={i} className="patch-notes-line">
+              {stripBullet(line)}
+            </p>
+          ),
+        )}
+      </div>
+    </section>
   )
 }
 

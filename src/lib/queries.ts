@@ -24,7 +24,8 @@ import {
   fetchMatchHistory,
   fetchMatchMetadata,
   fetchMateStats,
-  fetchPatches,
+  fetchPatchList,
+  fetchPatchNotes,
   fetchPerformanceCurve,
   fetchPlayerMetrics,
   fetchPlayerScoreboard,
@@ -43,6 +44,7 @@ import {
   type ScoreboardQuery,
   type SteamProfile,
 } from './api'
+import { fetchDemoObjectives } from './demoTimeline'
 
 /** 30-day analytics window, midnight-aligned so query keys stay stable. */
 export const SINCE_30D = Math.floor(Date.now() / 1000 / 86400) * 86400 - 30 * 86400
@@ -344,11 +346,35 @@ export const useBuild = (buildId: number, heroId?: number) =>
     staleTime: 30 * 60 * 1000,
   })
 
-export const usePatches = () =>
+/**
+ * Neutral objectives read out of a match's demo. Gated behind `enabled`
+ * because a cold parse costs ~55s upstream, and never retried: an
+ * "unavailable" answer is a normal result, not a transient failure.
+ */
+export const useDemoObjectives = (matchId: number, enabled: boolean) =>
   useQuery({
-    queryKey: ['patches'],
-    queryFn: fetchPatches,
+    queryKey: ['demoObjectives', matchId],
+    queryFn: () => fetchDemoObjectives(matchId),
+    enabled,
+    retry: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
+
+export const usePatchList = () =>
+  useQuery({
+    queryKey: ['patchList'],
+    queryFn: fetchPatchList,
     staleTime: 60 * 60 * 1000,
+  })
+
+/** Notes are immutable once published, so they never go stale. */
+export const usePatchNotes = (gid: string | null) =>
+  useQuery({
+    queryKey: ['patchNotes', gid],
+    queryFn: () => fetchPatchNotes(gid!),
+    enabled: gid !== null,
+    staleTime: Infinity,
   })
 
 export const useHeroStatsBetween = (fromUnix: number, toUnix: number, minBadge = 0) =>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { averageBadge, objectivesStanding, rankName, type ActiveMatch } from '../../lib/api'
+import { averageBadge, rankName, type ActiveMatch } from '../../lib/api'
+import { OBJECTIVES_PER_TEAM, objectivesStanding } from '../../lib/objectives'
 import { TEAMS } from '../../lib/teams'
 import {
   useActiveMatches,
@@ -110,7 +111,7 @@ function LiveDetail({ match }: { match: ActiveMatch }) {
               {objectivesStanding(
                 team === 0 ? match.objectives_mask_team0 : match.objectives_mask_team1,
               )}
-              /16 objectives standing
+              /{OBJECTIVES_PER_TEAM} objectives standing
             </div>
           </div>
         ))}
