@@ -13,6 +13,14 @@ export interface ObjectiveDef {
   respawn?: number
   /** ladder mode: respawn delay per successive event; last entry repeats. */
   ladder?: number[]
+  /**
+   * Seconds the real spawn can land either side of the predicted time. Set for
+   * objectives Valve deliberately jitters (the Unstable Rift is ±1:00), so the
+   * UI can show a window instead of pretending to know the exact second.
+   */
+  variance?: number
+  /** Seconds of global in-game warning before it goes live. */
+  warning?: number
   /** Label for the button that records the event ("Killed", "Broken", ...). */
   eventLabel?: string
   note?: string
@@ -26,16 +34,27 @@ export interface ObjectiveState {
 }
 
 export type SpawnStatus =
-  | { kind: 'waiting'; spawnsAt: number }
+  | { kind: 'waiting'; spawnsAt: number; earliest?: number; latest?: number }
   | { kind: 'up' }
   /** info mode: on the map; respawn depends on when each instance is cleared. */
   | { kind: 'spawned' }
 
 export const emptyState = (): ObjectiveState => ({ events: [] })
 
+/** Attaches the spawn window when the objective has a known variance. */
+const waiting = (def: ObjectiveDef, spawnsAt: number): SpawnStatus =>
+  def.variance
+    ? {
+        kind: 'waiting',
+        spawnsAt,
+        earliest: Math.max(0, spawnsAt - def.variance),
+        latest: spawnsAt + def.variance,
+      }
+    : { kind: 'waiting', spawnsAt }
+
 export function nextSpawn(def: ObjectiveDef, state: ObjectiveState, t: number): SpawnStatus {
   if (t < def.firstSpawn && state.events.length === 0) {
-    return { kind: 'waiting', spawnsAt: def.firstSpawn }
+    return waiting(def, def.firstSpawn)
   }
   switch (def.mode) {
     case 'info':
@@ -43,13 +62,13 @@ export function nextSpawn(def: ObjectiveDef, state: ObjectiveState, t: number): 
     case 'interval': {
       const interval = def.interval ?? 300
       const wavesElapsed = Math.floor((t - def.firstSpawn) / interval)
-      return { kind: 'waiting', spawnsAt: def.firstSpawn + (wavesElapsed + 1) * interval }
+      return waiting(def, def.firstSpawn + (wavesElapsed + 1) * interval)
     }
     case 'event': {
       const last = state.events[state.events.length - 1]
       if (last === undefined) return { kind: 'up' }
       const next = last + (def.respawn ?? 300)
-      return t >= next ? { kind: 'up' } : { kind: 'waiting', spawnsAt: next }
+      return t >= next ? { kind: 'up' } : waiting(def, next)
     }
     case 'ladder': {
       const last = state.events[state.events.length - 1]
@@ -57,7 +76,7 @@ export function nextSpawn(def: ObjectiveDef, state: ObjectiveState, t: number): 
       const ladder = def.ladder ?? [300]
       const delay = ladder[Math.min(state.events.length - 1, ladder.length - 1)]
       const next = last + delay
-      return t >= next ? { kind: 'up' } : { kind: 'waiting', spawnsAt: next }
+      return t >= next ? { kind: 'up' } : waiting(def, next)
     }
   }
 }

@@ -1,12 +1,33 @@
 {
-  "patch": "2026-03-09",
-  "verifiedOn": "2026-08-11",
+  "patch": "2026-08-22",
+  "verifiedOn": "2026-08-25",
   "sources": [
-    "https://lockbuilds.com/match-timeline",
-    "https://steamcommunity.com/sharedfiles/filedetails/?id=3676353238",
-    "https://deadlock.wiki/Neutral"
+    "https://store.steampowered.com/news/app/1422450 (Gameplay Update 05-22-2026: breakables 2:00 -> 3:00, Mid-Boss spawned from game start)",
+    "https://store.steampowered.com/news/app/1422450 (Minor Update 06-30-2026: King of the Hill retheme -> Unstable Rift, Urn split into its own objective at 10/15/20/25, Rejuv buff 4:00 -> 3:00)",
+    "https://store.steampowered.com/news/app/1422450 (Minor Update 07-09-2026: Unstable Rift warning 25s -> 20s)",
+    "https://assets.deadlock-api.com/v2/generic-data (rejuv_params.rejuvinator_buff_duration = 180)",
+    "deadlock-api demo query, match 101556979: Mid-Boss spawned 0:00, Sinners 8:00, Urn 10:00 then every 5:00, Unstable Rift warnings 11:17 / 19:19 / 33:24 / 40:04 / 47:04"
   ],
   "objectives": [
+    {
+      "id": "midboss",
+      "name": "Mid-Boss",
+      "firstSpawn": 0,
+      "mode": "ladder",
+      "ladder": [
+        420,
+        360,
+        300
+      ],
+      "eventLabel": "Killed",
+      "note": "Up from 0:00 · respawns 7:00, then 6:00, then 5:00 · Rejuv buff lasts 3:00",
+      "mapSpots": [
+        {
+          "left": 0.5,
+          "top": 0.5
+        }
+      ]
+    },
     {
       "id": "small-camps",
       "name": "Small Camps",
@@ -18,9 +39,9 @@
     {
       "id": "boxes-statues",
       "name": "Boxes & Golden Statues",
-      "firstSpawn": 120,
+      "firstSpawn": 180,
       "mode": "info",
-      "note": "Statues respawn ~3:00"
+      "note": "Breakables first spawn 3:00 · statues respawn ~3:00"
     },
     {
       "id": "bridge-buffs",
@@ -92,32 +113,12 @@
       ]
     },
     {
-      "id": "midboss",
-      "name": "Mid-Boss",
-      "firstSpawn": 600,
-      "mode": "ladder",
-      "ladder": [
-        420,
-        360,
-        300
-      ],
-      "eventLabel": "Killed",
-      "note": "Respawns 7:00, then 6:00, then 5:00",
-      "mapSpots": [
-        {
-          "left": 0.5,
-          "top": 0.5
-        }
-      ]
-    },
-    {
       "id": "urn",
       "name": "Soul Urn",
       "firstSpawn": 600,
-      "mode": "event",
-      "respawn": 300,
-      "eventLabel": "Delivered",
-      "note": "Respawns 5:00 after delivery",
+      "mode": "interval",
+      "interval": 300,
+      "note": "New Urn every 5:00 from 10:00 · run it to the far end of the map",
       "mapSpots": [
         {
           "left": 0.18,
@@ -128,6 +129,17 @@
           "top": 0.5
         }
       ]
+    },
+    {
+      "id": "unstable-rift",
+      "name": "Unstable Rift",
+      "firstSpawn": 660,
+      "mode": "event",
+      "respawn": 420,
+      "variance": 60,
+      "warning": 20,
+      "eventLabel": "Secured",
+      "note": "~7:00 cycle, ±1:00 · 20s global warning, then a random lane · first Rift seen at 11:17"
     }
   ]
 }

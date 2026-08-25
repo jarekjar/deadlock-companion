@@ -308,7 +308,8 @@ function MapPanel({
     if (!started) return { className: '', label: `at ${formatClock(def.firstSpawn)}` }
     const status = nextSpawn(def, states[def.id] ?? emptyState(), t)
     if (status.kind === 'waiting') {
-      return { className: '', label: `in ${formatClock(status.spawnsAt - t)}` }
+      const eta = formatClock(status.spawnsAt - t)
+      return { className: '', label: def.variance ? `~${eta}` : `in ${eta}` }
     }
     return { className: ' up', label: status.kind === 'up' ? 'up now' : 'on map' }
   }
@@ -377,13 +378,24 @@ function ObjectiveRow({ def, state, t, started, focused, onFocus, onEvent, onUnd
   } else if (status.kind === 'waiting') {
     const remaining = status.spawnsAt - t
     const isFirst = eventCount === 0 && status.spawnsAt === def.firstSpawn
-    const label = isFirst ? 'First spawn' : def.mode === 'interval' ? 'Next wave' : 'Respawns'
+    const label = isFirst
+      ? 'First spawn'
+      : def.variance
+        ? 'Expected'
+        : def.mode === 'interval'
+          ? 'Next wave'
+          : 'Respawns'
     statusContent = (
       <>
         <span className="label">{label}</span>
         <span className={`time${remaining <= SOON_THRESHOLD_SEC ? ' soon' : ''}`}>
           {formatClock(remaining)}
         </span>
+        {status.earliest !== undefined && status.latest !== undefined && (
+          <span className="obj-window">
+            window {formatClock(status.earliest)}–{formatClock(status.latest)}
+          </span>
+        )}
       </>
     )
   } else if (status.kind === 'up') {

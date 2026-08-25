@@ -150,6 +150,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+.obj-status .obj-window {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  margin-top: 1px;
+}
+
 .obj-status .time.soon {
   color: var(--brass-bright);
 }

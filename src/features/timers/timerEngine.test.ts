@@ -31,6 +31,16 @@ const midboss: ObjectiveDef = {
   ladder: [420, 360, 300],
 }
 
+const rift: ObjectiveDef = {
+  id: 'unstable-rift',
+  name: 'Unstable Rift',
+  firstSpawn: 660,
+  mode: 'event',
+  respawn: 420,
+  variance: 60,
+  warning: 20,
+}
+
 const camps: ObjectiveDef = {
   id: 'small-camps',
   name: 'Small Camps',
@@ -94,6 +104,46 @@ describe('nextSpawn', () => {
 
   it('ladder respawn countdown resolves to up once elapsed', () => {
     expect(nextSpawn(midboss, { events: [650] }, 650 + 420)).toEqual({ kind: 'up' })
+  })
+})
+
+describe('nextSpawn with variance', () => {
+  it('brackets the first spawn with the variance window', () => {
+    expect(nextSpawn(rift, emptyState(), 0)).toEqual({
+      kind: 'waiting',
+      spawnsAt: 660,
+      earliest: 600,
+      latest: 720,
+    })
+  })
+
+  it('brackets each respawn after a recorded event', () => {
+    expect(nextSpawn(rift, { events: [677] }, 700)).toEqual({
+      kind: 'waiting',
+      spawnsAt: 1097,
+      earliest: 1037,
+      latest: 1157,
+    })
+  })
+
+  it('still resolves to up once the predicted time passes', () => {
+    expect(nextSpawn(rift, { events: [677] }, 1097)).toEqual({ kind: 'up' })
+  })
+
+  it('clamps the window at 0:00 rather than going negative', () => {
+    const early: ObjectiveDef = { ...rift, firstSpawn: 30 }
+    expect(nextSpawn(early, emptyState(), 0)).toEqual({
+      kind: 'waiting',
+      spawnsAt: 30,
+      earliest: 0,
+      latest: 90,
+    })
+  })
+
+  it('leaves objectives without a variance unbracketed', () => {
+    const status = nextSpawn(bridgeBuffs, emptyState(), 300)
+    expect(status).toEqual({ kind: 'waiting', spawnsAt: 600 })
+    expect(status).not.toHaveProperty('earliest')
   })
 })
 

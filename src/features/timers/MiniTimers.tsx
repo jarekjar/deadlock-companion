@@ -6,7 +6,7 @@ import { useMatchClock } from './useMatchClock'
 import './timers.css'
 
 /** The objectives worth tracking mid-match without the full board. */
-const KEY_IDS = new Set(['bridge-buffs', 'sinners', 'midboss', 'urn'])
+const KEY_IDS = new Set(['bridge-buffs', 'sinners', 'midboss', 'urn', 'unstable-rift'])
 const objectives = (timersData.objectives as ObjectiveDef[]).filter((d) => KEY_IDS.has(d.id))
 const SOON_SEC = 30
 
@@ -110,6 +110,7 @@ export default function MiniTimers({ liveStartTime }: { liveStartTime?: number }
                     <span
                       className={`mono${status.spawnsAt - t <= SOON_SEC ? ' soon' : ''}`}
                     >
+                      {def.variance ? '~' : ''}
                       {formatClock(status.spawnsAt - t)}
                     </span>
                   ) : (

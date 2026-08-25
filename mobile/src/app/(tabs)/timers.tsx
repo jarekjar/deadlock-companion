@@ -211,9 +211,17 @@ function ObjectiveRow({
       </View>
       <View style={styles.objRight}>
         {status.kind === 'waiting' ? (
-          <Mono size={20} color={soon ? c.brassBright : c.ink} style={styles.countdown}>
-            {formatClock(remaining)}
-          </Mono>
+          <>
+            <Mono size={20} color={soon ? c.brassBright : c.ink} style={styles.countdown}>
+              {def.variance ? '~' : ''}
+              {formatClock(remaining)}
+            </Mono>
+            {status.earliest !== undefined && status.latest !== undefined && (
+              <Mono size={10} color={c.inkFaint} style={styles.window}>
+                {formatClock(status.earliest)}–{formatClock(status.latest)}
+              </Mono>
+            )}
+          </>
         ) : (
           <Text style={styles.upBadge}>{status.kind === 'up' ? 'UP' : 'SPAWNED'}</Text>
         )}
@@ -229,6 +237,7 @@ function ObjectiveRow({
 }
 
 const styles = StyleSheet.create({
+  window: { textAlign: 'right', marginTop: 1 },
   clockCard: { alignItems: 'center', gap: 12 },
   clockLabel: {
     fontFamily: f.bodyBold,

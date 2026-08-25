@@ -59,7 +59,7 @@ export async function rescheduleSpawnAlerts(
   const t = gameTime(clock, nowMs)
   const horizon = t + HORIZON_SEC
 
-  const fires: { atMs: number; title: string }[] = []
+  const fires: { atMs: number; title: string; approx: boolean }[] = []
   for (const def of objectives) {
     const spawnTimes: number[] = []
     if (def.mode === 'interval') {
@@ -72,12 +72,15 @@ export async function rescheduleSpawnAlerts(
     } else {
       const status = nextSpawn(def, states[def.id] ?? emptyState(), t)
       if (status.kind === 'waiting' && status.spawnsAt <= horizon) {
-        spawnTimes.push(status.spawnsAt)
+        // A windowed objective can arrive as early as `earliest`, so alert
+        // against the front of the window rather than the expected time.
+        spawnTimes.push(status.earliest ?? status.spawnsAt)
       }
     }
     for (const spawnAt of spawnTimes) {
       const fireMs = nowMs + (spawnAt - t - leadSec) * 1000
-      if (fireMs > nowMs + 1000) fires.push({ atMs: fireMs, title: def.name })
+      if (fireMs > nowMs + 1000)
+        fires.push({ atMs: fireMs, title: def.name, approx: def.variance !== undefined })
     }
   }
 
@@ -86,7 +89,9 @@ export async function rescheduleSpawnAlerts(
       Notifications.scheduleNotificationAsync({
         content: {
           title: fire.title,
-          body: `Spawns in ${formatClock(leadSec)}`,
+          body: fire.approx
+            ? `May spawn in ${formatClock(leadSec)}`
+            : `Spawns in ${formatClock(leadSec)}`,
           sound: true,
         },
         trigger: {
