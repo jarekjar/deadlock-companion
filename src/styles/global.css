@@ -218,11 +218,22 @@ select option::checkmark {
   margin-right: 8px;
 }
 
+/* a framed chip so the emblem reads at a glance instead of floating loose;
+   hovering raises the detail card, hence the help cursor */
 .rank-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   vertical-align: middle;
+  padding: 2px 6px;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  cursor: help;
+}
+
+.rank-badge:hover {
+  border-color: var(--brass-dim);
+  background: var(--bg-raised);
 }
 
 /* emblem art carries transparent margins; a contained box keeps rows tidy */
@@ -231,6 +242,45 @@ select option::checkmark {
   width: 30px;
   object-fit: contain;
   display: block;
+}
+
+.rank-tip {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  width: 200px;
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  padding: 12px 12px 10px;
+  z-index: 10;
+  pointer-events: none;
+  text-align: center;
+  animation: fade-in 0.15s ease-out;
+}
+
+.rank-tip > span {
+  display: block;
+}
+
+.rank-tip img {
+  width: 84px;
+  height: 74px;
+  object-fit: contain;
+  margin: 0 auto 6px;
+}
+
+.rank-tip .tip-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.rank-tip .tip-meta {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 
 /* ---- item hover chip (used wherever an item icon appears) ---- */

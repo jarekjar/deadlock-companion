@@ -22,6 +22,8 @@ interface LineChartProps {
   yDomain?: [number, number]
   /** Extra tooltip lines under the per-series values (e.g. a rank delta). */
   tooltipExtra?: (index: number) => string[]
+  /** Labeled vertical reference lines (e.g. a season reset); ones outside the x domain are dropped. */
+  markers?: { x: number; label: string }[]
   ariaLabel: string
   height?: number
   /** Trailing legend note, e.g. "rank after each ranked match". */
@@ -44,6 +46,7 @@ export default function LineChart({
   formatYTick,
   yDomain,
   tooltipExtra,
+  markers,
   ariaLabel,
   height = 240,
   legendNote,
@@ -170,6 +173,35 @@ export default function LineChart({
             y2={H - PAD.b}
             stroke="#3b2f1e"
           />
+
+          {(markers ?? [])
+            .filter((m) => m.x >= xMin && m.x <= xMax)
+            .map((m) => {
+              // keep the label inside the plot when the line sits near the right edge
+              const flip = x(m.x) > PAD.l + (W - PAD.l - PAD.r) * 0.72
+              return (
+                <g key={`${m.x}-${m.label}`}>
+                  <line
+                    x1={x(m.x)}
+                    x2={x(m.x)}
+                    y1={PAD.t}
+                    y2={H - PAD.b}
+                    stroke="#8f7434"
+                    strokeDasharray="4 4"
+                  />
+                  <text
+                    x={x(m.x) + (flip ? -5 : 5)}
+                    y={PAD.t + 9}
+                    textAnchor={flip ? 'end' : 'start'}
+                    fontSize="9"
+                    fill="#8f7434"
+                    fontFamily="IBM Plex Mono, monospace"
+                  >
+                    {m.label}
+                  </text>
+                </g>
+              )
+            })}
 
           {series.map((s) => (
             <path key={s.label} d={path(s.values)} fill="none" stroke={s.color} strokeWidth="2" />

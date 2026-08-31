@@ -16,6 +16,7 @@ import {
   matchModeOf,
   MATCH_MODE_LABELS,
   rankName,
+  seasonResets,
   type MatchHistoryEntry,
   type ModeFilterValue,
   type RankAsset,
@@ -32,6 +33,7 @@ import {
   usePlayerHeroStats,
   useRank,
   useRankAssets,
+  useRankedSeasons,
   useSteamProfile,
   useSteamProfilesBatch,
 } from '../../lib/queries'
@@ -71,6 +73,11 @@ export default function PlayerProfileScreen() {
   const accountId = Number(params.id)
   const profile = useSteamProfile(accountId)
   const rank = useRank(accountId)
+  const seasons = useRankedSeasons()
+  // the running season, so the head can say which season the badge is from
+  const currentSeason = seasonResets(seasons.data)
+    .filter((s) => s.startsAt <= Date.now() / 1000)
+    .at(-1)
   const history = useMatchHistory(accountId)
   const heroStats = usePlayerHeroStats(accountId)
   const heroes = useHeroes()
@@ -80,8 +87,9 @@ export default function PlayerProfileScreen() {
   const [winKey, setWinKey] = useState<WindowKey>('30d')
   const statsWindow = WINDOWS.find((w) => w.key === winKey) ?? WINDOWS[0]
   const [modeKey, setModeKey] = useState<ModeFilterValue>('all')
-  // the economy endpoints only make sense for the normal game mode
-  const mode: ModeFilterValue = tab === 'economy' && modeKey === 'brawl' ? 'all' : modeKey
+  // the performance/economy analytics only make sense for the normal game mode
+  const mode: ModeFilterValue =
+    (tab === 'performance' || tab === 'economy') && modeKey === 'brawl' ? 'all' : modeKey
   const insets = useSafeAreaInsets()
 
   const modeFiltered = useMemo(() => {
@@ -138,6 +146,9 @@ export default function PlayerProfileScreen() {
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={styles.persona}>{profile.data?.personaname ?? `#${accountId}`}</Text>
             <RankBadge badge={rank.data?.badge} />
+            {(rank.data?.badge ?? 0) > 0 && currentSeason && (
+              <Text style={styles.seasonNote}>{currentSeason.name}</Text>
+            )}
           </View>
           {profile.data && (
             <Btn
@@ -217,7 +228,9 @@ export default function PlayerProfileScreen() {
               </View>
             )}
             <View style={styles.windowSeg}>
-              {MODES.filter((m) => !(tab === 'economy' && m.key === 'brawl')).map((m) => {
+              {MODES.filter(
+                (m) => !((tab === 'performance' || tab === 'economy') && m.key === 'brawl'),
+              ).map((m) => {
                 const on = mode === m.key
                 return (
                   <Pressable
@@ -365,6 +378,7 @@ function HeroStatsList({ accountId }: { accountId: number }) {
 function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
   const rankAssets = useRankAssets()
   const ranks = rankAssets.data
+  const seasons = useRankedSeasons()
 
   const points = useMemo(
     () =>
@@ -376,6 +390,13 @@ function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
   )
 
   if (points.length < 2) return null
+
+  // season starts are full rank resets; mark ones the chart spans, and explain
+  // why matches before the latest reset chart no rank
+  const resets = seasonResets(seasons.data)
+  const lastReset = resets.filter((s) => s.startsAt <= Date.now() / 1000).at(-1)
+  const playedBeforeReset =
+    lastReset !== undefined && matches.some((m) => m.start_time < lastReset.startsAt)
 
   const indices = points.map((p) => p.y)
   const minIdx = Math.min(...indices)
@@ -407,8 +428,15 @@ function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
           formatYTick={tickLabel}
           yTicks={yTicks}
           yDomain={[minIdx - 1, maxIdx + 1]}
+          markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} · rank reset` }))}
         />
-        <Note>Rank after each ranked match.</Note>
+        <Note>
+          Rank after each ranked match.
+          {playedBeforeReset &&
+            ` Every rank reset when ${lastReset.name} began on ${dateLabel(
+              lastReset.startsAt,
+            )} — the API doesn't report badges from before the reset, so earlier matches chart no rank.`}
+        </Note>
       </Card>
     </>
   )
@@ -682,6 +710,8 @@ const styles = StyleSheet.create({
     backgroundColor: c.bgInset,
   },
   persona: { fontFamily: f.bodyBold, fontSize: 19, color: c.ink },
+  // which season the badge is from — ranks reset when a season starts
+  seasonNote: { fontFamily: f.body, fontSize: 11, color: c.inkFaint, letterSpacing: 0.5 },
   tiles: { flexDirection: 'row', gap: 8 },
   highlight: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12 },
   highlightArt: { width: 64, height: 84, borderWidth: 1, borderColor: c.rule },

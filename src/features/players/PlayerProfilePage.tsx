@@ -11,6 +11,7 @@ import {
   matchModeOf,
   MATCH_MODE_LABELS,
   rankName,
+  seasonResets,
   type HeroAsset,
   type MatchHistoryEntry,
   type ModeFilterValue,
@@ -34,6 +35,7 @@ import {
   usePlayerItemStats,
   useRank,
   useRankAssets,
+  useRankedSeasons,
   useSteamProfile,
   useSteamProfilesBatch,
 } from '../../lib/queries'
@@ -49,6 +51,11 @@ const dateFmt = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   day: 'numeric',
   year: '2-digit',
+})
+const seasonFmt = new Intl.DateTimeFormat('en', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
 })
 
 const PROFILE_TABS = [
@@ -84,6 +91,7 @@ function Profile({ accountId }: { accountId: number }) {
   const profile = useSteamProfile(accountId)
   const rank = useRank(accountId)
   const rankAssets = useRankAssets()
+  const seasons = useRankedSeasons()
   const heroes = useHeroes()
   const history = useMatchHistory(accountId)
   const heroStats = usePlayerHeroStats(accountId)
@@ -94,9 +102,11 @@ function Profile({ accountId }: { accountId: number }) {
   const tab = PROFILE_TABS.some((t) => t.key === requested) ? requested : 'overview'
   const statsWindow = WINDOWS.find((w) => w.key === searchParams.get('window')) ?? WINDOWS[0]
   const requestedMode = MODES.find((m) => m.key === searchParams.get('mode'))?.key ?? 'all'
-  // the economy endpoints only make sense for the normal game mode
+  // the performance/economy analytics only make sense for the normal game mode
   const mode: ModeFilterValue =
-    tab === 'economy' && requestedMode === 'brawl' ? 'all' : requestedMode
+    (tab === 'performance' || tab === 'economy') && requestedMode === 'brawl'
+      ? 'all'
+      : requestedMode
 
   const setParams = (nextTab: string, nextWindow: string, nextMode: string) => {
     const params: Record<string, string> = {}
@@ -108,6 +118,10 @@ function Profile({ accountId }: { accountId: number }) {
 
   const persona = profile.data?.personaname ?? `Player #${accountId}`
   const isFavorite = favorites.some((f) => f.accountId === accountId)
+  // the running season, so the head can say which season the badge is from
+  const currentSeason = seasonResets(seasons.data)
+    .filter((s) => s.startsAt <= Date.now() / 1000)
+    .at(-1)
   usePageMeta(
     `${persona} — Deadlock Player Stats — The Cursed Apple`,
     `Deadlock stats for ${persona}: win rate, KDA, souls per minute, hero breakdowns, and match history.`,
@@ -163,6 +177,16 @@ function Profile({ accountId }: { accountId: number }) {
           <span className="rank">
             <RankBadge badge={rank.data?.badge} />
             {rankName(rank.data?.badge ?? 0, rankAssets.data)}
+            {(rank.data?.badge ?? 0) > 0 && currentSeason && (
+              <span
+                className="rank-season"
+                title={`Every rank reset when ${currentSeason.name} began on ${seasonFmt.format(
+                  currentSeason.startsAt * 1000,
+                )} — pre-reset badges aren't reported by the API.`}
+              >
+                {currentSeason.name}
+              </span>
+            )}
           </span>
           {live.data && (
             <Link
@@ -242,7 +266,10 @@ function Profile({ accountId }: { accountId: number }) {
                   onChange={(e) => setParams(tab, statsWindow.key, e.target.value)}
                   aria-label="Match mode filter"
                 >
-                  {MODES.filter((m) => !(tab === 'economy' && m.key === 'brawl')).map((m) => (
+                  {MODES.filter(
+                    (m) =>
+                      !((tab === 'performance' || tab === 'economy') && m.key === 'brawl'),
+                  ).map((m) => (
                     <option key={m.key} value={m.key}>
                       {m.label}
                     </option>
@@ -329,6 +356,7 @@ function RankHistory({
   matches: MatchHistoryEntry[]
   ranks: RankAsset[] | undefined
 }) {
+  const seasons = useRankedSeasons()
   const points = useMemo(
     () =>
       matches
@@ -343,6 +371,13 @@ function RankHistory({
   )
 
   if (points.length < 2) return null
+
+  // season starts are full rank resets; mark ones the chart spans, and explain
+  // why matches before the latest reset chart no rank
+  const resets = seasonResets(seasons.data)
+  const lastReset = resets.filter((s) => s.startsAt <= Date.now() / 1000).at(-1)
+  const playedBeforeReset =
+    lastReset !== undefined && matches.some((m) => m.start_time < lastReset.startsAt)
 
   const indices = points.map((p) => p.y)
   const minIdx = Math.min(...indices)
@@ -388,7 +423,15 @@ function RankHistory({
         }
         ariaLabel="Rank over time"
         legendNote="rank after each ranked match"
+        markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} · rank reset` }))}
       />
+      {playedBeforeReset && (
+        <p className="grid-note left-note">
+          Every rank reset when {lastReset.name} began on{' '}
+          {seasonFmt.format(lastReset.startsAt * 1000)} — the API doesn't report badges from
+          before the reset, so this player's earlier matches chart no rank.
+        </p>
+      )}
     </section>
   )
 }

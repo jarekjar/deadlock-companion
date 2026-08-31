@@ -34,6 +34,7 @@ import {
   fetchRank,
   fetchRankAssets,
   fetchRankDistribution,
+  fetchRankedSeasons,
   fetchSteamProfiles,
   searchPlayers,
   type BuildSearch,
@@ -70,6 +71,15 @@ export function useRankAssets() {
   return useQuery({
     queryKey: ['rankAssets'],
     queryFn: fetchRankAssets,
+    staleTime: FOREVER,
+    gcTime: FOREVER,
+  })
+}
+
+export function useRankedSeasons() {
+  return useQuery({
+    queryKey: ['rankedSeasons'],
+    queryFn: fetchRankedSeasons,
     staleTime: FOREVER,
     gcTime: FOREVER,
   })

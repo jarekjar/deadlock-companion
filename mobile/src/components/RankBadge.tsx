@@ -4,7 +4,10 @@ import { rankName } from '../lib/api'
 import { useRankAssets } from '../lib/queries'
 import { c, f } from '../theme'
 
-/** Rank emblem + name, or "Unranked". Size is the emblem edge in px. */
+/**
+ * Rank emblem + name framed as a chip so it reads at a glance, or "Unranked".
+ * Size is the emblem edge in px.
+ */
 export default function RankBadge({ badge, size = 26 }: { badge?: number; size?: number }) {
   const ranks = useRankAssets()
   if (!badge || !ranks.data) {
@@ -24,7 +27,17 @@ export default function RankBadge({ badge, size = 26 }: { badge?: number; size?:
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  name: { fontFamily: f.bodySemi, fontSize: 13, color: c.inkDim },
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    backgroundColor: c.bgInset,
+    borderWidth: 1,
+    borderColor: c.rule,
+  },
+  name: { fontFamily: f.bodySemi, fontSize: 13, color: c.ink },
   unranked: { fontFamily: f.body, fontSize: 13, color: c.inkFaint },
 })

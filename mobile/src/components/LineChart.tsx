@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View } from 'react-native'
-import Svg, { Line, Path, Text as SvgText } from 'react-native-svg'
+import Svg, { G, Line, Path, Text as SvgText } from 'react-native-svg'
 import { c, f } from '../theme'
 
 interface LineChartProps {
@@ -19,6 +19,8 @@ interface LineChartProps {
   /** A second line (e.g. "all players") drawn behind the primary one. */
   compareValues?: number[]
   compareColor?: string
+  /** Labeled vertical reference lines (e.g. a season reset); ones outside the x domain are dropped. */
+  markers?: { x: number; label: string }[]
 }
 
 const PAD = { l: 62, r: 10, t: 10, b: 24 }
@@ -35,6 +37,7 @@ export default function LineChart({
   color = c.brass,
   compareValues,
   compareColor = c.inkFaint,
+  markers,
 }: LineChartProps) {
   const [width, setWidth] = useState(0)
 
@@ -121,6 +124,35 @@ export default function LineChart({
             stroke={c.rule}
             strokeWidth={1}
           />
+          {(markers ?? [])
+            .filter((m) => m.x >= xMin && m.x <= xMax)
+            .map((m) => {
+              // keep the label inside the plot when the line sits near the right edge
+              const flip = x(m.x) > PAD.l + (W - PAD.l - PAD.r) * 0.72
+              return (
+                <G key={`${m.x}-${m.label}`}>
+                  <Line
+                    x1={x(m.x)}
+                    x2={x(m.x)}
+                    y1={PAD.t}
+                    y2={H - PAD.b}
+                    stroke={c.brassDim}
+                    strokeWidth={1}
+                    strokeDasharray="4 4"
+                  />
+                  <SvgText
+                    x={x(m.x) + (flip ? -4 : 4)}
+                    y={PAD.t + 8}
+                    textAnchor={flip ? 'end' : 'start'}
+                    fontSize={8}
+                    fontFamily={f.mono}
+                    fill={c.brassDim}
+                  >
+                    {m.label}
+                  </SvgText>
+                </G>
+              )
+            })}
           {comparePath && (
             <Path d={comparePath} fill="none" stroke={compareColor} strokeWidth={1.5} />
           )}

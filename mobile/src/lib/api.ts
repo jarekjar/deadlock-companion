@@ -161,6 +161,29 @@ export const fetchItems = () => get<ItemAsset[]>(`/v1/assets/items`)
 
 export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
+export interface RankedSeason {
+  name: string
+  intervals: { interval: number; start_timestamp: number; end_timestamp: number }[]
+}
+
+export const fetchRankedSeasons = () => get<RankedSeason[]>(`/v1/assets/ranked-seasons`)
+
+/**
+ * When each ranked season began, oldest first. A season's start is a full rank
+ * reset (the 2026-07-30 ranked rework shipped as "Beta Season 1") — no public
+ * endpoint reports a player's badge from before it.
+ */
+export function seasonResets(
+  seasons: RankedSeason[] | undefined,
+): { name: string; startsAt: number }[] {
+  return (seasons ?? [])
+    .flatMap((s) => {
+      const starts = s.intervals.map((i) => i.start_timestamp)
+      return starts.length > 0 ? [{ name: s.name, startsAt: Math.min(...starts) }] : []
+    })
+    .sort((a, b) => a.startsAt - b.startsAt)
+}
+
 export interface HeroCounterStat {
   hero_id: number
   enemy_hero_id: number

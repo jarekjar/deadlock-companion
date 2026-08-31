@@ -21,12 +21,12 @@ const PAGE_SIZE = 100
 export default function LeaderboardPage() {
   usePageMeta(
     'Deadlock Leaderboard & Rank Distribution — The Cursed Apple',
-    'The top 1000 ranked Deadlock players per region, plus the full rank distribution — and where you land on it.',
+    'The top 1000 ranked Deadlock players per region, the full rank distribution, and every rank badge on the current ladder — and where you land on it.',
   )
   const [params] = useSearchParams()
   const [region, setRegion] = useState<LeaderboardRegion>('NAmerica')
   const [search, setSearch] = useState(params.get('q') ?? '')
-  const [view, setView] = useState<'board' | 'distribution'>('board')
+  const [view, setView] = useState<'board' | 'distribution' | 'ladder'>('board')
   const [visible, setVisible] = useState(PAGE_SIZE)
   const session = useSession()
   const board = useLeaderboard(region)
@@ -84,6 +84,12 @@ export default function LeaderboardPage() {
               onClick={() => setView('distribution')}
             >
               Distribution
+            </button>
+            <button
+              className={`seg${view === 'ladder' ? ' on' : ''}`}
+              onClick={() => setView('ladder')}
+            >
+              Badges
             </button>
           </span>
         </span>
@@ -176,9 +182,94 @@ export default function LeaderboardPage() {
             </div>
           )}
         </>
-      ) : (
+      ) : view === 'distribution' ? (
         <DistributionView />
+      ) : (
+        <RankLadder />
       )}
+    </>
+  )
+}
+
+/* ---- rank ladder: every badge in the current system, with art and names ---- */
+
+function RankLadder() {
+  const rankAssets = useRankAssets()
+  const distribution = useRankDistribution()
+  const session = useSession()
+  const myRank = useRank(session.data ?? 0)
+
+  if (rankAssets.isError) {
+    return <div className="page-note error">Could not load the ranks</div>
+  }
+  if (!rankAssets.data) return <div className="page-note">Loading ranks</div>
+
+  const myBadge = myRank.data?.badge ?? 0
+  const myTier = Math.floor(myBadge / 10)
+
+  // share of ranked players per tier, once the distribution arrives
+  const tierPlayers = new Map<number, number>()
+  let total = 0
+  for (const b of distribution.data ?? []) {
+    if (b.rank < 11) continue
+    const tier = Math.floor(b.rank / 10)
+    tierPlayers.set(tier, (tierPlayers.get(tier) ?? 0) + b.players)
+    total += b.players
+  }
+
+  const tiers = [...rankAssets.data].sort((a, b) => b.tier - a.tier)
+
+  return (
+    <>
+      <p className="grid-note">
+        Every badge in the current ranked ladder, highest first. Each rank spans six subranks —
+        clear all six and you're promoted to the next rank.
+      </p>
+      <div className="rank-ladder">
+        {tiers.map((rank) => {
+          const isMine = myBadge > 0 && rank.tier === myTier
+          const players = tierPlayers.get(rank.tier)
+          const emblem = rank.images.large_webp ?? rank.images.large
+          return (
+            <div
+              key={rank.tier}
+              className={`rank-card${isMine ? ' mine' : ''}`}
+              style={{ borderTopColor: rank.color }}
+            >
+              {emblem && <img className="emblem" src={emblem} alt={rank.name} loading="lazy" />}
+              <div className="rank-card-name">
+                {rank.name}
+                {isMine && <span className="me-tag">you</span>}
+              </div>
+              <div className="rank-card-share">
+                {rank.tier === 0
+                  ? 'unranked · rank hidden'
+                  : players !== undefined && total > 0
+                    ? `${((players / total) * 100).toFixed(1)}% of ranked players`
+                    : ' '}
+              </div>
+              {rank.tier > 0 && (
+                <div className="subrank-strip">
+                  {[1, 2, 3, 4, 5, 6].map((sub) => {
+                    const img =
+                      rank.images[`small_subrank${sub}_webp`] ?? rank.images[`subrank${sub}_webp`]
+                    return img ? (
+                      <img
+                        key={sub}
+                        src={img}
+                        alt={`${rank.name} ${sub}`}
+                        title={`${rank.name} ${sub}`}
+                        className={isMine && myBadge % 10 === sub ? 'current' : ''}
+                        loading="lazy"
+                      />
+                    ) : null
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </>
   )
 }

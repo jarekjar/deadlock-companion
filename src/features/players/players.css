@@ -126,6 +126,18 @@
   width: 44px;
 }
 
+/* which season the badge is from — ranks reset when a season starts */
+.profile-head .who .rank .rank-season {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+  padding: 2px 7px;
+  cursor: help;
+}
+
 .profile-head .actions {
   margin-left: auto;
 }
