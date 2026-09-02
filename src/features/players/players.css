@@ -365,6 +365,13 @@ a.hl-hero:hover .hl-name {
   object-fit: cover;
 }
 
+/* marks a lobby rank guessed from only a few known player ranks */
+.rank-approx {
+  color: var(--brass);
+  cursor: help;
+  margin-left: 3px;
+}
+
 .result-w {
   color: var(--up);
   font-weight: 600;

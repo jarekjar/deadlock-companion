@@ -413,6 +413,45 @@ export const fetchHeroSynergyStats = (
 export const fetchMatchMetadata = (matchId: number) =>
   get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)
 
+/** Lobby roster and Valve-reported average badge for one finished match. */
+export interface MatchBadgeSummary {
+  match_id: number
+  /**
+   * Valve's lobby average. Reported for every ranked match and for all
+   * matches from before the ranked rework; null on newer standard matches.
+   */
+  average_badge: number | null
+  players: { account_id: number }[]
+}
+
+const BADGE_CHUNK = 200
+
+/**
+ * Bulk lookup behind the match-history "Avg Rank" column.
+ * `include_player_kda` is the slimmest player payload the endpoint offers —
+ * the default player info drags accolades along (~1.5KB per player).
+ * Matches the API never ingested are silently absent from the response,
+ * and a request where none of the ids are known 404s rather than
+ * returning [].
+ */
+export async function fetchMatchBadges(matchIds: number[]): Promise<MatchBadgeSummary[]> {
+  const chunks: number[][] = []
+  for (let i = 0; i < matchIds.length; i += BADGE_CHUNK) {
+    chunks.push(matchIds.slice(i, i + BADGE_CHUNK))
+  }
+  const rows = await Promise.all(
+    chunks.map(async (ids) => {
+      const res = await fetch(
+        `${API_BASE}/v1/matches/metadata?match_ids=${ids.join(',')}&include_player_kda=true`,
+      )
+      if (res.status === 404) return []
+      if (!res.ok) throw new Error(`Deadlock API ${res.status} on /v1/matches/metadata`)
+      return res.json() as Promise<MatchBadgeSummary[]>
+    }),
+  )
+  return rows.flat()
+}
+
 /* ---- in-game published hero builds ---- */
 
 export interface BuildMod {

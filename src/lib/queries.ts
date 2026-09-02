@@ -21,6 +21,7 @@ import {
   fetchItemTimingStats,
   fetchLeaderboard,
   fetchMapAsset,
+  fetchMatchBadges,
   fetchMatchHistory,
   fetchMatchMetadata,
   fetchMateStats,
@@ -181,6 +182,21 @@ export const useMatchMetadata = (matchId: number) =>
     queryFn: () => fetchMatchMetadata(matchId),
     staleTime: FOREVER,
   })
+
+/**
+ * Lobby rosters + Valve average badges for a set of finished matches. Keyed
+ * on the sorted id set so reordering the same rows doesn't refetch; finished
+ * matches never change, so entries never go stale.
+ */
+export function useMatchBadges(matchIds: number[]) {
+  const ids = [...matchIds].sort((a, b) => a - b)
+  return useQuery({
+    queryKey: ['matchBadges', ids.join(',')],
+    queryFn: () => fetchMatchBadges(ids),
+    enabled: ids.length > 0,
+    staleTime: FOREVER,
+  })
+}
 
 export const useSteamProfilesBatch = (accountIds: number[]) =>
   useQuery({
