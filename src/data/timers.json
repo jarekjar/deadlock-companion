@@ -1,12 +1,14 @@
 {
-  "patch": "2026-08-22",
-  "verifiedOn": "2026-08-25",
+  "patch": "2026-10-06",
+  "verifiedOn": "2026-10-08",
   "sources": [
     "https://store.steampowered.com/news/app/1422450 (Gameplay Update 05-22-2026: breakables 2:00 -> 3:00, Mid-Boss spawned from game start)",
     "https://store.steampowered.com/news/app/1422450 (Minor Update 06-30-2026: King of the Hill retheme -> Unstable Rift, Urn split into its own objective at 10/15/20/25, Rejuv buff 4:00 -> 3:00)",
     "https://store.steampowered.com/news/app/1422450 (Minor Update 07-09-2026: Unstable Rift warning 25s -> 20s)",
+    "https://store.steampowered.com/news/app/1422450 (Minor Update 09-16-2026: breakables in the underground tunnels first spawn 3:00 -> 5:00, respawn 3:00 -> 5:00)",
     "https://assets.deadlock-api.com/v2/generic-data (rejuv_params.rejuvinator_buff_duration = 180)",
-    "deadlock-api demo query, match 101556979: Mid-Boss spawned 0:00, Sinners 8:00, Urn 10:00 then every 5:00, Unstable Rift warnings 11:17 / 19:19 / 33:24 / 40:04 / 47:04"
+    "deadlock-api demo query, match 101556979: Mid-Boss spawned 0:00, Sinners 8:00, Urn 10:00 then every 5:00, Unstable Rift warnings 11:17 / 19:19 / 33:24 / 40:04 / 47:04",
+    "09-29-2026 City Never Sleeps (neutrals reworked as Haunts, new breakables) and 10-05/10-06 updates: no timer numbers published; spawn values above not re-verified against a post-rework demo"
   ],
   "objectives": [
     {
@@ -41,7 +43,7 @@
       "name": "Boxes & Golden Statues",
       "firstSpawn": 180,
       "mode": "info",
-      "note": "Breakables first spawn 3:00 · statues respawn ~3:00"
+      "note": "Breakables first spawn 3:00 (underground tunnels 5:00) · statues respawn ~3:00"
     },
     {
       "id": "bridge-buffs",
