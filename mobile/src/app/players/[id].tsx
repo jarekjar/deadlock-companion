@@ -391,12 +391,13 @@ function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
 
   if (points.length < 2) return null
 
-  // season starts are full rank resets; mark ones the chart spans, and explain
-  // why matches before the latest reset chart no rank
+  // mark each season start the chart spans. Badges only exist from the first
+  // season on (the 2026-07-30 ranked rework); later seasons began with soft
+  // resets, so their earlier badges still chart
   const resets = seasonResets(seasons.data)
-  const lastReset = resets.filter((s) => s.startsAt <= Date.now() / 1000).at(-1)
-  const playedBeforeReset =
-    lastReset !== undefined && matches.some((m) => m.start_time < lastReset.startsAt)
+  const firstSeason = resets[0]
+  const playedBeforeRanked =
+    firstSeason !== undefined && matches.some((m) => m.start_time < firstSeason.startsAt)
 
   const indices = points.map((p) => p.y)
   const minIdx = Math.min(...indices)
@@ -428,14 +429,14 @@ function RankHistory({ matches }: { matches: MatchHistoryEntry[] }) {
           formatYTick={tickLabel}
           yTicks={yTicks}
           yDomain={[minIdx - 1, maxIdx + 1]}
-          markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} · rank reset` }))}
+          markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} begins` }))}
         />
         <Note>
           Rank after each ranked match.
-          {playedBeforeReset &&
-            ` Every rank reset when ${lastReset.name} began on ${dateLabel(
-              lastReset.startsAt,
-            )} — the API doesn't report badges from before the reset, so earlier matches chart no rank.`}
+          {playedBeforeRanked &&
+            ` Ranked badges start with ${firstSeason.name} on ${dateLabel(
+              firstSeason.startsAt,
+            )}. The API doesn't report badges from before it, so earlier matches chart no rank.`}
         </Note>
       </Card>
     </>
@@ -710,7 +711,7 @@ const styles = StyleSheet.create({
     backgroundColor: c.bgInset,
   },
   persona: { fontFamily: f.bodyBold, fontSize: 19, color: c.ink },
-  // which season the badge is from — ranks reset when a season starts
+  // which season the badge is from — each season starts with a rank reset
   seasonNote: { fontFamily: f.body, fontSize: 11, color: c.inkFaint, letterSpacing: 0.5 },
   tiles: { flexDirection: 'row', gap: 8 },
   highlight: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12 },

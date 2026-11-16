@@ -183,9 +183,9 @@ function Profile({ accountId }: { accountId: number }) {
             {(rank.data?.badge ?? 0) > 0 && currentSeason && (
               <span
                 className="rank-season"
-                title={`Every rank reset when ${currentSeason.name} began on ${seasonFmt.format(
+                title={`${currentSeason.name} began on ${seasonFmt.format(
                   currentSeason.startsAt * 1000,
-                )} — pre-reset badges aren't reported by the API.`}
+                )} with a rank reset.`}
               >
                 {currentSeason.name}
               </span>
@@ -375,12 +375,13 @@ function RankHistory({
 
   if (points.length < 2) return null
 
-  // season starts are full rank resets; mark ones the chart spans, and explain
-  // why matches before the latest reset chart no rank
+  // mark each season start the chart spans. Badges only exist from the first
+  // season on (the 2026-07-30 ranked rework); later seasons began with soft
+  // resets, so their earlier badges still chart
   const resets = seasonResets(seasons.data)
-  const lastReset = resets.filter((s) => s.startsAt <= Date.now() / 1000).at(-1)
-  const playedBeforeReset =
-    lastReset !== undefined && matches.some((m) => m.start_time < lastReset.startsAt)
+  const firstSeason = resets[0]
+  const playedBeforeRanked =
+    firstSeason !== undefined && matches.some((m) => m.start_time < firstSeason.startsAt)
 
   const indices = points.map((p) => p.y)
   const minIdx = Math.min(...indices)
@@ -426,13 +427,13 @@ function RankHistory({
         }
         ariaLabel="Rank over time"
         legendNote="rank after each ranked match"
-        markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} · rank reset` }))}
+        markers={resets.map((s) => ({ x: s.startsAt, label: `${s.name} begins` }))}
       />
-      {playedBeforeReset && (
+      {playedBeforeRanked && (
         <p className="grid-note left-note">
-          Every rank reset when {lastReset.name} began on{' '}
-          {seasonFmt.format(lastReset.startsAt * 1000)} — the API doesn't report badges from
-          before the reset, so this player's earlier matches chart no rank.
+          Ranked badges start with {firstSeason.name} on{' '}
+          {seasonFmt.format(firstSeason.startsAt * 1000)}. The API doesn't report badges from
+          before it, so this player's earlier matches chart no rank.
         </p>
       )}
     </section>

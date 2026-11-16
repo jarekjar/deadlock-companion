@@ -828,8 +828,15 @@ export interface RankDistributionBucket {
   players: number
 }
 
-export const fetchRankDistribution = () =>
-  get<RankDistributionBucket[]>(`/v1/players/mmr/distribution`)
+/**
+ * Players per badge, by the rank at the end of each player's latest ranked match
+ * since `sinceUnix`. Pass the current season's start so players who haven't
+ * played since a reset don't count at their old rank.
+ */
+export const fetchRankDistribution = (sinceUnix?: number) =>
+  get<{ badge: number; players: number }[]>(
+    `/v1/players/rank/distribution${sinceUnix ? `?min_unix_timestamp=${sinceUnix}` : ''}`,
+  ).then((rows) => rows.map((r): RankDistributionBucket => ({ rank: r.badge, players: r.players })))
 
 export const fetchRankAssets = () => get<RankAsset[]>(`/v1/assets/ranks`)
 
@@ -841,9 +848,10 @@ export interface RankedSeason {
 export const fetchRankedSeasons = () => get<RankedSeason[]>(`/v1/assets/ranked-seasons`)
 
 /**
- * When each ranked season began, oldest first. A season's start is a full rank
- * reset (the 2026-07-30 ranked rework shipped as "Beta Season 1") — no public
- * endpoint reports a player's badge from before it.
+ * When each ranked season began, oldest first. Beta Season 1 (the 2026-07-30
+ * ranked rework) was a full reset and no endpoint reports badges from before
+ * it; Beta Season 2 (2026-11-05) was a soft reset, and Season 1 badges still
+ * show in match history.
  */
 export function seasonResets(
   seasons: RankedSeason[] | undefined,

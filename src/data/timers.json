@@ -1,6 +1,6 @@
 {
-  "patch": "2026-10-06",
-  "verifiedOn": "2026-10-08",
+  "patch": "2026-11-04",
+  "verifiedOn": "2026-11-16",
   "sources": [
     "https://store.steampowered.com/news/app/1422450 (Gameplay Update 05-22-2026: breakables 2:00 -> 3:00, Mid-Boss spawned from game start)",
     "https://store.steampowered.com/news/app/1422450 (Minor Update 06-30-2026: King of the Hill retheme -> Unstable Rift, Urn split into its own objective at 10/15/20/25, Rejuv buff 4:00 -> 3:00)",
@@ -8,7 +8,8 @@
     "https://store.steampowered.com/news/app/1422450 (Minor Update 09-16-2026: breakables in the underground tunnels first spawn 3:00 -> 5:00, respawn 3:00 -> 5:00)",
     "https://assets.deadlock-api.com/v2/generic-data (rejuv_params.rejuvinator_buff_duration = 180)",
     "deadlock-api demo query, match 101556979: Mid-Boss spawned 0:00, Sinners 8:00, Urn 10:00 then every 5:00, Unstable Rift warnings 11:17 / 19:19 / 33:24 / 40:04 / 47:04",
-    "09-29-2026 City Never Sleeps (neutrals reworked as Haunts, new breakables) and 10-05/10-06 updates: no timer numbers published; spawn values above not re-verified against a post-rework demo"
+    "https://store.steampowered.com/news/app/1422450 (Halloween 2026 + Gameplay Update 10-30-2026: Mid-Boss +20% HP, Rejuvenator now drops as 3 crystals; no spawn times changed. Minor Updates 10-14 and 11-04: hero/item balance only)",
+    "deadlock-api demo queries, matches 138424153 / 138412305 / 138398809 / 138326147 (played after 11-04-2026): Mid-Boss 0:00, Sinners 8:00 in all four, Urn 10:00 then every 5:00, first Rift 10:06-11:30, Rift call-to-call gaps 5:53-8:22 (mean 7:01, 11 gaps) -> variance widened from 60s to 90s"
   ],
   "objectives": [
     {
@@ -22,7 +23,7 @@
         300
       ],
       "eventLabel": "Killed",
-      "note": "Up from 0:00 · respawns 7:00, then 6:00, then 5:00 · Rejuv buff lasts 3:00",
+      "note": "Up from 0:00 · respawns 7:00, then 6:00, then 5:00 · Rejuvenator drops as 3 crystals · buff lasts 3:00",
       "mapSpots": [
         {
           "left": 0.5,
@@ -138,10 +139,10 @@
       "firstSpawn": 660,
       "mode": "event",
       "respawn": 420,
-      "variance": 60,
+      "variance": 90,
       "warning": 20,
       "eventLabel": "Secured",
-      "note": "~7:00 cycle, ±1:00 · 20s global warning, then a random lane · first Rift seen at 11:17"
+      "note": "~7:00 cycle, ±1:30 · 20s global warning, then a random lane · first Rift seen at 11:17"
     }
   ]
 }

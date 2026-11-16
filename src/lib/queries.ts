@@ -45,6 +45,7 @@ import {
   type ModeFilterValue,
   type ScoreboardQuery,
   type SteamProfile,
+  seasonResets,
 } from './api'
 import { fetchDemoObjectives } from './demoTimeline'
 
@@ -314,12 +315,16 @@ export const useLeaderboard = (region: LeaderboardRegion) =>
     staleTime: 5 * 60 * 1000,
   })
 
-export const useRankDistribution = () =>
-  useQuery({
-    queryKey: ['rankDistribution'],
-    queryFn: fetchRankDistribution,
+export const useRankDistribution = () => {
+  const seasons = useRankedSeasons()
+  const seasonStart = seasonResets(seasons.data).at(-1)?.startsAt
+  return useQuery({
+    queryKey: ['rankDistribution', seasonStart],
+    queryFn: () => fetchRankDistribution(seasonStart),
+    enabled: !seasons.isPending,
     staleTime: 60 * 60 * 1000,
   })
+}
 
 export const useMapAsset = () =>
   useQuery({

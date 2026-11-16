@@ -7,7 +7,7 @@ const resetFmt = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric',
 /**
  * Inline rank emblem shown next to player names, framed as a chip so it reads
  * at a glance. Hover raises a card with the full-size emblem, the rank name,
- * and which season the badge is from (ranks reset when a season starts).
+ * and which season the badge is from.
  * Renders nothing when the player has no visible rank (unranked, or rank
  * hidden) — most rows.
  */
@@ -34,8 +34,8 @@ export default function RankBadge({
     rank.images[`subrank${subrank}_webp`] ?? rank.images.large_webp ?? image
   const name = rankName(badge, ranks.data)
 
-  // every badge the API reports is from the running season — name it in the
-  // card, since pre-reset ranks are gone and the distinction trips people up
+  // these are current ranks, so they're from the running season — name it in
+  // the card, since each season starts with a (full or soft) reset
   const now = Date.now() / 1000
   const season = seasonResets(seasons.data)
     .filter((s) => s.startsAt <= now)
@@ -62,7 +62,7 @@ export default function RankBadge({
           <span className="tip-name">{name}</span>
           {season && (
             <span className="tip-meta">
-              {season.name} · ranks reset {resetFmt.format(season.startsAt * 1000)}
+              {season.name} · since {resetFmt.format(season.startsAt * 1000)}
             </span>
           )}
         </span>
