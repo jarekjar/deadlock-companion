@@ -46,7 +46,7 @@ import {
 import { winRateClass } from '../../lib/winrate'
 import { useFavorites } from '../../lib/favorites'
 import { formatClock } from '../timers/timerEngine'
-import { matchScores } from '../../lib/matchScore'
+import { matchRanks, type MatchRank } from '../../lib/matchScore'
 import MatchScore, { MATCH_SCORE_HELP } from '../../shared/MatchScore'
 import './players.css'
 import '../heroes/heroes.css'
@@ -727,9 +727,9 @@ function MatchTable({
   )
 
   const scores = useMemo(() => {
-    const out = new Map<number, number>()
+    const out = new Map<number, MatchRank>()
     for (const lobby of lobbies.data ?? []) {
-      const mine = matchScores(lobby.players.map(lobbyPlayerLine)).get(accountId)
+      const mine = matchRanks(lobby.players.map(lobbyPlayerLine)).get(accountId)
       if (mine !== undefined) out.set(lobby.match_id, mine)
     }
     return out
@@ -869,7 +869,7 @@ function MatchTable({
               <th title="Average rank of the lobby. Ranked matches show Valve's reported average; standard matches are a guess from the players' current ranks.">
                 Avg Rank
               </th>
-              <th title={MATCH_SCORE_HELP}>Score</th>
+              <th title={MATCH_SCORE_HELP}>Match Rank</th>
               {header('player_kills', 'K')}
               {header('player_deaths', 'D')}
               {header('player_assists', 'A')}
@@ -905,7 +905,7 @@ function MatchTable({
                     {lobbies.isPending ? (
                       <span className="dim">…</span>
                     ) : (
-                      <MatchScore score={scores.get(m.match_id)} />
+                      <MatchScore placement={scores.get(m.match_id)} />
                     )}
                   </td>
                   <td className="mono">{m.player_kills}</td>

@@ -1,8 +1,8 @@
 /**
- * The per-match score: how a player stacked up against the other eleven in
- * the same lobby. Each stat ranks the lobby (best = 12 points, worst = 1,
- * ties share the average), and the score is the weighted mean of those
- * placements — so 12.0 means topping every stat and 6.5 is dead average.
+ * The per-match ranking: every player in a lobby placed 1st to 12th. Each
+ * stat ranks the lobby (best = most points, ties share the average), the
+ * weighted mean of those placements orders the players, and their position
+ * in that order is their rank — 1 is the best performance in the match.
  */
 
 export interface LobbyPlayerLine {
@@ -37,11 +37,16 @@ const STATS: ScoreStat[] = [
   { weight: 0.025, value: (p) => p.denies },
 ]
 
-export const MAX_MATCH_SCORE = 12
+export interface MatchRank {
+  /** 1 = best in the lobby. */
+  rank: number
+  /** Lobby size: 12 normally, 8 in Street Brawl. */
+  of: number
+}
 
-/** account_id → score on a 1–12 scale, one decimal. */
-export function matchScores(lobby: LobbyPlayerLine[]): Map<number, number> {
-  const out = new Map<number, number>()
+/** account_id → placement in the lobby, 1 (best) to lobby size. */
+export function matchRanks(lobby: LobbyPlayerLine[]): Map<number, MatchRank> {
+  const out = new Map<number, MatchRank>()
   const n = lobby.length
   if (n < 2) return out
   const totals = new Array<number>(n).fill(0)
@@ -50,19 +55,21 @@ export function matchScores(lobby: LobbyPlayerLine[]): Map<number, number> {
     values.forEach((v, i) => {
       const below = values.filter((o) => o < v).length
       const tied = values.filter((o) => o === v).length - 1
-      // points 1..n among this lobby, scaled to 1..12 for lobbies short a player
-      const points = 1 + below + tied / 2
-      totals[i] += stat.weight * (1 + ((points - 1) * (MAX_MATCH_SCORE - 1)) / (n - 1))
+      totals[i] += stat.weight * (below + tied / 2)
     })
   }
-  lobby.forEach((p, i) => out.set(p.account_id, Math.round(totals[i] * 10) / 10))
+  // souls break an exact tie on the composite
+  const order = lobby
+    .map((p, i) => ({ p, total: totals[i] }))
+    .sort((a, b) => b.total - a.total || b.p.net_worth - a.p.net_worth)
+  order.forEach(({ p }, i) => out.set(p.account_id, { rank: i + 1, of: n }))
   return out
 }
 
-/** Colour band for a score: top / solid / middling / rough. */
-export function scoreTier(score: number): 'top' | 'good' | 'mid' | 'low' {
-  if (score >= 9.5) return 'top'
-  if (score >= 7.5) return 'good'
-  if (score >= 5) return 'mid'
-  return 'low'
+/** Colour band for a placement: MVP / top three / bottom three / the rest. */
+export function rankTier({ rank, of }: MatchRank): 'top' | 'good' | 'mid' | 'low' {
+  if (rank === 1) return 'top'
+  if (rank <= 3) return 'good'
+  if (rank > of - 3) return 'low'
+  return 'mid'
 }

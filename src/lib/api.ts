@@ -444,7 +444,7 @@ const LOBBY_PLAYER_COLUMNS =
 
 const lastSample = (samples: number[] | null) => samples?.[samples.length - 1] ?? 0
 
-/** Flatten a bulk-endpoint player into the shape `matchScores` reads. */
+/** Flatten a bulk-endpoint player into the shape `matchRanks` reads. */
 export const lobbyPlayerLine = (p: MatchLobbyPlayer) => ({
   ...p,
   player_damage: lastSample(p.stats_player_damage),
@@ -455,7 +455,7 @@ export const lobbyPlayerLine = (p: MatchLobbyPlayer) => ({
 const LOBBY_CHUNK = 200
 
 /**
- * Bulk lookup behind the match-history "Avg Rank" and "Score" columns.
+ * Bulk lookup behind the match-history "Avg Rank" and "Match Rank" columns.
  * `include_player_kda` plus named `extra_player_columns` keeps it to ~4KB a
  * match — the default player info drags accolades along (~1.5KB per player)
  * and `include_player_final_stats` is ~33KB a match.

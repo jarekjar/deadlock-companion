@@ -648,17 +648,16 @@ a.hl-hero:hover .hl-name {
   border-left-color: var(--danger);
 }
 
-/* the per-match score out of 12 (src/shared/MatchScore.tsx) */
+/* a player's 1-12 placement in a match (src/shared/MatchScore.tsx) */
 .match-score {
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
   cursor: help;
   white-space: nowrap;
 }
 
 .match-score .score-of {
   color: var(--ink-faint);
-  font-weight: 400;
   font-size: 0.85em;
 }
 

@@ -16,7 +16,7 @@ import {
 } from '../../lib/queries'
 import RankBadge from '../../shared/RankBadge'
 import MatchScore, { MATCH_SCORE_HELP } from '../../shared/MatchScore'
-import { matchScores } from '../../lib/matchScore'
+import { matchRanks } from '../../lib/matchScore'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import '../../shared/charts.css'
@@ -62,7 +62,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
   const [openBuild, setOpenBuild] = useState<number | null>(null)
   const scores = useMemo(
     () =>
-      matchScores(
+      matchRanks(
         info.players.map((p) => {
           const last = p.stats[p.stats.length - 1]
           return {
@@ -117,7 +117,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                 <tr>
                   <th>Hero</th>
                   <th>Player</th>
-                  <th title={MATCH_SCORE_HELP}>Score</th>
+                  <th title={MATCH_SCORE_HELP}>Rank</th>
                   <th>K</th>
                   <th>D</th>
                   <th>A</th>
@@ -152,7 +152,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                         </span>
                       </td>
                       <td>
-                        <MatchScore score={scores.get(p.account_id)} />
+                        <MatchScore placement={scores.get(p.account_id)} />
                       </td>
                       <td className="mono">{p.kills}</td>
                       <td className="mono">{p.deaths}</td>
