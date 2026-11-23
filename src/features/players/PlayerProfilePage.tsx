@@ -138,8 +138,21 @@ function Profile({ accountId }: { accountId: number }) {
     return mode === 'all' ? matches : matches.filter((m) => matchModeOf(m) === mode)
   }, [history.data, mode])
 
+  // the match table's hero/date filters also drive the summary tiles
+  const [filters, setFilters] = useState<MatchFilters>(NO_FILTERS)
+  const filtered = useMemo(() => {
+    const from = filters.from ? Date.parse(`${filters.from}T00:00:00`) / 1000 : null
+    const to = filters.to ? Date.parse(`${filters.to}T23:59:59`) / 1000 : null
+    return modeFiltered.filter(
+      (m) =>
+        (filters.hero === 0 || m.hero_id === filters.hero) &&
+        (from === null || m.start_time >= from) &&
+        (to === null || m.start_time <= to),
+    )
+  }, [modeFiltered, filters])
+
   const summary = useMemo(() => {
-    const matches = modeFiltered
+    const matches = filtered
     if (matches.length === 0) return null
     const wins = matches.filter(isWin).length
     const kills = matches.reduce((s, m) => s + m.player_kills, 0)
@@ -153,7 +166,7 @@ function Profile({ accountId }: { accountId: number }) {
       kda: deaths === 0 ? kills + assists : (kills + assists) / deaths,
       soulsPerMin: souls / minutes,
     }
-  }, [modeFiltered])
+  }, [filtered])
 
   if (history.isError || profile.isError) {
     return <div className="page-note error">Could not load this player</div>
@@ -298,7 +311,14 @@ function Profile({ accountId }: { accountId: number }) {
 
               <RankHistory matches={history.data} ranks={rankAssets.data} />
 
-              <MatchTable accountId={accountId} matches={modeFiltered} heroes={heroes.data} />
+              <MatchTable
+                accountId={accountId}
+                allMatches={modeFiltered}
+                matches={filtered}
+                filters={filters}
+                onFiltersChange={setFilters}
+                heroes={heroes.data}
+              />
 
               <p className="grid-note left-note">
                 Matches missing? The community API only knows matches that got synced —{' '}
@@ -652,13 +672,30 @@ type SortKey =
 /** Below this many known ranks, a guessed lobby average gets an asterisk. */
 const MIN_CONFIDENT_RANKS = 6
 
+interface MatchFilters {
+  /** 0 = all heroes. */
+  hero: number
+  /** yyyy-mm-dd from the date inputs, or ''. */
+  from: string
+  to: string
+}
+
+const NO_FILTERS: MatchFilters = { hero: 0, from: '', to: '' }
+
 function MatchTable({
   accountId,
-  matches,
+  allMatches,
+  matches: filtered,
+  filters,
+  onFiltersChange,
   heroes,
 }: {
   accountId: number
+  /** Every match in the current mode, before the hero/date filters. */
+  allMatches: MatchHistoryEntry[]
   matches: MatchHistoryEntry[]
+  filters: MatchFilters
+  onFiltersChange: (next: MatchFilters) => void
   heroes: Map<number, HeroAsset> | undefined
 }) {
   const navigate = useNavigate()
@@ -669,27 +706,14 @@ function MatchTable({
   })
   // recent matches are what people came for; the rest is one click away
   const [visible, setVisible] = useState(6)
-  const [heroFilter, setHeroFilter] = useState(0)
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
+  const set = (patch: Partial<MatchFilters>) => onFiltersChange({ ...filters, ...patch })
 
   const heroOptions = useMemo(() => {
-    const ids = [...new Set(matches.map((m) => m.hero_id))]
+    const ids = [...new Set(allMatches.map((m) => m.hero_id))]
     return ids
       .map((id) => ({ id, name: heroes?.get(id)?.name ?? `Hero ${id}` }))
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [matches, heroes])
-
-  const filtered = useMemo(() => {
-    const from = fromDate ? Date.parse(`${fromDate}T00:00:00`) / 1000 : null
-    const to = toDate ? Date.parse(`${toDate}T23:59:59`) / 1000 : null
-    return matches.filter(
-      (m) =>
-        (heroFilter === 0 || m.hero_id === heroFilter) &&
-        (from === null || m.start_time >= from) &&
-        (to === null || m.start_time <= to),
-    )
-  }, [matches, heroFilter, fromDate, toDate])
+  }, [allMatches, heroes])
 
   const sorted = useMemo(() => {
     const value = (m: MatchHistoryEntry): number | string => {
@@ -793,7 +817,7 @@ function MatchTable({
     )
   }
 
-  const hasFilters = heroFilter !== 0 || fromDate !== '' || toDate !== ''
+  const hasFilters = filters.hero !== 0 || filters.from !== '' || filters.to !== ''
 
   const header = (key: SortKey, label: string) => (
     <th
@@ -811,8 +835,8 @@ function MatchTable({
         <span className="cb-group">
           <span className="cb-label">Hero</span>
           <select
-            value={heroFilter}
-            onChange={(e) => setHeroFilter(Number(e.target.value))}
+            value={filters.hero}
+            onChange={(e) => set({ hero: Number(e.target.value) })}
             aria-label="Filter by hero"
           >
             <option value={0}>All heroes</option>
@@ -827,8 +851,8 @@ function MatchTable({
           <span className="cb-label">From</span>
           <input
             type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            value={filters.from}
+            onChange={(e) => set({ from: e.target.value })}
             aria-label="From date"
           />
         </span>
@@ -836,8 +860,8 @@ function MatchTable({
           <span className="cb-label">To</span>
           <input
             type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
+            value={filters.to}
+            onChange={(e) => set({ to: e.target.value })}
             aria-label="To date"
           />
         </span>
@@ -845,18 +869,14 @@ function MatchTable({
           <span className="cb-group">
             <button
               className="cb-dir"
-              onClick={() => {
-                setHeroFilter(0)
-                setFromDate('')
-                setToDate('')
-              }}
+              onClick={() => onFiltersChange(NO_FILTERS)}
             >
               Clear
             </button>
           </span>
         )}
         <span className="cb-group cb-count">
-          {hasFilters ? `${filtered.length} of ${matches.length}` : `${matches.length}`} matches
+          {hasFilters ? `${filtered.length} of ${allMatches.length}` : `${allMatches.length}`} matches
         </span>
       </div>
       <div className="table-wrap">
