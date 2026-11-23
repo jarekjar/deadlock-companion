@@ -9,6 +9,7 @@ import {
   indexToBadge,
   isWin,
   itemIcon,
+  lobbyPlayerLine,
   matchModeOf,
   MATCH_MODE_LABELS,
   rankName,
@@ -30,7 +31,7 @@ import {
   useHeroes,
   useItems,
   useLiveMatchForPlayer,
-  useMatchBadges,
+  useMatchLobbies,
   useMatchHistory,
   useMateStats,
   usePlayerHeroStats,
@@ -45,6 +46,8 @@ import {
 import { winRateClass } from '../../lib/winrate'
 import { useFavorites } from '../../lib/favorites'
 import { formatClock } from '../timers/timerEngine'
+import { matchScores } from '../../lib/matchScore'
+import MatchScore, { MATCH_SCORE_HELP } from '../../shared/MatchScore'
 import './players.css'
 import '../heroes/heroes.css'
 import '../live/live.css'
@@ -295,7 +298,7 @@ function Profile({ accountId }: { accountId: number }) {
 
               <RankHistory matches={history.data} ranks={rankAssets.data} />
 
-              <MatchTable matches={modeFiltered} heroes={heroes.data} />
+              <MatchTable accountId={accountId} matches={modeFiltered} heroes={heroes.data} />
 
               <p className="grid-note left-note">
                 Matches missing? The community API only knows matches that got synced —{' '}
@@ -650,9 +653,11 @@ type SortKey =
 const MIN_CONFIDENT_RANKS = 6
 
 function MatchTable({
+  accountId,
   matches,
   heroes,
 }: {
+  accountId: number
   matches: MatchHistoryEntry[]
   heroes: Map<number, HeroAsset> | undefined
 }) {
@@ -707,31 +712,45 @@ function MatchTable({
 
   const shown = useMemo(() => sorted.slice(0, visible), [sorted, visible])
 
-  // lobby data for the Avg Rank column, fetched only for the rows on screen;
-  // brawl lobbies are skipped (no rank bracket applies there)
+  // lobby data for the Avg Rank and Score columns, fetched only for the rows
+  // on screen; brawl lobbies get a score but no rank (no bracket applies there)
+  const shownIds = useMemo(() => shown.map((m) => m.match_id), [shown])
+  const lobbies = useMatchLobbies(shownIds)
   const rankableIds = useMemo(
     () =>
-      shown
-        .filter((m) => matchModeOf(m) === 'ranked' || matchModeOf(m) === 'standard')
-        .map((m) => m.match_id),
+      new Set(
+        shown
+          .filter((m) => matchModeOf(m) === 'ranked' || matchModeOf(m) === 'standard')
+          .map((m) => m.match_id),
+      ),
     [shown],
   )
-  const lobbies = useMatchBadges(rankableIds)
+
+  const scores = useMemo(() => {
+    const out = new Map<number, number>()
+    for (const lobby of lobbies.data ?? []) {
+      const mine = matchScores(lobby.players.map(lobbyPlayerLine)).get(accountId)
+      if (mine !== undefined) out.set(lobby.match_id, mine)
+    }
+    return out
+  }, [lobbies.data, accountId])
 
   // lobbies Valve didn't score (standard queue) get a guess from the current
   // ranks of whichever participants have a visible one
   const guessAccountIds = useMemo(() => {
     const ids = new Set<number>()
     for (const lobby of lobbies.data ?? []) {
+      if (!rankableIds.has(lobby.match_id)) continue
       if (!lobby.average_badge) for (const p of lobby.players) ids.add(p.account_id)
     }
     return [...ids]
-  }, [lobbies.data])
+  }, [lobbies.data, rankableIds])
   const badges = useRanks(guessAccountIds)
 
   const avgRanks = useMemo(() => {
     const out = new Map<number, { badge: number; known: number; total: number; exact: boolean }>()
     for (const lobby of lobbies.data ?? []) {
+      if (!rankableIds.has(lobby.match_id)) continue
       if (lobby.average_badge) {
         out.set(lobby.match_id, {
           badge: lobby.average_badge,
@@ -752,13 +771,12 @@ function MatchTable({
       }
     }
     return out
-  }, [lobbies.data, badges])
+  }, [lobbies.data, badges, rankableIds])
 
   const avgRankCell = (m: MatchHistoryEntry) => {
     const est = avgRanks.get(m.match_id)
     if (!est) {
-      const rankable = matchModeOf(m) === 'ranked' || matchModeOf(m) === 'standard'
-      return <td className="dim">{rankable && lobbies.isPending ? '…' : '—'}</td>
+      return <td className="dim">{rankableIds.has(m.match_id) && lobbies.isPending ? '…' : '—'}</td>
     }
     return (
       <td className="dim">
@@ -851,6 +869,7 @@ function MatchTable({
               <th title="Average rank of the lobby. Ranked matches show Valve's reported average; standard matches are a guess from the players' current ranks.">
                 Avg Rank
               </th>
+              <th title={MATCH_SCORE_HELP}>Score</th>
               {header('player_kills', 'K')}
               {header('player_deaths', 'D')}
               {header('player_assists', 'A')}
@@ -882,6 +901,13 @@ function MatchTable({
                   <td className={isWin(m) ? 'result-w' : 'result-l'}>{isWin(m) ? 'W' : 'L'}</td>
                   <td className="dim">{MATCH_MODE_LABELS[matchModeOf(m)]}</td>
                   {avgRankCell(m)}
+                  <td>
+                    {lobbies.isPending ? (
+                      <span className="dim">…</span>
+                    ) : (
+                      <MatchScore score={scores.get(m.match_id)} />
+                    )}
+                  </td>
                   <td className="mono">{m.player_kills}</td>
                   <td className="mono">{m.player_deaths}</td>
                   <td className="mono">{m.player_assists}</td>

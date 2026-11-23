@@ -15,6 +15,8 @@ import {
   useSteamProfilesBatch,
 } from '../../lib/queries'
 import RankBadge from '../../shared/RankBadge'
+import MatchScore, { MATCH_SCORE_HELP } from '../../shared/MatchScore'
+import { matchScores } from '../../lib/matchScore'
 import { formatClock } from '../timers/timerEngine'
 import '../players/players.css'
 import '../../shared/charts.css'
@@ -58,6 +60,21 @@ function MatchDetail({ info }: { info: MatchInfo }) {
   const profiles = useSteamProfilesBatch(accountIds)
   const badges = useRanks(accountIds)
   const [openBuild, setOpenBuild] = useState<number | null>(null)
+  const scores = useMemo(
+    () =>
+      matchScores(
+        info.players.map((p) => {
+          const last = p.stats[p.stats.length - 1]
+          return {
+            ...p,
+            player_damage: last?.player_damage ?? 0,
+            player_healing: last?.player_healing ?? 0,
+            boss_damage: last?.boss_damage ?? 0,
+          }
+        }),
+      ),
+    [info],
+  )
 
   const persona = (accountId: number) =>
     profiles.data?.get(accountId)?.personaname ?? `#${accountId}`
@@ -100,6 +117,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                 <tr>
                   <th>Hero</th>
                   <th>Player</th>
+                  <th title={MATCH_SCORE_HELP}>Score</th>
                   <th>K</th>
                   <th>D</th>
                   <th>A</th>
@@ -133,6 +151,9 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                           <RankBadge badge={badges.get(p.account_id)} />
                         </span>
                       </td>
+                      <td>
+                        <MatchScore score={scores.get(p.account_id)} />
+                      </td>
                       <td className="mono">{p.kills}</td>
                       <td className="mono">{p.deaths}</td>
                       <td className="mono">{p.assists}</td>
@@ -159,7 +180,7 @@ function MatchDetail({ info }: { info: MatchInfo }) {
                   if (isOpen) {
                     rows.push(
                       <tr key={`${p.account_id}-build`} className="build-tr">
-                        <td colSpan={12}>
+                        <td colSpan={13}>
                           <BuildStrip player={p} items={items.data} />
                         </td>
                       </tr>,

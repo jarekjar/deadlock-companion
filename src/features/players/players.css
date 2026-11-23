@@ -647,3 +647,33 @@ a.hl-hero:hover .hl-name {
 .coach-notes li.coach-fix {
   border-left-color: var(--danger);
 }
+
+/* the per-match score out of 12 (src/shared/MatchScore.tsx) */
+.match-score {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.match-score .score-of {
+  color: var(--ink-faint);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
+.match-score.score-top {
+  color: var(--brass-bright);
+}
+
+.match-score.score-good {
+  color: var(--up);
+}
+
+.match-score.score-mid {
+  color: var(--ink-dim);
+}
+
+.match-score.score-low {
+  color: var(--danger);
+}

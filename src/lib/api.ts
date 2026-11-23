@@ -170,6 +170,7 @@ export interface MatchPlayerStatsSample {
   player_damage: number
   player_healing: number
   player_damage_taken: number
+  boss_damage: number
 }
 
 export interface MatchPlayer {
@@ -413,40 +414,68 @@ export const fetchHeroSynergyStats = (
 export const fetchMatchMetadata = (matchId: number) =>
   get<{ match_info: MatchInfo }>(`/v1/matches/${matchId}/metadata`).then((r) => r.match_info)
 
-/** Lobby roster and Valve-reported average badge for one finished match. */
-export interface MatchBadgeSummary {
+/** Per-player stat line from the bulk endpoint; `stats_*` are 3-minute samples, last = final. */
+export interface MatchLobbyPlayer {
+  account_id: number
+  kills: number
+  deaths: number
+  assists: number
+  net_worth: number
+  last_hits: number
+  denies: number
+  stats_player_damage: number[] | null
+  stats_player_healing: number[] | null
+  stats_boss_damage: number[] | null
+}
+
+/** Lobby roster, stat lines, and Valve-reported average badge for one finished match. */
+export interface MatchLobbySummary {
   match_id: number
   /**
    * Valve's lobby average. Reported for every ranked match and for all
    * matches from before the ranked rework; null on newer standard matches.
    */
   average_badge: number | null
-  players: { account_id: number }[]
+  players: MatchLobbyPlayer[]
 }
 
-const BADGE_CHUNK = 200
+const LOBBY_PLAYER_COLUMNS =
+  'net_worth,last_hits,denies,stats.player_damage,stats.player_healing,stats.boss_damage'
+
+const lastSample = (samples: number[] | null) => samples?.[samples.length - 1] ?? 0
+
+/** Flatten a bulk-endpoint player into the shape `matchScores` reads. */
+export const lobbyPlayerLine = (p: MatchLobbyPlayer) => ({
+  ...p,
+  player_damage: lastSample(p.stats_player_damage),
+  player_healing: lastSample(p.stats_player_healing),
+  boss_damage: lastSample(p.stats_boss_damage),
+})
+
+const LOBBY_CHUNK = 200
 
 /**
- * Bulk lookup behind the match-history "Avg Rank" column.
- * `include_player_kda` is the slimmest player payload the endpoint offers —
- * the default player info drags accolades along (~1.5KB per player).
+ * Bulk lookup behind the match-history "Avg Rank" and "Score" columns.
+ * `include_player_kda` plus named `extra_player_columns` keeps it to ~4KB a
+ * match — the default player info drags accolades along (~1.5KB per player)
+ * and `include_player_final_stats` is ~33KB a match.
  * Matches the API never ingested are silently absent from the response,
  * and a request where none of the ids are known 404s rather than
  * returning [].
  */
-export async function fetchMatchBadges(matchIds: number[]): Promise<MatchBadgeSummary[]> {
+export async function fetchMatchLobbies(matchIds: number[]): Promise<MatchLobbySummary[]> {
   const chunks: number[][] = []
-  for (let i = 0; i < matchIds.length; i += BADGE_CHUNK) {
-    chunks.push(matchIds.slice(i, i + BADGE_CHUNK))
+  for (let i = 0; i < matchIds.length; i += LOBBY_CHUNK) {
+    chunks.push(matchIds.slice(i, i + LOBBY_CHUNK))
   }
   const rows = await Promise.all(
     chunks.map(async (ids) => {
       const res = await fetch(
-        `${API_BASE}/v1/matches/metadata?match_ids=${ids.join(',')}&include_player_kda=true`,
+        `${API_BASE}/v1/matches/metadata?match_ids=${ids.join(',')}&include_player_kda=true&extra_player_columns=${LOBBY_PLAYER_COLUMNS}`,
       )
       if (res.status === 404) return []
       if (!res.ok) throw new Error(`Deadlock API ${res.status} on /v1/matches/metadata`)
-      return res.json() as Promise<MatchBadgeSummary[]>
+      return res.json() as Promise<MatchLobbySummary[]>
     }),
   )
   return rows.flat()

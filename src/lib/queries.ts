@@ -21,7 +21,7 @@ import {
   fetchItemTimingStats,
   fetchLeaderboard,
   fetchMapAsset,
-  fetchMatchBadges,
+  fetchMatchLobbies,
   fetchMatchHistory,
   fetchMatchMetadata,
   fetchMateStats,
@@ -185,15 +185,15 @@ export const useMatchMetadata = (matchId: number) =>
   })
 
 /**
- * Lobby rosters + Valve average badges for a set of finished matches. Keyed
+ * Lobby rosters, stat lines + Valve average badges for a set of finished matches. Keyed
  * on the sorted id set so reordering the same rows doesn't refetch; finished
  * matches never change, so entries never go stale.
  */
-export function useMatchBadges(matchIds: number[]) {
+export function useMatchLobbies(matchIds: number[]) {
   const ids = [...matchIds].sort((a, b) => a - b)
   return useQuery({
-    queryKey: ['matchBadges', ids.join(',')],
-    queryFn: () => fetchMatchBadges(ids),
+    queryKey: ['matchLobbies', ids.join(',')],
+    queryFn: () => fetchMatchLobbies(ids),
     enabled: ids.length > 0,
     staleTime: FOREVER,
   })
